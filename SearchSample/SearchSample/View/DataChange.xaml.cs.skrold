@@ -1,0 +1,453 @@
+﻿using MRILossTool.DataModel;
+using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// DataChange.xaml の相互作用ロジック
+    /// </summary>
+    public partial class DataChange : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        public string connectionStringBase = Common.connectionStringBase;
+
+        /// <summary>
+        /// 内部保持データ（MDB）
+        /// </summary>
+        private string LocalDBName = Common.LocalDBName;
+        //private string LocalMasterDBName = Common.LocalMasterDBName;
+        private string LocalMasterDBName = Common.LocalDBName;
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// データ共通化
+        /// </summary>
+        public DataChange()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                // 会社マスタ読み込み
+                if (!GetCustomerMasterData())
+                {
+                    return;
+                }
+
+                // 工場マスタ読み込み
+                if (!GetFactoryMasterData())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        #region DB処理
+
+        /// <summary>
+        /// 会社マスタの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetCustomerMasterData()
+        {
+            bool ret = true;
+
+            // 会社マスタをロード
+            try
+            {
+                DataChangeViewModel vm = (DataChangeViewModel)DataContext;
+
+                // コンボボックスを作成
+                cmbCompany.Items.Clear();
+                cmbCompany.ItemsSource = vm.CustomerDT;
+                cmbCompany.SelectedValuePath = "CUST_CD";
+                cmbCompany.DisplayMemberPath = "CUST_N";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 工場マスタの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetFactoryMasterData()
+        {
+            bool ret = true;
+
+            // マスタをロード
+            try
+            {
+                DataChangeViewModel vm = (DataChangeViewModel)DataContext;
+
+                // コンボボックスを作成
+                DataView view1 = new DataView(vm.FactoryDT);
+                view1.RowFilter = "CUST_CD = ''";
+                cmbFactory.Items.Clear();
+                cmbFactory.ItemsSource = view1;
+                cmbFactory.SelectedValuePath = "KOJOCD";
+                cmbFactory.DisplayMemberPath = "KOJO_N";
+
+                DataView view2 = new DataView(vm.TargetTableDT);
+                view2.RowFilter = "CUST_CD = '' and KOJOCD = ''";
+                cmbTargetTable.Items.Clear();
+                cmbTargetTable.ItemsSource = view2;
+                cmbTargetTable.SelectedValuePath = "TABLE_N";
+                cmbTargetTable.DisplayMemberPath = "TABLE_NAME";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 対象テーブルのデータ共通化
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool ChangeData()
+        {
+            bool ret = true; // 戻り値を設定
+
+            DataChangeViewModel vm = (DataChangeViewModel)DataContext;
+
+            // 共通化定義情報読み込み
+            if (!GetDefineData())
+            {
+                return false;
+            }
+
+            // 一時データ読み込み
+            if (!GetOrgData())
+            {
+                return false;
+            }
+
+            if (vm.DtOld.Rows.Count == 0)
+            {
+                MessageBox.Show("対象期間のデータは存在しません。",
+                        "データなし", MessageBoxButton.OK, MessageBoxImage.Information);
+                return true;
+            }
+
+            try
+            {
+                // エラー情報
+                List<string> erro_list = new List<string>();
+                string strMsg = "";
+                int cnt = 0;
+
+                // 対象テーブルのデータ共通化
+                cnt = vm.ChangeData(
+                    cmbCompany.SelectedValue.ToString(),
+                    cmbFactory.SelectedValue.ToString(),
+                    txtFromDate.Text,
+                    txtToDate.Text,
+                    cmbTargetTable.SelectedValue.ToString(),
+                    ref erro_list,
+                    ref strMsg
+                );
+
+                if (cnt == -3)
+                {
+                    MessageBox.Show("データの更新に失敗しました。\n" + strMsg);
+                    ret = false;
+                }
+                else
+                {
+                    if (erro_list.Count > 0)
+                    {
+                        ErrorDialog frm = new ErrorDialog();
+                        frm.Message = erro_list;
+                        frm.ShowDialog();
+                    }
+                    else
+                    {
+                        MessageBox.Show(cnt.ToString() + "件変更しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("データの更新に失敗しました。\n" + ex.Message,
+                    "DB更新エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+            }
+
+            this.Cursor = null;     // デフォルトカーソルにする
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 定義マスタの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetDefineData()
+        {
+            bool ret = true;
+
+            DataChangeViewModel vm = (DataChangeViewModel)DataContext;
+
+            // 定義マスタをロード
+            try
+            {
+                vm.GetDefineData(
+                    cmbCompany.SelectedValue.ToString(),
+                    cmbFactory.SelectedValue.ToString(),
+                    cmbTargetTable.SelectedValue.ToString()
+                );
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("共通化定義マスタの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 一時データの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetOrgData()
+        {
+            bool ret = true;
+
+            DataChangeViewModel vm = (DataChangeViewModel)DataContext;
+
+            // 定義マスタをロードする
+            try
+            {
+                ret = vm.GetOrgData(
+                    cmbCompany.SelectedValue.ToString(),
+                    cmbFactory.SelectedValue.ToString(),
+                    txtFromDate.Text,
+                    txtToDate.Text,
+                    cmbTargetTable.SelectedValue.ToString()
+                    );
+                if (ret == false)
+                {
+                    MessageBox.Show("対象テーブルの読み込みに失敗しました。",
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("対象テーブルの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// データ共通化　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDataChange_Click(object sender, EventArgs e)
+        {
+            if (cmbCompany.SelectedValue == null || string.IsNullOrEmpty(cmbCompany.SelectedValue.ToString()))
+            {
+                MessageBox.Show("会社が選択されていません", "必須入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (cmbFactory.SelectedValue == null || string.IsNullOrEmpty(cmbFactory.SelectedValue.ToString()))
+            {
+                MessageBox.Show("工場が選択されていません", "必須入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (cmbTargetTable.SelectedValue == null || string.IsNullOrEmpty(cmbTargetTable.SelectedValue.ToString()))
+            {
+                MessageBox.Show("対象テーブルが選択されていません", "必須入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                // 入力フォーマットチェック
+                string strFormat = "yyyyMMdd";
+
+                if (!string.IsNullOrEmpty(txtFromDate.Text))
+                {
+
+                    try
+                    {
+                        DateTime dTime = DateTime.ParseExact(txtFromDate.Text, strFormat, null);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("yyyymmdd形式で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtFromDate.Focus();
+                        return;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(txtToDate.Text))
+                {
+
+                    try
+                    {
+                        DateTime dTime = DateTime.ParseExact(txtToDate.Text, strFormat, null);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("yyyymmdd形式で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtToDate.Focus();
+                        return;
+                    }
+                }
+
+            }
+            catch
+            {
+
+            }
+
+            this.Cursor = Cursors.Wait;     // 待機カーソルにする
+
+            // データ共通化
+            if (!ChangeData())
+            {
+                return;
+            }
+
+            this.Cursor = null;             // デフォルトカーソルにする
+
+        }
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        /// <summary>
+        /// 会社名コンボボックス選択
+        /// </summary>
+        private void cmbCompany_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // 工場コンボボックス更新
+            DataView viewFactory = cmbFactory.ItemsSource as DataView;
+            String cust_cd = cmbCompany.SelectedValue.ToString();
+            if (viewFactory != null && cust_cd != null)
+            {
+                viewFactory.RowFilter = String.Format("CUST_CD = '{0}'", cust_cd);
+            }
+            else
+            {
+                viewFactory.RowFilter = "CUST_CD = ''";
+            }
+            cmbFactory.SelectedValue = string.Empty;
+
+            // 対象テーブルコンボボックス更新
+            DataView viewTargetTable = cmbTargetTable.ItemsSource as DataView;
+            viewTargetTable.RowFilter = "CUST_CD = '' and KOJOCD = ''";
+
+        }
+
+        /// <summary>
+        /// 工場名コンボボックス選択
+        /// </summary>
+        private void cmbFactory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // 対象テーブルコンボボックス更新
+            DataView viewTargetTable = cmbTargetTable.ItemsSource as DataView;
+            String cust_cd = cmbCompany.SelectedValue.ToString();
+            String kojocd = cmbFactory.SelectedValue.ToString();
+            if (viewTargetTable != null && kojocd != null)
+            {
+                viewTargetTable.RowFilter = String.Format("CUST_CD = '{0}' and KOJOCD = '{1}'", cust_cd, kojocd);
+            }
+            else
+            {
+                viewTargetTable.RowFilter = "CUST_CD = '' and KOJOCD = ''";
+            }
+            cmbTargetTable.SelectedValue = string.Empty;
+
+        }
+    }
+}

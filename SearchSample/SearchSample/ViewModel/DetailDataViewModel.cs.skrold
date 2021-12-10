@@ -1,0 +1,64 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 内訳データ画面 ViewModel
+    /// </summary>
+    class DetailDataViewModel
+    {
+        #region "DBアクセスモデル"
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        // 表示グラフ種類
+        private int prvKindGraph = 1;
+
+        /// <summary>
+        /// 表示グラフ種類セット
+        /// </summary>
+        /// <param name="kind">1=内訳, 2=異常停止理由別, 3=異常停止理由別２</param>
+        public void SetKindGraph(int kind)
+        {
+            prvKindGraph = kind;
+        }
+        public int KindGraph()
+        {
+            return prvKindGraph;
+        }
+
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataTable dtMain = new DataTable();
+        public DataTable DtMain { get => dtMain; set => dtMain = value; }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public DetailDataViewModel()
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+        }
+    }
+}

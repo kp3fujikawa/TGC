@@ -1,0 +1,280 @@
+﻿using MRILossTool.DataModel;
+using MRILossTool.Model;
+using System;
+using System.Collections.Generic;
+using System.Data;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 共通化定義マスタメンテナンス ViewModel
+    /// </summary>
+    class CommonMasterViewModel
+    {
+        #region "DBアクセスモデル"
+
+        private CompanyMasterAccess acCompamyMaster = new CompanyMasterAccess();
+        private FactoryMasterAccess acFactoryMaster = new FactoryMasterAccess();
+        private TargetTableAccess acTargetTable = new TargetTableAccess();
+        private CommonMasterAccess acCommonMaster = new CommonMasterAccess();
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataSetMaster.S_COMMONDataTable dtMst = new DataSetMaster.S_COMMONDataTable();
+        public DataSetMaster.S_COMMONDataTable DtMst { get => dtMst; set => dtMst = value; }
+
+        /// <summary>
+        /// 一覧ヘッダ
+        /// </summary>
+        private String[] headerName = {
+            "ライン",
+            "設備",
+            "装置",
+            "連番",
+            "項目名1",
+            "項目値1",
+            "項目名2",
+            "項目値2",
+            "項目名3",
+            "項目値3",
+            "項目名4",
+            "項目値4",
+            "項目名5",
+            "項目値5",
+            "項目名6",
+            "項目値6",
+            "項目名7",
+            "項目値7",
+            "項目名8",
+            "項目値8",
+            "項目名9",
+            "項目値9",
+            "項目名10",
+            "項目値10",
+            "変換後"
+        };
+        public string[] HeaderName { get => headerName; set => headerName = value; }
+
+        private String[] columnName = {
+            "LINE_CD",
+            "GOUKI",
+            "EQUIPMENT_CD",
+            "SEQ_NO",
+            "ITEM_N1",
+            "VALUE1",
+            "ITEM_N2",
+            "VALUE2",
+            "ITEM_N3",
+            "VALUE3",
+            "ITEM_N4",
+            "VALUE4",
+            "ITEM_N5",
+            "VALUE5",
+            "ITEM_N6",
+            "VALUE6",
+            "ITEM_N7",
+            "VALUE7",
+            "ITEM_N8",
+            "VALUE8",
+            "ITEM_N9",
+            "VALUE9",
+            "ITEM_N10",
+            "VALUE10",
+            "AFTER_VALUE"
+        };
+        public string[] ColumnName { get => columnName; set => columnName = value; }
+
+        /// <summary>
+        /// 会社マスタ コンボボックス
+        /// </summary>
+        private DataSetMaster.M_COMPANYDataTable customerDT = new DataSetMaster.M_COMPANYDataTable();
+        public DataSetMaster.M_COMPANYDataTable CustomerDT { get => customerDT; set => customerDT = value; }
+
+        /// <summary>
+        /// 工場マスタ コンボボックス
+        /// </summary>
+        private DataSetMaster.M_FACTORYDataTable factoryDT = new DataSetMaster.M_FACTORYDataTable();
+        public DataSetMaster.M_FACTORYDataTable FactoryDT { get => factoryDT; set => factoryDT = value; }
+
+        /// <summary>
+        /// 対象テーブル コンボボックス
+        /// </summary>
+        private DataTable targetTableDT = new DataTable();
+        public DataTable TargetTableDT { get => targetTableDT; set => targetTableDT = value; }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public CommonMasterViewModel()
+        {
+            try
+            {
+                // 会社マスタの読み込み
+                if (!GetCustomerMasterData())
+                {
+                    return;
+                }
+
+                // 対象テーブル
+                TargetTableDT.Columns.Add("CUST_CD");
+                TargetTableDT.Columns.Add("KOJOCD");
+                TargetTableDT.Columns.Add("TABLE_N");
+                TargetTableDT.Columns.Add("TABLE_NAME");
+
+                // 工場マスタの読み込み
+                if (!GetFactoryMasterData())
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 会社マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetCustomerMasterData()
+        {
+            bool ret = true;
+
+            try
+            {
+                // 会社マスタの読み込み
+                if (!acCompamyMaster.GetCustomerMasterData(ref customerDT))
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// 工場マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetFactoryMasterData()
+        {
+            bool ret = true;
+
+            DataSetMaster.M_FACTORYDataTable dt = new DataSetMaster.M_FACTORYDataTable();
+
+            try
+            {
+                // 工場マスタの読み込み
+                if (!acFactoryMaster.GetFactoryMasterData(ref factoryDT, ref targetTableDT, ref dt))
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        public void GetMasterData(
+            string strCustomer,
+            string strFactory,
+            string strTargetTable
+            )
+        {
+            try
+            {
+                // マスタデータの読み込み
+                acCommonMaster.GetMasterData(
+                    ref dtMst,
+                    strCustomer,
+                    strFactory,
+                    strTargetTable
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns></returns>
+        public int ReadCSVFile(
+            String filenName,
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            int ret = 0;
+
+            try
+            {
+                // CSVファイルをロード
+                ret = acTargetTable.ReadCSVFile(
+                    ColumnName,
+                    filenName,
+                    strCustomer,
+                    strFactory,
+                    strTargetTable,
+                    ref erro_list,
+                    ref strMsg
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+    }
+}

@@ -1,0 +1,301 @@
+﻿using MRILossTool.DataModel;
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Win32;
+using NLog;
+using MRILossTool.ViewModel;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// FactoryMaster.xaml の相互作用ロジック
+    /// </summary>
+    public partial class FactoryMaster : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// 工場マスタメンテナンス
+        /// </summary>
+        public FactoryMaster()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvFactory);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                // 会社マスタの読み込み
+                if (!GetCustomerMasterData())
+                {
+                    return;
+                }
+
+                // グリッド初期設定
+                gvFactory.IsReadOnly = true;                // 読取専用
+                gvFactory.CanUserDeleteRows = false;        // 行削除禁止
+                gvFactory.CanUserAddRows = false;           // 行挿入禁止
+                gvFactory.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                //gvFactory.EnableHeadersVisualStyles = false;
+
+                // グリッド初期設定
+                dataGrid2.IsReadOnly = true;                // 読取専用
+                dataGrid2.CanUserDeleteRows = false;        // 行削除禁止
+                dataGrid2.CanUserAddRows = false;           // 行挿入禁止
+                dataGrid2.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                //dataGrid2.EnableHeadersVisualStyles = false;
+
+                dataGrid2.Visibility = Visibility.Hidden;
+
+                // マスタデータの読み込み
+                if (!GetMasterData())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetMasterData()
+        {
+            bool ret = true;
+
+            try
+            {
+                FactoryMasterViewModel vm = (FactoryMasterViewModel)DataContext;
+
+                // 工場マスタをロードする
+                string strCustomer = null;
+                if (cmbCustomer.SelectedValue != null) strCustomer = cmbCustomer.SelectedValue.ToString();
+
+                vm.GetMasterData(
+                    strCustomer
+                );
+
+                gvFactory.ItemsSource = vm.DtMst;
+
+                for (int i = 0; i < vm.HeaderName.Length; i++)
+                {
+                    gvFactory.Columns[i].Header = vm.HeaderName[i];
+                    gvFactory.Columns[i].Width = 120;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 会社マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetCustomerMasterData()
+        {
+            bool ret = true;
+
+            // 会社マスタをロード
+            try
+            {
+                FactoryMasterViewModel vm = (FactoryMasterViewModel)DataContext;
+
+                cmbCustomer.Items.Clear();
+                cmbCustomer.ItemsSource = vm.CustomerDT;
+                cmbCustomer.SelectedValuePath = "CUST_CD";
+                cmbCustomer.DisplayMemberPath = "CUST_N";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// ダウンロード　ボタンクリック
+        /// </summary>
+        private void btnDownload_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+
+            // 初期ファイル名を指定
+            sfd.FileName = "工場マスタ.csv";
+            //タイトル設定
+            sfd.Title = "保存先のファイルを選択してください";
+
+            //ダイアログ表示
+            if (sfd.ShowDialog() == true)
+            {
+                FactoryMasterViewModel vm = (FactoryMasterViewModel)DataContext;
+
+                DataSetMaster.M_FACTORYDataTable dt = new DataSetMaster.M_FACTORYDataTable();
+
+                // 工場マスタをロードする
+                vm.GetMasterDataForDownload(
+                    ref dt
+                );
+
+                dataGrid2.ItemsSource = dt;
+
+                for (int i = 0; i < vm.HeaderName.Length; i++)
+                {
+                    dataGrid2.Columns[i].Header = vm.HeaderName[i];
+                }
+
+                // マスタデータCSV出力
+                Common.outputCSV(sfd.FileName, dataGrid2);
+            }
+
+        }
+
+        /// <summary>
+        /// アップロード　ボタンクリック
+        /// </summary>
+        private void btnUpload_Click(object sender, EventArgs e)
+        {
+            string strPath = string.Empty;
+            try
+            {
+                FactoryMasterViewModel vm = (FactoryMasterViewModel)DataContext;
+
+                String filenName;
+                OpenFileDialog ofd = new OpenFileDialog();
+
+                ofd.Title = "ファイル選択";                   // ダイアログのタイトル
+                ofd.Filter = "CSV ファイル (*.csv)|*.csv";    // CSVファイルでフィルタ
+
+                // ダイアログ オープン
+                if (ofd.ShowDialog() == true)
+                {
+                    filenName = ofd.FileName;
+
+                    // エラー情報
+                    List<string> erro_list = new List<string>();
+                    string strMsg = "";
+                    int ret = 0;
+
+                    // CSVファイルをロード
+                    ret = vm.ReadCSVFile(
+                        filenName,
+                        ref erro_list,
+                        ref strMsg
+                    );
+
+                    if (ret == -1)
+                    {
+                        MessageBox.Show("CSVファイルの場合はShift-JISまたはUTF-8を指定して下さい。",
+                            "文字コードエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                    else if (ret == -2)
+                    {
+                        MessageBox.Show("CSVファイル読み込みエラー\n" + strMsg);
+                        return;
+                    }
+                    else if (ret == -3)
+                    {
+                        MessageBox.Show("マスタデータアップロードに失敗しました。\n" + strMsg);
+                        return;
+                    }
+                    else
+                    {
+                        if (erro_list.Count > 0)
+                        {
+                            ErrorDialog frm = new ErrorDialog();
+                            frm.Message = erro_list;
+                            frm.ShowDialog();
+                        }
+                        else
+                        {
+                            // 検索
+                            GetMasterData();
+
+                            MessageBox.Show(ret.ToString() + "件追加しました。");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DialogResult = true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 検索　ボタンクリック
+        /// </summary>
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            GetMasterData();
+
+        }
+    }
+}

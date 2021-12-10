@@ -1,0 +1,42 @@
+﻿<mahApps:MetroWindow x:Class="MRILossTool.View.MasterMente"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MRILossTool.ViewModel"
+        mc:Ignorable="d"
+        xmlns:mahApps="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        ResizeMode="CanResizeWithGrip"
+        Title="マスタメンテナンス" Height="420" Width="334.016"
+        WindowStartupLocation="CenterOwner">
+    <mahApps:MetroWindow.DataContext>
+        <local:MasterMenteViewModel/>
+    </mahApps:MetroWindow.DataContext>
+    <Grid>
+        <Button x:Name="btnCompany" Content="会社マスタ" HorizontalAlignment="Left" Margin="59,20,0,0" VerticalAlignment="Top" Width="207" Height="43" Click="btnCompany_Click" RenderTransformOrigin="0.486,0.096"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
+        <Button x:Name="btnFactory" Content="工場マスタ" HorizontalAlignment="Left" Margin="59,83,0,0" VerticalAlignment="Top" Width="207" Height="43" Click="btnFactory_Click" RenderTransformOrigin="0.486,0.096"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
+        <Button x:Name="btnSettingIn" Content="取込定義" HorizontalAlignment="Left" Margin="59,146,0,0" VerticalAlignment="Top" Width="207" Height="43" Click="btnSettingIn_Click" RenderTransformOrigin="0.486,0.096"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
+        <Button x:Name="btnLossReplace" Content="ロス変換定義" HorizontalAlignment="Left" Margin="59,209,0,0" VerticalAlignment="Top" Width="207" Height="43" Click="btnLossReplace_Click" RenderTransformOrigin="0.486,0.096"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
+        <Button x:Name="btnCommon" Content="共通化定義" HorizontalAlignment="Left" Margin="59,272,0,0" VerticalAlignment="Top" Width="207" Height="43" Click="btnCommon_Click" RenderTransformOrigin="0.486,0.096"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
+        <Button x:Name="btnClose" Content="閉じる" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="111" Height="43" Click="btnClose_Click"
+                Style="{DynamicResource MahApps.Styles.Button.Square}" ToolTip="閉じる">
+            <Button.ContentTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconZondicons Width="22" Height="22" VerticalAlignment="Center" Kind="CloseOutline" />
+                        <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Button.ContentTemplate>
+        </Button>
+
+    </Grid>
+</mahApps:MetroWindow>

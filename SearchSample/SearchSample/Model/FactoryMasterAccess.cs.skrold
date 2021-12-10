@@ -1,0 +1,471 @@
+﻿using MRILossTool.DataModel;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Text;
+
+namespace MRILossTool.Model
+{
+    /// <summary>
+    /// 工場マスタ アクセスモデル
+    /// </summary>
+    class FactoryMasterAccess
+    {
+
+        #region "定数"
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        public string connectionStringBase = Common.connectionStringBase;
+
+        /// <summary>
+        /// 内部保持データ（MDB）
+        /// </summary>
+        //private string LocalDBName = Common.LocalMasterDBName;
+        private string LocalDBName = Common.LocalDBName;
+
+        /// <summary>
+        /// テーブル
+        /// </summary>
+        private string MasterTableName = "M_FACTORY";
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public FactoryMasterAccess()
+        {
+
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み：全項目
+        /// </summary>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <returns>true/false</returns>
+        public bool GetMasterData(
+            ref DataSetMaster.M_FACTORYDataTable dtMst,
+            string strCustomer
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            // 工場マスタをロードする
+            dtMst = new DataSetMaster.M_FACTORYDataTable();
+            dtMst.Columns.Add("CUST_N", typeof(String));
+            dtMst.Columns["CUST_N"].SetOrdinal(1);
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string where = string.Empty;
+                    if (strCustomer != null && !string.IsNullOrEmpty(strCustomer))
+                        where = " AND f.CUST_CD='" + strCustomer + "'";
+                    string queryString = "SELECT " +
+                            "   f.CUST_CD" +
+                            " , c.CUST_N" +
+                            " , f.KOJOCD" +
+                            " , f.KOJO_N" +
+                            " , f.REMARKS" +
+                            " , f.BREAK1_START" +
+                            " , f.BREAK1_END" +
+                            " , f.BREAK2_START" +
+                            " , f.BREAK2_END" +
+                            " , f.BREAK3_START" +
+                            " , f.BREAK3_END" +
+                        " FROM M_FACTORY f " +
+                        "  INNER JOIN M_COMPANY c on c.CUST_CD = f.CUST_CD " +
+                        " WHERE 0=0 " + where + " ORDER BY f.CUST_CD,f.KOJOCD";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtMst);
+                    adapter.Dispose();
+
+                    connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 工場マスタデータ（MDB）の読み込み：コード、名称のみ
+        /// </summary>
+        /// <param name="factoryDT">工場データテーブル</param>
+        /// <param name="targetTableDT">対象テーブルデータテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetFactoryMasterData(
+            ref DataSetMaster.M_FACTORYDataTable factoryDT,
+            ref DataTable targetTableDT,
+            ref DataSetMaster.M_FACTORYDataTable dtAllFactory
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            // 工場マスタをロード
+            DataSetMaster.M_FACTORYDataTable dt = new DataSetMaster.M_FACTORYDataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM " + MasterTableName + " ORDER BY CUST_CD,KOJOCD";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    // DataTableを作成
+                    Dictionary<string, int> dicF = new Dictionary<string, int>();
+                    Dictionary<string, int> dicT = new Dictionary<string, int>();
+                    foreach (DataSetMaster.M_FACTORYRow row in dt.Rows)
+                    {
+                        if (!dicF.ContainsKey(row.CUST_CD))
+                        {
+                            factoryDT.Rows.Add(new object[] { row.CUST_CD, "", "" });
+                            dicF[row.CUST_CD] = 1;
+                        }
+                        if (!dicT.ContainsKey(row.CUST_CD + row.KOJOCD))
+                        {
+                            targetTableDT.Rows.Add(new object[] { row.CUST_CD, row.KOJOCD, "", "" });
+                            dicT[row.CUST_CD + row.KOJOCD] = 1;
+                        }
+                        factoryDT.Rows.Add(new object[] { row.CUST_CD, row.KOJOCD, row.KOJO_N });
+                        foreach (KeyValuePair<string, string> key in Common.target_table_dic)
+                        {
+                            if (!key.Key.Equals("t_work_org")) continue;    // 稼働テーブル以外はスキップ
+                            targetTableDT.Rows.Add(new object[] { row.CUST_CD, row.KOJOCD, key.Key, key.Value });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+                if (dtAllFactory != null) dtAllFactory = dt;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 工場マスタデータ（MDB）の読み込み：ダウンロード用
+        /// </summary>
+        /// <param name="dt">データテーブル</param>
+        /// <returns>true/false</returns>
+        /// </summary>
+        public bool GetMasterDataForDownload(
+            ref DataSetMaster.M_FACTORYDataTable dt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            // 工場マスタをロード
+            dt = new DataSetMaster.M_FACTORYDataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalDBName))
+                {
+                    connection.Open();
+
+                    dt.Columns.Add("CUST_N", typeof(String));
+                    dt.Columns["CUST_N"].SetOrdinal(1);
+
+                    string where = string.Empty;
+                    string queryString = "SELECT " +
+                            "   f.CUST_CD" +
+                            " , c.CUST_N" +
+                            " , f.KOJOCD" +
+                            " , f.KOJO_N" +
+                            " , f.REMARKS" +
+                            " , f.BREAK1_START" +
+                            " , f.BREAK1_END" +
+                            " , f.BREAK2_START" +
+                            " , f.BREAK2_END" +
+                            " , f.BREAK3_START" +
+                            " , f.BREAK3_END" +
+                        " FROM M_FACTORY f " +
+                        "  INNER JOIN M_COMPANY c on c.CUST_CD = f.CUST_CD " +
+                        " WHERE 0=0 " + where + " ORDER BY f.CUST_CD,f.KOJOCD";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="headerName">一覧ヘッダ</param>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>0>:登録件数,-1:文字コードエラー,-2:CSVファイル読み込みエラー,-3:システムエラー</returns>
+        public int ReadCSVFile(
+            String[] headerName,
+            String filenName,
+            DataSetMaster.M_FACTORYDataTable dtMst,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            string strPath = string.Empty;
+
+            int ret = 0;
+            strMsg = "";
+
+            try
+            {
+                String strCharSet = "";                                  // 文字コード（CSV用）：未指定時はShift-JIS
+                String strDataSource = System.IO.Path.GetDirectoryName(filenName); // 対象ファイル名
+                String strFileName = System.IO.Path.GetFileName(filenName);
+                String strTableName = Guid.NewGuid().ToString("N").Substring(0, 8) + DateTime.Now.ToString("yyyyMMddHHmmss") + strFileName; // 対象テーブル名
+                strPath = strDataSource + "\\" + strTableName;
+
+                // 文字コードをチェック
+                string strInpCode = Common.getStringCode(filenName);
+                if (!strInpCode.Equals("Shift-JIS") && !strInpCode.Equals("UTF-8"))
+                {
+                    ret = -1;
+                    return ret;
+                }
+                if (strInpCode.Equals("UTF-8"))
+                {
+                    strCharSet = "CharacterSet=65001;";
+                }
+
+                List<string> colmunName = new List<string>();
+                foreach (DataColumn col in dtMst.Columns)
+                {
+                    colmunName.Add(col.ColumnName);
+                }
+
+                //ファイルの内容を読み込む
+                StreamReader sr =
+                    new StreamReader(filenName, Encoding.GetEncoding(strInpCode));
+                string s = sr.ReadToEnd();
+                sr.Close();
+
+                // 文字列置換
+                s = s.Replace(string.Join(",", headerName), string.Join(",", colmunName));
+
+                //書き込むファイルが既に存在している場合は上書き
+                StreamWriter sw = new StreamWriter(
+                    strPath,
+                    false,
+                    Encoding.GetEncoding(strInpCode));
+                sw.Write(s);
+                sw.Close();
+
+                // ファイル読み込み
+                string connectionString = connectionStringBase + strDataSource + "; "
+                        + "Extended Properties=\"Text;" // ファイルプロパティ指定
+                        + "HDR=YES;"                    // ヘッダー設定
+                        + "FMT=Delimited;"              // フィールドの型
+                        + strCharSet                    // 文字コード
+                        + "\"";
+
+                // CSVファイル読み込み時の定義ファイル出力
+                Common.outputSchemaIni(strTableName, strDataSource, new List<string>(colmunName), strCharSet);
+
+                // CSVファイルをロード
+                DataTable dtAdd = new DataTable();
+                string queryString = "SELECT * FROM [" + strTableName + "]";
+                try
+                {
+                    using (OleDbConnection connection = new OleDbConnection(connectionString))
+                    {
+                        connection.Open();
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                        adapter.Fill(dtAdd);
+
+                        connection.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ret = -2;
+                    strMsg = ex.Message;
+                    return ret;
+                }
+                finally
+                {
+                    if (File.Exists(strPath)) File.Delete(strPath);
+                }
+
+                // 不要な列を削除
+                dtAdd.Columns.Remove("CUST_N");
+
+                // エラー情報
+                erro_list = new List<string>();
+
+                // データをDelete/Insert
+                using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalDBName))
+                {
+
+                    OleDbCommand command = new OleDbCommand();
+                    OleDbTransaction transaction = null;
+                    command.Connection = connection;
+                    int cnt = 0;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // マスタ削除
+                        command.CommandText = "DELETE FROM " + MasterTableName;
+                        int delcnt = command.ExecuteNonQuery();
+
+                        DataSetMaster.M_FACTORYDataTable dt = new DataSetMaster.M_FACTORYDataTable();
+
+                        List<string> cols = new List<string>();
+                        foreach (DataColumn col in dtAdd.Columns)
+                        {
+                            cols.Add(col.ColumnName);
+                        }
+
+                        // マスタ登録
+                        int lineno = 0;
+                        foreach (DataRow row in dtAdd.Rows)
+                        {
+                            try
+                            {
+                                lineno++;
+
+                                List<string> err_list2 = new List<string>();
+                                var newrow = dt.NewM_FACTORYRow();
+                                foreach (DataColumn col in dtAdd.Columns)
+                                {
+                                    string data = row[col.ColumnName].ToString();
+                                    if (!dt.Columns[col.ColumnName].AllowDBNull && string.IsNullOrEmpty(data))
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は必須です。"));
+                                    }
+                                    else if (data.Length > dt.Columns[col.ColumnName].MaxLength)
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は最大文字数を超えています。"));
+                                    }
+                                    else
+                                    {
+                                        newrow[col.ColumnName] = row[col.ColumnName];
+                                    }
+                                }
+
+                                if (err_list2.Count > 0)
+                                {
+                                    erro_list.AddRange(err_list2);
+                                    continue;
+                                }
+                                dt.Rows.Add(newrow);
+
+                                List<string> values = new List<string>();
+                                foreach (string col in cols)
+                                {
+                                    values.Add("'" + row[col] + "'");
+                                }
+                                command.CommandText =
+                                    "INSERT INTO " + MasterTableName + " (" + string.Join(",", cols) + ") VALUES ( " + string.Join(",", values) + " )";
+                                cnt += command.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                erro_list.Add(string.Format("{0}行目：{1}", lineno, ex.Message));
+                            }
+                        }
+
+                        if (erro_list.Count > 0)
+                        {
+                            transaction.Rollback();
+                        }
+                        else
+                        {
+                            // コミット
+                            transaction.Commit();
+
+                            ret = cnt;
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = -3;
+                        strMsg = ex.Message;
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = -3;
+                strMsg = ex.Message;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(strPath) && File.Exists(strPath))
+                {
+                    File.Delete(strPath);
+                }
+            }
+
+            return ret;
+        }
+    }
+}

@@ -1,0 +1,432 @@
+﻿using Microsoft.Win32;
+using MRILossTool.DataModel;
+using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// LossReplaceMaster.xaml の相互作用ロジック
+    /// </summary>
+    public partial class LossReplaceMaster : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// ロス変換定義マスタメンテナンス
+        /// </summary>
+        public LossReplaceMaster()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvLossReplace);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                // 対象テーブル
+                if (!GetTargetTableData())
+                {
+                    return;
+                }
+
+                // グリッド初期設定
+                gvLossReplace.IsReadOnly = true;            // 読取専用
+                gvLossReplace.CanUserDeleteRows = false;    // 行削除禁止
+                gvLossReplace.CanUserAddRows = false;       // 行挿入禁止
+                gvLossReplace.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                gvLossReplace.AutoGenerateColumns = false;  // 列の自動追加禁止
+                //gvLossReplace.EnableHeadersVisualStyles = false;
+
+                foreach (string col in vm.ColumnName)
+                {
+                    DataGridTextColumn textColumn = new DataGridTextColumn();
+                    textColumn.Binding = new Binding(col);
+                    gvLossReplace.Columns.Add(textColumn);
+                }
+                for (int i = 0; i < vm.HeaderName.Length; i++)
+                {
+                    gvLossReplace.Columns[i].Header = vm.HeaderName[i];
+                    gvLossReplace.Columns[i].Width = 125;
+                }
+
+                // グリッド初期設定
+                dataGrid2.IsReadOnly = true;            // 読取専用
+                dataGrid2.CanUserDeleteRows = false;    // 行削除禁止
+                dataGrid2.CanUserAddRows = false;       // 行挿入禁止
+                dataGrid2.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                dataGrid2.AutoGenerateColumns = false;  // 列の自動追加禁止
+
+                foreach (string col in vm.ColumnName)
+                {
+                    DataGridTextColumn textColumn = new DataGridTextColumn();
+                    textColumn.Binding = new Binding(col);
+                    dataGrid2.Columns.Add(textColumn);
+                }
+                for (int i = 0; i < vm.HeaderName.Length; i++)
+                {
+                    dataGrid2.Columns[i].Header = vm.HeaderName[i];
+                }
+
+                dataGrid2.Visibility = Visibility.Hidden;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        private void GetMasterData()
+        {
+            try
+            {
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                // マスタをロードする
+                string strTargetTable = null;
+                if (cmbTargetTable.SelectedValue != null) strTargetTable = cmbTargetTable.SelectedValue.ToString();
+                string strItemN = null;
+                if (cmbItemN.SelectedValue != null) strItemN = cmbItemN.SelectedValue.ToString();
+
+                vm.GetMasterData(
+                    strTargetTable,
+                    strItemN
+                );
+
+                gvLossReplace.ItemsSource = vm.DtMst;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// 対象テーブルの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetTargetTableData()
+        {
+
+            bool ret = true;
+
+            try
+            {
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                DataView view = new DataView(vm.TargetTableDT);
+                //view.RowFilter = "TABLE_N = ''";
+                cmbTargetTable.Items.Clear();
+                cmbTargetTable.ItemsSource = null;
+                cmbTargetTable.ItemsSource = vm.TargetTableDT.DefaultView;
+                cmbTargetTable.SelectedValuePath = "TABLE_N";
+                cmbTargetTable.DisplayMemberPath = "TABLE_NAME";
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("対象テーブルデータの読み込みに失敗しました。\n" + ex.Message,
+                    "読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 項目名の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetItemNameData()
+        {
+            String table_name = cmbTargetTable.SelectedValue.ToString();
+
+            if (string.IsNullOrEmpty(table_name)) return true;
+
+            bool ret = true;
+
+            try
+            {
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                // 項目名の読み込み
+                ret = vm.GetItemNameData(
+                    table_name
+                );
+                if (ret == true)
+                { 
+                    // コンボボックスを作成
+
+                    DataView view1 = new DataView(vm.ItemNameDT);
+                    view1.RowFilter = String.Format("TABLE_N = '{0}'", table_name);
+                    cmbItemN.ItemsSource = null;
+                    cmbItemN.Items.Clear();
+                    cmbItemN.ItemsSource = view1;
+                    cmbItemN.SelectedValuePath = "ITEM_N";
+                    cmbItemN.DisplayMemberPath = "ITEM_N";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// ダウンロード　ボタンクリック
+        /// </summary>
+        private void btnDownload_Click(object sender, EventArgs e)
+        {
+            // 入力チェック
+            if (!CheckInput())
+            {
+                return;
+            }
+
+            SaveFileDialog sfd = new SaveFileDialog();
+
+            // 初期ファイル名を指定
+            sfd.FileName = "ロス変換定義マスタ.csv";
+            //タイトル設定
+            sfd.Title = "保存先のファイルを選択してください";
+
+            //ダイアログ表示
+            if (sfd.ShowDialog() == true)
+            {
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                DataTable dt = new DataTable();
+
+                // マスタをロードする
+                string strTargetTable = null;
+                if (cmbTargetTable.SelectedValue != null) strTargetTable = cmbTargetTable.SelectedValue.ToString();
+
+                vm.GetMasterDataForDownload(
+                    ref dt,
+                    strTargetTable
+                );
+
+                dataGrid2.ItemsSource = dt.DefaultView;
+
+                // マスタデータCSV出力
+                Common.outputCSV(sfd.FileName, dataGrid2);
+            }
+
+        }
+
+        /// <summary>
+        /// アップロード　ボタンクリック
+        /// </summary>
+        private void btnUpload_Click(object sender, EventArgs e)
+        {
+            // 入力チェック
+            if (!CheckInput())
+            {
+                return;
+            }
+
+            doUpload();
+        }
+
+        /// <summary>
+        /// アップロード実行
+        /// </summary>
+        private void doUpload()
+        {
+            try
+            {
+                LossReplaceMasterViewModel vm = (LossReplaceMasterViewModel)DataContext;
+
+                if (cmbTargetTable.SelectedValue == null || string.IsNullOrEmpty(cmbTargetTable.SelectedValue.ToString()))
+                {
+                    MessageBox.Show("対象テーブルが選択されていません", "必須エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                String filenName;
+                OpenFileDialog ofd = new OpenFileDialog();
+
+                ofd.Title = "ファイル選択";                   // ダイアログのタイトル
+                ofd.Filter = "CSV ファイル (*.csv)|*.csv";    // CSVファイルでフィルタ
+
+                // ダイアログ オープン
+                if (ofd.ShowDialog() == true)
+                {
+                    filenName = ofd.FileName;
+
+                    // エラー情報
+                    List<string> erro_list = new List<string>();
+                    string strMsg = "";
+                    int ret = 0;
+
+                    // CSVファイルをロード
+                    ret = vm.ReadCSVFile(
+                        filenName,
+                        cmbTargetTable.SelectedValue.ToString(),
+                        ref erro_list,
+                        ref strMsg
+                    );
+
+                    if (ret == -1)
+                    {
+                        MessageBox.Show("CSVファイルの場合はShift-JISまたはUTF-8を指定して下さい。",
+                            "文字コードエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                    else if (ret == -2)
+                    {
+                        MessageBox.Show("CSVファイル読み込みエラー\n" + strMsg);
+                        return;
+                    }
+                    else if (ret == -3)
+                    {
+                        MessageBox.Show("マスタデータアップロードに失敗しました。\n" + strMsg);
+                        return;
+                    }
+                    else
+                    {
+                        if (erro_list.Count > 0)
+                        {
+                            ErrorDialog frm = new ErrorDialog();
+                            frm.Message = erro_list;
+                            frm.ShowDialog();
+                        }
+                        else
+                        {
+                            // 検索
+                            GetMasterData();
+
+                            MessageBox.Show(ret.ToString() + "件追加しました。");
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        /// <summary>
+        /// 検索　ボタンクリック
+        /// </summary>
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            // 入力チェック
+            if (!CheckInput())
+            {
+                return;
+            }
+
+            // 検索
+            GetMasterData();
+        }
+
+        /// <summary>
+        /// 対象テーブルコンボボックス選択
+        /// </summary>
+        private void cmbTargetTable_SelectionChanged(object sender, EventArgs e)
+        {
+            if (cmbTargetTable.SelectedValue == null || string.IsNullOrEmpty(cmbTargetTable.SelectedValue.ToString()))
+            {
+                cmbItemN.ItemsSource = null;
+                cmbItemN.Items.Clear();
+                return;
+            }
+            // 項目名の読み込み
+            if (!GetItemNameData())
+            {
+                return;
+            }
+
+        }
+
+        /// <summary>
+        /// 入力チェック
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckInput(bool CheckFormatType = true)
+        {
+            if (cmbTargetTable.SelectedValue == null || string.IsNullOrEmpty(cmbTargetTable.SelectedValue.ToString()))
+            {
+                MessageBox.Show("対象テーブルが選択されていません", "必須エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            return true;
+        }
+    }
+}

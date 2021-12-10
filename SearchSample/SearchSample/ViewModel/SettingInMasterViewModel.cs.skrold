@@ -1,0 +1,356 @@
+﻿using MRILossTool.DataModel;
+using MRILossTool.Model;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 取込定義マスタメンテナンス ViewModel
+    /// </summary>
+    class SettingInMasterViewModel
+    {
+        #region "DBアクセスモデル"
+
+        private CompanyMasterAccess acCompamyMaster = new CompanyMasterAccess();
+        private FactoryMasterAccess acFactoryMaster = new FactoryMasterAccess();
+        private TargetTableAccess acTargetTable = new TargetTableAccess();
+        private SettingInMasterAccess acSettingInMaster = new SettingInMasterAccess();
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataSetMaster.S_SETTING_INDataTable dtMst = new DataSetMaster.S_SETTING_INDataTable();
+        public DataSetMaster.S_SETTING_INDataTable DtMst { get => dtMst; set => dtMst = value; }
+
+        /// <summary>
+        /// 一覧ヘッダ
+        /// </summary>
+        private String[] headerName = {
+            "",
+            "項目名",
+            "取得位置",
+            "取得項目名",
+            "変換種類",
+            "項目１",
+            "項目２",
+            "演算値",
+            "小数点桁数",
+            "丸め種類"
+        };
+        public string[] HeaderName { get => headerName; set => headerName = value; }
+
+        private String[] columnName = {
+            "FORMAT_N",
+            "ITEM_N",
+            "POS",
+            "POS_ITEM_N",
+            "CHANGE_TYPE",
+            "ITEM1",
+            "ITEM2",
+            "VALUE",
+            "DEC_POS",
+            "ROUND_TYPE"
+        };
+        public string[] ColumnName { get => columnName; set => columnName = value; }
+
+        /// <summary>
+        /// 会社マスタ コンボボックス
+        /// </summary>
+        private DataSetMaster.M_COMPANYDataTable customerDT = new DataSetMaster.M_COMPANYDataTable();
+        public DataSetMaster.M_COMPANYDataTable CustomerDT { get => customerDT; set => customerDT = value; }
+
+        /// <summary>
+        /// 工場マスタ コンボボックス
+        /// </summary>
+        private DataSetMaster.M_FACTORYDataTable factoryDT = new DataSetMaster.M_FACTORYDataTable();
+        public DataSetMaster.M_FACTORYDataTable FactoryDT { get => factoryDT; set => factoryDT = value; }
+
+        /// <summary>
+        /// 対象テーブル コンボボックス
+        /// </summary>
+        private DataTable targetTableDT = new DataTable();
+        public DataTable TargetTableDT { get => targetTableDT; set => targetTableDT = value; }
+
+        /// <summary>
+        /// フォーマット名 コンボボックス
+        /// </summary>
+        private DataTable formatNameDT = new DataTable();
+        public DataTable FormatNameDT { get => formatNameDT; set => formatNameDT = value; }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public SettingInMasterViewModel()
+        {
+            try
+            {
+                // 会社マスタの読み込み
+                if (!GetCustomerMasterData())
+                {
+                    return;
+                }
+                // 対象テーブル
+                targetTableDT.Columns.Add("CUST_CD");
+                targetTableDT.Columns.Add("KOJOCD");
+                targetTableDT.Columns.Add("TABLE_N");
+                targetTableDT.Columns.Add("TABLE_NAME");
+
+                // 工場マスタの読み込み
+                if (!GetFactoryMasterData())
+                {
+                    return;
+                }
+
+                formatNameDT.Columns.Add("CUST_CD");
+                formatNameDT.Columns.Add("KOJOCD");
+                formatNameDT.Columns.Add("TABLE_N");
+                formatNameDT.Columns.Add("FORMAT_N");
+
+                // フォーマット名の読み込み
+                if (!GetFormatNameData())
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        public void GetMasterData(
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType
+            )
+        {
+            try
+            {
+                dtMst = new DataSetMaster.S_SETTING_INDataTable();
+
+                // 取込定義マスタをロードする
+                acSettingInMaster.GetMasterData(
+                    ref dtMst,
+                    strCustomer,
+                    strFactory,
+                    strTargetTable,
+                    strFormatType
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// 会社マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetCustomerMasterData()
+        {
+            bool ret = true;
+
+            try
+            {
+                // 会社マスタをロード
+                if (!acCompamyMaster.GetCustomerMasterData(ref customerDT))
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 工場マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetFactoryMasterData()
+        {
+            bool ret = true;
+
+            // マスタをロード
+            DataSetMaster.M_FACTORYDataTable dt = new DataSetMaster.M_FACTORYDataTable();
+
+            try
+            {
+                // 工場マスタをロード
+                if (!acFactoryMaster.GetFactoryMasterData(ref factoryDT, ref targetTableDT, ref dt))
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// フォーマット名の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetFormatNameData()
+        {
+            bool ret = true;
+
+            try
+            {
+                // マスタをロード
+                acSettingInMaster.GetFormatNameData(
+                    ref formatNameDT
+                    );
+
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns></returns>
+        public int ReadCSVFile(
+            String filenName,
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            int ret = 0;
+
+            try
+            {
+                // CSVファイルをロード
+                ret = acSettingInMaster.ReadCSVFile(
+                    ColumnName,
+                    filenName,
+                    dtMst,
+                    strCustomer,
+                    strFactory,
+                    strTargetTable,
+                    strFormatType,
+                    ref erro_list,
+                    ref strMsg
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// マスタデータの削除
+        /// </summary>
+        /// <param name="dtMst">マスタデータテーブル</param>
+        /// <param name="formatNameDT">フォーマット名データテーブル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        /// <param name="delcnt">削除件数</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool DeleteMasterData(
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType,
+            ref int delcnt,
+            ref string strMsg
+            )
+        {
+            bool ret = true;
+
+            try
+            {
+                // マスタデータの削除
+                ret = acSettingInMaster.DeleteMasterData(
+                    ref dtMst,
+                    ref formatNameDT,
+                    strCustomer,
+                    strFactory,
+                    strTargetTable,
+                    strFormatType,
+                    ref delcnt,
+                    ref strMsg
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+    }
+}

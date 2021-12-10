@@ -1,0 +1,1369 @@
+﻿using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Forms.DataVisualization.Charting;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using MathNet.Numerics.Statistics;      // 数値計算ライブラリ
+using System.Windows.Forms.Integration;
+using System.Drawing;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// GraphArea4.xaml の相互作用ロジック
+    /// </summary>
+    public partial class GraphArea4 : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        private DataTable dtMain = new DataTable();
+
+        private double window_width;
+
+        private double gridrow1_width;
+        private double gridrow2_width;
+        private double gridrow3_width;
+        private double gridrow4_width;
+        private double gridrow5_width;
+
+        private double grid1_width;
+        private double grid2_width;
+        private double grid3_width;
+
+        private double graph1_width;
+        private double graph2_width;
+
+
+        /// <summary>
+        /// 画面タイトルセット
+        /// </summary>
+        /// <param name="title"></param>
+        public void SetTitle(string title)
+        {
+            this.Title = title;
+        }
+
+        /// <summary>
+        /// （４）グラフ画面
+        /// </summary>
+        public GraphArea4()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvGraph1);
+            Common.SettingColumnHeaderStyle(gvGraph2);
+            Common.SettingColumnHeaderStyle(gvGraph3);
+
+            // WPF版：コントロールを非表示にする
+            gvMain.Visibility = Visibility.Hidden;
+
+        }
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="frmTargetData">対象データ画面</param>
+        /// <param name="kind">表示グラフ種類:1,2,3</param>
+        /// <param name="title">画面タイトル</param>
+        public GraphArea4(
+            TargetData frmTargetData,
+            int kind,
+            string title)
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvGraph1);
+            Common.SettingColumnHeaderStyle(gvGraph2);
+            Common.SettingColumnHeaderStyle(gvGraph3);
+
+            // WPF版：コントロールを非表示にする
+            gvMain.Visibility = Visibility.Hidden;
+
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                // 初期データ設定
+                vm.SetInitialData(frmTargetData, kind, title);
+
+                // 画面タイトルセット
+                SetTitle(title);
+
+                // DBデータセット
+                DataTable dtAll = frmTargetData.GetDtMain();        // 全データ
+                this.dtMain = dtAll;
+
+                DataRow row1 = dtAll.Rows[0];
+                txtCompany.Text = row1["COMPANY_NAME"].ToString();
+                txtFactory.Text = row1["FACTORY_NAME"].ToString();
+                var machines = dtAll.AsEnumerable().GroupBy(x => x["MACHINE_NAME"].ToString());
+                List<string> machine_list = new List<string>();
+                foreach (var machine in machines)
+                {
+                    machine_list.Add(machine.Key);
+                }
+                txtMachine.Text = string.Join(",", machine_list);
+
+                // コンボボックスデータ設定
+                // 対象月リスト
+                clstMonth.Items.Clear();
+                var months = dtAll.AsEnumerable().GroupBy(x => x["MONTH"].ToString()).OrderBy(x => x.Key);
+                foreach (var month in months)
+                {
+                    CheckBox chk = new CheckBox();
+                    chk.Content = month.Key;
+                    chk.IsChecked = true;
+                    clstMonth.Items.Add(chk);
+                }
+
+                // メイン停止理由
+                // 絞り込み実行
+                string whereMS = "(SCHEDULED_STOP_WORK_1 <> '' OR SCHEDULED_STOP_WORK_1 IS NOT NULL)";
+                DataRow[] selDtMS = dtAll.Select(whereMS, "SCHEDULED_STOP_WORK_1");
+                Dictionary<string, int> plans = new Dictionary<string, int>();
+                foreach (DataRow row in selDtMS)
+                {
+                    string SCHEDULED_STOP_WORK_1 = row["SCHEDULED_STOP_WORK_1"].ToString();
+                    if (!string.IsNullOrEmpty(SCHEDULED_STOP_WORK_1) && !plans.ContainsKey(SCHEDULED_STOP_WORK_1))
+                    {
+                        plans[SCHEDULED_STOP_WORK_1] = 0;
+                    }
+                }
+                clstPlanStop.Items.Clear();
+                foreach (var plan in plans)
+                {
+                    CheckBox chk = new CheckBox();
+                    chk.Content = plan.Key;
+                    chk.IsChecked = true;
+                    clstPlanStop.Items.Add(chk);
+                }
+
+                // 追加停止理由
+                // 絞り込み実行
+                string whereAS = "(SCHEDULED_STOP_WORK_2 <> '' OR SCHEDULED_STOP_WORK_2 IS NOT NULL)";
+                DataRow[] selDtAS = dtAll.Select(whereAS);
+                Dictionary<string, int> addplans = new Dictionary<string, int>();
+                foreach (DataRow row in selDtAS)
+                {
+                    string SCHEDULED_STOP_WORK_2 = row["SCHEDULED_STOP_WORK_2"].ToString();
+                    if (!string.IsNullOrEmpty(SCHEDULED_STOP_WORK_2) && !addplans.ContainsKey(SCHEDULED_STOP_WORK_2))
+                    {
+                        addplans[SCHEDULED_STOP_WORK_2] = 0;
+                    }
+                }
+                clstAddPlanStop.Items.Clear();
+                foreach (var addplan in addplans)
+                {
+                    CheckBox chk = new CheckBox();
+                    chk.Content = addplan.Key;
+                    chk.IsChecked = true;
+                    clstAddPlanStop.Items.Add(chk);
+                }
+
+                // コンボボックスデータ設定
+                // 除外リスト
+                cmbJogai.Items.Clear();
+                foreach (DataColumn col in dtAll.Columns)
+                {
+                    if (string.IsNullOrEmpty(col.ColumnName)) continue;
+                    if (col.ColumnName=="選択") continue;
+                    cmbJogai.Items.Add(col.ColumnName);
+                }
+
+                if (kind == 4)
+                {
+                    // (4-1)
+
+                    // 製管期間分_リアル
+                    var reals = dtAll.AsEnumerable()
+                        .Where(x => !string.IsNullOrEmpty(x["WORKING_TIME"].ToString()))
+                        .GroupBy(x => x["WORKING_TIME"].ToString()).OrderBy(x => x.Key);
+                    cboReal.Items.Clear();
+                    cboReal.Items.Add("");
+                    foreach (var recsbt_n in reals)
+                    {
+                        cboReal.Items.Add(recsbt_n.Key);
+                    }
+
+                    // 作業班
+                    var keys = dtAll.AsEnumerable()
+                        .Where(x => !string.IsNullOrEmpty(x["WORKGROUP_ID"].ToString()))
+                        .GroupBy(x => x["WORKGROUP_ID"].ToString()).OrderBy(x => x.Key);
+                    cboHan.Items.Clear();
+                    cboHan.Items.Add("");
+                    foreach (var recsbt_n in keys)
+                    {
+                        cboHan.Items.Add(recsbt_n.Key);
+                    }
+
+                    // シフト
+                    var shitnos = dtAll.AsEnumerable()
+                        .Where(x => !string.IsNullOrEmpty(x["SHIFTNO"].ToString()))
+                        .GroupBy(x => x["SHIFTNO"].ToString()).OrderBy(x => x.Key);
+                    cboShift.Items.Clear();
+                    cboShift.Items.Add("");
+                    foreach (var recsbt_n in shitnos)
+                    {
+                        cboShift.Items.Add(recsbt_n.Key);
+                    }
+
+                    // デフォルト値を設定
+                    // 最大
+                    txtMax.Text = "";
+
+                    // 最小
+                    txtMin.Text = "";
+
+                    // 単位
+                    txtUnit.Text = "";
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+
+
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                chkAllMonth.IsChecked = true;
+                chkAllMainReason.IsChecked = true;
+                chkAllAddReason.IsChecked = true;
+
+                window_width = this.Width;
+
+                gridrow1_width = grdRow1.Width;
+                gridrow2_width = grdRow2.Width;
+                gridrow3_width = grdRow3.Width;
+                gridrow4_width = grdRow4.Width;
+                gridrow5_width = grdRow5.Width;
+
+                grid1_width = gvGraph1.Width;
+                grid2_width = gvGraph2.Width;
+                grid3_width = gvGraph3.Width;
+
+                graph1_width = grdGraph1.Width;
+                graph2_width = grdGraph2.Width;
+
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 表示　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDisp_Click(object sender, RoutedEventArgs e)
+        {
+            // WPF版：待機カーソルにする
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+            // (4-1)　表示
+            dispGraph4();
+
+            // WPF版：デフォルトカーソルにする
+            Mouse.OverrideCursor = null;
+        }
+
+        /// <summary>
+        /// (4-1)　表示
+        /// </summary>
+        private void dispGraph4()
+        {
+            // グラフ表示
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                // DataGridへの表示
+                vm.DtMain = vm.FrmTargetData.GetSelectedData();
+                gvMain.ItemsSource = vm.DtMain.DefaultView;
+
+                // 計画停止時間(4-1)グラフデータ設定
+                showPlanStop4();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 計画停止時間(4-1)グラフデータ設定
+        /// </summary>
+        private void showPlanStop4()
+        {
+
+            DataTable dtBase = new DataTable();
+
+            // 読み込み
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                // 対象リストを設定
+                dtBase = vm.FrmTargetData.GetSelectedData();
+
+                // 対象月リスト
+                List<string> monthList = new List<string>();
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    CheckBox chk = (CheckBox)clstMonth.Items[i];
+                    if (chk.IsChecked==true)
+                    {
+                        monthList.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_month = monthList.Count > 0 ? " AND MONTH in (" + string.Join(",", monthList) + ")" : " AND (MONTH IS NULL OR MONTH = '')";
+
+                // 追加停止理由リスト
+                List<string> add_plan_list = new List<string>();
+                for (int i = 0; i < clstAddPlanStop.Items.Count; i++)
+                {
+                    CheckBox chk = (CheckBox)clstAddPlanStop.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        add_plan_list.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_addPS = add_plan_list.Count > 0
+                    ? " AND SCHEDULED_STOP_WORK_2 in (" + string.Join(",", add_plan_list) + ") "
+                    : " AND (SCHEDULED_STOP_WORK_2 IS NULL OR SCHEDULED_STOP_WORK_2 = '' )";
+
+                // メイン停止理由リスト
+                List<string> mainPSList = new List<string>();
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    CheckBox chk = (CheckBox)clstPlanStop.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        mainPSList.Add("( SCHEDULED_STOP_WORK_1 = '" + chk.Content.ToString() + "'" + check_addPS + " )");
+                    }
+                }
+                string check_mainPS = mainPSList.Count > 0
+                    ? " AND (" + string.Join(" OR ", mainPSList) + ")"
+                    : " AND (SCHEDULED_STOP_WORK_1 IS NULL OR SCHEDULED_STOP_WORK_1 = '' )";
+
+                // 除外リスト
+                List<string> jogaiList = new List<string>();
+                if (!string.IsNullOrEmpty(cmbJogai.Text))
+                {
+                    for (int i = 0; i < clstJogai.Items.Count; i++)
+                    {
+                        CheckBox chk = (CheckBox)clstJogai.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            if (string.IsNullOrEmpty(chk.Content.ToString()))
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '' OR " + cmbJogai.Text + " IS NOT NULL)");
+                            }
+                            else
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '" + chk.Content.ToString() + "')");
+                            }
+                        }
+                    }
+                }
+                string jogai = jogaiList.Count > 0 ? " AND " + string.Join(" AND ", jogaiList) : "";
+
+                string sqlSelect = " STATUS_NAME = '計画停止' AND STANDARD_TIME_MINUTE IS NOT NULL AND STANDARD_TIME_MINUTE <> ''";
+                sqlSelect += check_month + check_mainPS + jogai;
+
+                #region "検索条件の指定があるとき"
+                // 製管期間分_リアル の指定があるとき
+                if (cboReal.Text != "")
+                {
+                    sqlSelect += " AND (WORKING_TIME = '" + cboReal.Text + "')";
+                }
+                // 作業班 の指定があるとき
+                if (cboHan.Text != "")
+                {
+                    sqlSelect += " AND (WORKGROUP_ID = '" + cboHan.Text + "')";
+                }
+                // シフト の指定があるとき
+                if (cboShift.Text != "")
+                {
+                    sqlSelect += " AND (SHIFTNO = '" + cboShift.Text + "')";
+                }
+                // パーティション の指定があるとき
+                if (txtMax.Text != "" || txtMin.Text != "" || txtUnit.Text != "")
+                {
+                    int inpMax = 0;
+                    int inpMin = 0;
+                    int inpUnit = 0;
+
+                    // 最大 の指定があるとき
+                    if (txtMax.Text != "")
+                    {
+                        try
+                        {
+                            inpMax = int.Parse(txtMax.Text);
+                        }
+                        catch
+                        {
+                            MessageBox.Show("数値で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                            txtMax.Focus();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("「最大」が入力されていません。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtMax.Focus();
+                        return;
+                    }
+                    // 最小 の指定があるとき
+                    if (txtMin.Text != "")
+                    {
+                        try
+                        {
+                            inpMin = int.Parse(txtMin.Text);
+                        }
+                        catch
+                        {
+                            MessageBox.Show("数値で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                            txtMin.Focus();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("「最小」が入力されていません。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtMin.Focus();
+                        return;
+                    }
+                    // 単位 の指定があるとき
+                    if (txtUnit.Text != "")
+                    {
+                        try
+                        {
+                            inpUnit = int.Parse(txtUnit.Text);
+                        }
+                        catch
+                        {
+                            MessageBox.Show("数値で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                            txtUnit.Focus();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("「単位」が入力されていません。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtUnit.Focus();
+                        return;
+                    }
+                    // レンジチェック
+                    if (inpMin >= inpMax)
+                    {
+                        MessageBox.Show("最小＜最大で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtMin.Focus();
+                        return;
+                    }
+                    if (inpUnit < 1 || inpUnit > (inpMax - inpMin))
+                    {
+                        MessageBox.Show("単位は最小－最大の範囲内の整数値で入力してください。", "入力エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtUnit.Focus();
+                        return;
+                    }
+                    // 最小から最大のデータを絞り込む
+                    sqlSelect += " AND ((STANDARD_TIME_MINUTE >= " + txtMin.Text + ")";
+                    sqlSelect += " AND (STANDARD_TIME_MINUTE <= " + txtMax.Text + "))";
+                }
+                #endregion
+
+                // 絞り込み実行
+                DataRow[] selDt = dtBase.Select(sqlSelect, "MONTH, SCHEDULED_STOP_WORK_1, UNSCHEDULED_STOP_REASON_1");
+
+                DataTable dtSelect = dtBase.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDt)
+                {
+                    DataRow newrow = dtSelect.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelect.Rows.Add(newrow);
+                }
+
+                #region "パーティション分割"
+                //-----------------------------------------------------------------
+                // Partition([TIME_MINUTE_REAL],[最小],[最大],[単位]) AS 時間帯
+                // Partition(数値, 範囲の先頭, 範囲の最後, 区分のサイズ)
+                // 範囲の先頭から範囲の最後までを区分のサイズで区切った中で、数値がどの区分に含まれるかを調べます。
+                //-----------------------------------------------------------------
+                List<string[]> part_list = new List<string[]>();
+                if (txtMax.Text != "")
+                {
+                    // パーティション の指定あり
+                    int inpMax = int.Parse(txtMax.Text);
+                    int inpMin = int.Parse(txtMin.Text);
+                    int inpUnit = int.Parse(txtUnit.Text);
+
+                    int part_count = (inpMax - inpMin) / inpUnit;
+                    if ((inpMax - inpMin) % inpUnit != 0) part_count++;
+
+                    for (int i = 0; i < part_count; i++)
+                    {
+                        int part_min = inpMin + inpUnit * i;
+                        int part_max = inpMin + inpUnit * (i + 1);
+                        if (part_max >= inpMax) part_max = inpMax + 1;
+
+                        var period_list = dtSelect.AsEnumerable().Where(
+                                                x => int.Parse(x["STANDARD_TIME_MINUTE"].ToString()) >= part_min
+                                                && int.Parse(x["STANDARD_TIME_MINUTE"].ToString()) < part_max).ToList();
+
+                        string time_period = part_min.ToString() + "<" + part_max.ToString();
+                        part_list.Add(new string[] { time_period, period_list.Count.ToString() });
+                    }
+
+                }
+                else
+                {
+                    // パーティション の指定なし
+                    var period_list1 = dtSelect.AsEnumerable().Where(
+                                            x => int.Parse(x["STANDARD_TIME_MINUTE"].ToString()) < 10).ToList();
+                    part_list.Add(new string[] { "<10", period_list1.Count.ToString() });
+
+                    var period_list2 = dtSelect.AsEnumerable().Where(
+                                            x => int.Parse(x["STANDARD_TIME_MINUTE"].ToString()) >= 10).ToList();
+                    part_list.Add(new string[] { "10<=", period_list2.Count.ToString() });
+
+                }
+                #endregion
+
+                // 検索結果をグループ化する
+                //var keys = dtSelect.AsEnumerable().GroupBy(x => x["MAIN_PLAN_STOP_N"].ToString());
+                Dictionary<string, int> keys = new Dictionary<string, int>();
+                foreach (DataRow row in dtSelect.Rows)
+                {
+                    string SCHEDULED_STOP_WORK_1 = row["SCHEDULED_STOP_WORK_1"].ToString();
+                    if (!string.IsNullOrEmpty(SCHEDULED_STOP_WORK_1) && !keys.ContainsKey(SCHEDULED_STOP_WORK_1))
+                    {
+                        keys[SCHEDULED_STOP_WORK_1] = 0;
+                    }
+                }
+                var months = dtSelect.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                vm.DtGraph1 = new DataTable();
+                vm.DtGraph1.Columns.Add(new DataColumn("月"));
+                vm.DtGraph1.Columns.Add(new DataColumn("平均時間", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("標準偏差", Type.GetType("System.String")));
+
+                vm.DtGraph2 = new DataTable();
+                vm.DtGraph2.Columns.Add(new DataColumn("時間帯", Type.GetType("System.String")));
+                vm.DtGraph2.Columns.Add(new DataColumn("個数", Type.GetType("System.Decimal")));
+
+                vm.DtGraph3 = new DataTable();
+                vm.DtGraph3.Columns.Add(new DataColumn("N数", Type.GetType("System.Decimal")));
+                vm.DtGraph3.Columns.Add(new DataColumn("平均", Type.GetType("System.String")));
+                vm.DtGraph3.Columns.Add(new DataColumn("標準偏差", Type.GetType("System.String")));
+                #endregion
+
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                foreach (var recsbt_n in keys)
+                {
+                    recsbt_list.Add(recsbt_n.Key);
+                }
+
+                // 月でまとめる
+                List<double> yAllValues = new List<double>();
+                foreach (var month in months)
+                {
+                    var list = dtSelect.AsEnumerable().Where(x => x["MONTH"].Equals(month.Key)).ToList();
+                    double[] yValues = new double[list.Count];
+                    int rowcount = 0;
+                    foreach (var row in list)
+                    {
+                        int data = 0;
+                        try
+                        {
+                            int.TryParse((string)row["STANDARD_TIME_MINUTE"], out data);
+                        }
+                        catch
+                        {
+                            data = 0;
+                        }
+                        yValues[rowcount] = (double)(data);
+                        yAllValues.Add((double)(data));
+
+                        rowcount++;
+                    }
+                    // グラフ用データテーブル生成
+                    DataRow row1 = vm.DtGraph1.NewRow();
+
+                    row1["月"] = month.Key;
+                    row1["平均時間"] = string.Format("{0:#0.0}", yValues.Mean());
+                    row1["標準偏差"] = string.Format("{0:#0.0}", yValues.PopulationStandardDeviation());
+
+                    vm.DtGraph1.Rows.Add(row1);
+
+                }
+
+                int total_count = 0;
+                foreach (string[] parts in part_list)
+                {
+                    DataRow row2 = vm.DtGraph2.NewRow();
+
+                    int count = 0;
+                    try { int.TryParse(parts[1], out count); }
+                    catch { count = 0; }
+
+                    row2["時間帯"] = parts[0];
+                    row2["個数"] = count;
+
+                    total_count += count;
+
+                    vm.DtGraph2.Rows.Add(row2);
+                }
+
+                // 集計値用データテーブル生成
+                DataRow row3 = vm.DtGraph3.NewRow();
+
+                row3["N数"] = total_count;
+                row3["平均"] = string.Format("{0:#0.0}", yAllValues.Mean());
+                row3["標準偏差"] = string.Format("{0:#0.0}", yAllValues.PopulationStandardDeviation());
+
+                vm.DtGraph3.Rows.Add(row3);
+
+                // DataGridへの表示
+                gvGraph1.ItemsSource = vm.DtGraph1.DefaultView;
+                gvGraph2.ItemsSource = vm.DtGraph2.DefaultView;
+                gvGraph3.ItemsSource = vm.DtGraph3.DefaultView;
+
+                // 計画停止時間(4-1)グラフ表示
+                showPlanStopGraph4(vm.DtGraph1, recsbt_list, month_list);
+
+                // 計画停止時間(4-1)グラフ2表示
+                showPlanStopGraph4_2(vm.DtGraph2);
+
+                // 選択データを保存
+                vm.DtStopReasonSelect = dtSelect.Copy();     // 構成とデータをコピー
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 計画停止時間(4-1)グラフ表示
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="recsbts"></param>
+        /// <param name="months"></param>
+        private void showPlanStopGraph4(DataTable dt, List<String> recsbts, List<String> months)
+        {
+            try
+            {
+                // WPF版：Chartコントロールの作成
+                var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+                var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+                chtGraph1.ChartAreas.Clear();
+                chtGraph1.Legends.Clear();
+
+                chtGraph1.ChartAreas.Add("ChartArea1");
+                chtGraph1.Legends.Add("Legend1");
+
+                string legends = "標準偏差";
+
+                chtGraph1.Series.Clear();       // グラフ初期化
+                chtGraph1.Titles.Clear();       // タイトル初期化
+
+                chtGraph1.Series.Add(legends);  // グラフ追加
+                                                // グラフの種類を指定（縦棒グラフ）
+                chtGraph1.Series[legends].ChartType = SeriesChartType.Column;
+                chtGraph1.Series[legends].IsVisibleInLegend = false;    // 凡例を非表示
+
+                // Y軸タイトルを設定
+                chtGraph1.ChartAreas[0].AxisY.Title = "平均時間 分";
+                chtGraph1.ChartAreas[0].AxisY.TextOrientation = TextOrientation.Stacked;
+
+                // Y軸最大値を設定
+                //chtGraph1.ChartAreas[0].AxisY.Maximum = 100;
+
+                double maxdata = 0;               // Y軸最大値
+
+                string[] xValues = months.ToArray();                // X軸のデータ
+                double[,] yValues = new double[months.Count, 1];  // Y軸のデータ
+                int rowcount = 0;
+                foreach (DataRow row in dt.Rows)
+                {
+                    double pdata = 0;
+                    try
+                    {
+                        double.TryParse((string)row["平均時間"], out pdata);
+                    }
+                    catch
+                    {
+                        pdata = 0;
+                    }
+                    yValues[rowcount, 0] = (double)pdata;
+
+                    rowcount++;
+                }
+
+                for (int i = 0; i < xValues.Length; i++)
+                {
+                    for (int j = 0; j < 1; j++)
+                    {
+                        // グラフに追加するデータクラスを生成
+                        DataPoint dp = new DataPoint();
+                        // XとYの値を設定
+                        dp.SetValueXY(MakeMonthString(xValues[i]), yValues[i, 0]);
+                        dp.IsValueShownAsLabel = true;  // グラフに値を表示するように指定
+                        // 軸の名前に表示するテキストを指定
+                        dp.AxisLabel = MakeMonthString(months[i]);
+                        // グラフにデータ追加
+                        chtGraph1.Series[legends].Points.Add(dp);
+
+                        // Y軸最大値を更新
+                        if (yValues[i, 0] > maxdata) maxdata = yValues[i, 0];
+                    }
+                }
+                // グラフのタイトルを設定
+                string strTitle = "標準偏差";
+                chtGraph1.Titles.Add("(4-1)「" + strTitle + "」");
+
+                // Y軸最大値を設定
+                chtGraph1.ChartAreas[0].AxisY.Maximum = (double)maxdata * 1.25;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 計画停止時間(4-1)グラフ2表示
+        /// </summary>
+        /// <param name="dt"></param>
+        private void showPlanStopGraph4_2(DataTable dt)
+        {
+            try
+            {
+                // WPF版：Chartコントロールの作成
+                var windowsFormsHost = (WindowsFormsHost)grdGraph2.Children[0];
+                var chtGraph2 = (Chart)windowsFormsHost.Child;
+
+                chtGraph2.ChartAreas.Clear();
+                chtGraph2.Legends.Clear();
+
+                chtGraph2.ChartAreas.Add("ChartArea1");
+                chtGraph2.Legends.Add("Legend1");
+
+                string legends = "範囲";
+
+                chtGraph2.Series.Clear();           // グラフ初期化
+                chtGraph2.Titles.Clear();           // タイトル初期化
+
+                chtGraph2.Series.Add(legends);      // グラフ追加
+                                                    // グラフの種類を指定（縦棒グラフ）
+                chtGraph2.Series[legends].ChartType = SeriesChartType.Column;
+                chtGraph2.Series[legends].IsVisibleInLegend = false;    // 凡例を非表示
+
+                // Y軸タイトルを設定
+                chtGraph2.ChartAreas[0].AxisY.Title = "度数";
+                chtGraph2.ChartAreas[0].AxisY.TextOrientation = TextOrientation.Stacked;
+
+                decimal maxdata = 10;               // Y軸最大値
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    string item = (string)row[0];
+
+                    //グラフに追加するデータクラスを生成
+                    DataPoint dp = new DataPoint();
+                    //XとYの値を設定
+                    dp.SetValueXY(item, (decimal)row[1]);
+                    dp.IsValueShownAsLabel = true;  //グラフに値を表示するように指定
+                    //軸の名前に表示するテキストを指定
+                    dp.AxisLabel = item;
+                    //グラフにデータ追加
+                    chtGraph2.Series[legends].Points.Add(dp);
+
+                    // Y軸最大値を更新
+                    if ((decimal)row[1] > maxdata) maxdata = (decimal)row[1];
+                }
+
+                // Y軸最大値を設定
+                chtGraph2.ChartAreas[0].AxisY.Maximum = (double)maxdata * 1.25;
+
+                //グラフのタイトルを設定
+                string strTitle = "実績";
+                chtGraph2.Titles.Add("(4-1)「" + strTitle + "」");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 月データを表示用フォーマットに変換
+        /// </summary>
+        /// <param name="str">yyyymm</param>
+        /// <returns>yyyy/mm</returns>
+        private string MakeMonthString(string str)
+        {
+            string dispstr = "";
+            try
+            {
+                dispstr = str.Substring(0, 4) + "/" + str.Substring(4, 2);
+            }
+            catch
+            {
+                dispstr = str;
+            }
+            return dispstr;
+        }
+
+        /// <summary>
+        /// 対象　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnTarget_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                // 対象リスト画面を表示
+                vm.FrmTargetData.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// グラフデータ　中段　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnGraphData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                if (vm.DtGraph1.Columns.Count == 0) return;
+
+                // グラフデータ画面を表示
+                GraphData frm1 = new GraphData(
+                    vm.DtGraph1,
+                    1, "グラフデータ"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// グラフデータ　下段　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnGraphData2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+                if (vm.DtGraph2.Columns.Count == 0) return;
+
+                // グラフデータ画面を表示
+                GraphData frm1 = new GraphData(
+                    vm.DtGraph2,
+                    1, "グラフデータ"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 画面のリサイズ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MetroWindow_SizeChanged(object sender, RoutedEventArgs e)
+        {
+
+            if (this.window_width == 0) return;
+
+            double w = this.Width / this.window_width;
+
+            grdRow1.Width = this.gridrow1_width * w;
+            grdRow2.Width = this.gridrow2_width * w;
+            grdRow3.Width = this.gridrow3_width * w;
+            grdRow4.Width = this.gridrow4_width * w;
+            grdRow5.Width = this.gridrow5_width * w;
+
+            gvGraph1.Width = this.grid1_width * w;
+            grdGraph1.Width = this.graph1_width * w;
+
+            gvGraph2.Width = this.grid2_width * w;
+            grdGraph2.Width = this.graph2_width * w;
+
+            gvGraph3.Width = this.grid3_width * w;
+        }
+
+        /// <summary>
+        /// グラフデータ　全体像　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnGraphData3_Click(object sender, RoutedEventArgs e)
+        {
+            GraphArea4ViewModel vm = (GraphArea4ViewModel)DataContext;
+
+            try
+            {
+                if (vm.DtGraph1.Columns.Count == 0) return;
+
+                // 検索結果をグループ化する
+                var keys = vm.DtStopReasonSelect.AsEnumerable().GroupBy(x => x["SCHEDULED_STOP_WORK_1"].ToString());
+                var months = vm.DtStopReasonSelect.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> month_list = new List<string>();
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                DataTable dtEmg1 = new DataTable();
+                dtEmg1.Columns.Add(new DataColumn("メイン計画停止理由名", Type.GetType("System.String")));
+                foreach (var month in months)
+                {
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "TOTAL", Type.GetType("System.String")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "COUNT", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "AVERAGE", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns[month.Key + "TOTAL"].Caption = MakeMonthString(month.Key) + "\n合計";
+                    dtEmg1.Columns[month.Key + "COUNT"].Caption = "\n頻度";
+                    dtEmg1.Columns[month.Key + "AVERAGE"].Caption = "\n平均";
+                }
+                #endregion
+
+                // 時間（分） を求める
+                // メイン計画停止理由名でまとめる
+                int mcnt = 0;
+                int rcnt = 0;
+
+                List<String> stop_n_list = new List<string>();
+                foreach (var stop_n in keys)
+                {
+                    stop_n_list.Add(stop_n.Key);
+                }
+
+                double[,] time_sum = new double[stop_n_list.Count + 1, month_list.Count];
+                double[,] time_cnt = new double[stop_n_list.Count + 1, month_list.Count];
+                foreach (var stop_n in keys)
+                {
+
+                    // 月でまとめる
+                    mcnt = 0;
+                    foreach (var month in months)
+                    {
+                        var list = vm.DtStopReasonSelect.AsEnumerable().Where(
+                            x => x["SCHEDULED_STOP_WORK_1"].Equals(stop_n.Key) && x["MONTH"].Equals(month.Key)).ToList();
+
+                        // 集計する為、String→Decimalにしたテーブルにコピーする
+                        DataTable dtsum = vm.DtStopReasonSelect.Clone(); // 構成のみコピー
+                        dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                        foreach (var row in list)
+                        {
+                            DataRow newrow = dtsum.NewRow();
+
+                            for (int i = 0; i < row.ItemArray.Length; i++)
+                            {
+                                newrow[i] = row[i];
+                            }
+                            dtsum.Rows.Add(newrow);
+                        }
+
+                        object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                        double data = 0;
+                        try
+                        {
+                            double.TryParse(total.ToString(), out data);
+                        }
+                        catch
+                        {
+                            data = 0;
+                        }
+                        time_sum[rcnt, mcnt] = data;
+                        time_cnt[rcnt, mcnt] = list.Count;
+
+                        time_sum[stop_n_list.Count, mcnt] += time_sum[rcnt, mcnt];
+                        time_cnt[stop_n_list.Count, mcnt] += time_cnt[rcnt, mcnt];
+
+                        mcnt++;
+                    }
+
+                    DataRow row1 = dtEmg1.NewRow();
+                    if (!string.IsNullOrEmpty(stop_n.Key))
+                    {
+                        row1["メイン計画停止理由名"] = stop_n.Key;
+                        for (int iy = 0; iy < month_list.Count; iy++)
+                        {
+                            row1[iy * 3 + 1] = string.Format("{0:#,#0}", time_sum[rcnt, iy]);
+                            row1[iy * 3 + 2] = string.Format("{0:#,#0}", time_cnt[rcnt, iy]);
+                            row1[iy * 3 + 3] = string.Format("{0:#,#0}", time_cnt[rcnt, iy] > 0 ? time_sum[rcnt, iy] / time_cnt[rcnt, iy] : 0);
+                        }
+                        dtEmg1.Rows.Add(row1);
+                    }
+
+                    rcnt++;
+
+                }
+
+                // 総計行を追加
+                DataRow row1total = dtEmg1.NewRow();
+                row1total["メイン計画停止理由名"] = "総計";
+                for (int iy = 0; iy < month_list.Count; iy++)
+                {
+                    row1total[iy * 3 + 1] = string.Format("{0:#,#0}", time_sum[stop_n_list.Count, iy]);
+                    row1total[iy * 3 + 2] = string.Format("{0:#,#0}", time_cnt[stop_n_list.Count, iy]);
+                    row1total[iy * 3 + 3] = string.Format("{0:#,#0}", time_cnt[stop_n_list.Count, iy] > 0 ? time_sum[stop_n_list.Count, iy] / time_cnt[stop_n_list.Count, iy] : 0);
+                }
+                dtEmg1.Rows.Add(row1total);
+
+                // グラフデータ(全体像)画面を表示
+                GraphData frm1 = new GraphData(
+                    dtEmg1,
+                    1, "グラフデータ(全体像)"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 対象月 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllMonth_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllMonth.IsChecked == true)
+            {
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstMonth, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstMonth, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// メイン停止理由 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllMainReason_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllMainReason.IsChecked　== true)
+            {
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstPlanStop, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstPlanStop, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 追加停止理由 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllAddStopReason_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllAddReason.IsChecked == true)
+            {
+                for (int i = 0; i < clstAddPlanStop.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstAddPlanStop, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstAddPlanStop.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstAddPlanStop, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// WPF版：チェックリストボックスのON/OFFを設定する
+        /// </summary>
+        /// <param name="clst">リストボックス</param>
+        /// <param name="i">配列番号</param>
+        /// <param name="bolCheck">true/false</param>
+        private void SetItemChecked(
+            ref ListBox clst,
+            int i,
+            Boolean bolCheck
+            )
+        {
+            CheckBox chk = (CheckBox)clst.Items[i];
+            chk.IsChecked = bolCheck;
+        }
+
+        /// <summary>
+        /// 除外 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkJogai_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkJogai.IsChecked == true)
+            {
+                for (int i = 0; i < clstJogai.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstJogai, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstJogai.Items.Count; i++)
+                {
+                    SetItemChecked(ref clstJogai, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 除外リスト選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cmbJogai_SelectedIndexChanged(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string jogai_item = cmbJogai.SelectedValue.ToString();
+                if (string.IsNullOrEmpty(jogai_item)) return;
+
+                // 選択項目のデータ取得
+                clstJogai.Items.Clear();
+                var list = this.dtMain.AsEnumerable().GroupBy(x => x[jogai_item].ToString()).OrderBy(x => x.Key);
+                foreach (var data in list)
+                {
+                    CheckBox chk = new CheckBox();
+                    chk.Content = data.Key;
+                    chk.IsChecked = false;
+                    clstJogai.Items.Add(chk);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// クリップボードにコピー(データ１) ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClpCopyData1_Click(object sender, RoutedEventArgs e)
+        {
+            if (gvGraph1.ItemsSource == null) return;
+            Clipboard.SetText(getDataGridClipBoard(gvGraph1));
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+        /// <summary>
+        /// クリップボードにコピー(データ２) ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClpCopyData2_Click(object sender, RoutedEventArgs e)
+        {
+            if (gvGraph2.ItemsSource == null) return;
+            Clipboard.SetText(getDataGridClipBoard(gvGraph2));
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+        /// <summary>
+        /// クリップボードにコピー(データ３) ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClpCopyData3_Click(object sender, RoutedEventArgs e)
+        {
+            if (gvGraph3.ItemsSource == null) return;
+            Clipboard.SetText(getDataGridClipBoard(gvGraph3));
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+        /// <summary>
+        /// クリップボードにコピーするデータ取得
+        /// </summary>
+        /// <param name="gv"></param>
+        private string getDataGridClipBoard(DataGrid gv)
+        {
+            //全てのセル選択
+            gv.SelectAll();
+
+            string delmiter = "\t";
+
+            StringBuilder sb = new StringBuilder();
+            //ヘッダを書き込む
+            List<string> headerrow = new List<string>();
+            foreach (DataGridColumn column in gv.Columns)
+            {
+                headerrow.Add(column.Header.ToString());
+            }
+            sb.AppendLine(string.Join(delmiter, headerrow));
+
+            //レコードを書き込む
+            foreach (DataRowView row in gv.SelectedItems)
+            {
+                List<string> datarow = new List<string>();
+                foreach (string col in headerrow)
+                {
+                    //フィールドを書き込む
+                    datarow.Add(row[col].ToString());
+                }
+                sb.AppendLine(string.Join(delmiter, datarow));
+            }
+
+            return sb.ToString();
+
+        }
+
+        /// <summary>
+        /// クリップボードにコピー(グラフ１) ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClpCopyGraph1_Click(object sender, RoutedEventArgs e)
+        {
+            var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+            var chtGraph = (Chart)windowsFormsHost.Child;
+
+            if (chtGraph == null) return;
+
+            // 一旦 Stream オブジェクトに保存
+            System.IO.MemoryStream memStream = new System.IO.MemoryStream();
+            chtGraph.SaveImage(memStream, System.Drawing.Imaging.ImageFormat.Bmp);
+            Bitmap bmp = new Bitmap(memStream);
+            //クリップボードにコピーする
+            Clipboard.SetData(DataFormats.Bitmap, bmp);
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+        /// <summary>
+        /// クリップボードにコピー(グラフ２) ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClpCopyGraph2_Click(object sender, RoutedEventArgs e)
+        {
+            var windowsFormsHost = (WindowsFormsHost)grdGraph2.Children[0];
+            var chtGraph = (Chart)windowsFormsHost.Child;
+
+            if (chtGraph == null) return;
+
+            // 一旦 Stream オブジェクトに保存
+            System.IO.MemoryStream memStream = new System.IO.MemoryStream();
+            chtGraph.SaveImage(memStream, System.Drawing.Imaging.ImageFormat.Bmp);
+            Bitmap bmp = new Bitmap(memStream);
+            //クリップボードにコピーする
+            Clipboard.SetData(DataFormats.Bitmap, bmp);
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+    }
+}

@@ -1,0 +1,396 @@
+﻿using Microsoft.Win32;
+using MRILossTool.DataModel;
+using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// ReplaceInMaster.xaml の相互作用ロジック
+    /// </summary>
+    public partial class ReplaceInMaster : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        private string _CUST_CD;
+        private string _KOJOCD;
+        private string _FORMAT_TYPE;
+        private string _TABLE;
+
+        #endregion
+
+        /// <summary>
+        /// 置換定義マスタメンテナンス
+        /// </summary>
+        public ReplaceInMaster()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvReplaceIn);
+        }
+        public ReplaceInMaster(
+            string CUST_CD,
+            string KOJOCD,
+            string FORMAT_TYPE,
+            string TABLE,
+            string CUST_N,
+            string KOJON,
+            string FORMAT_TYPE_N,
+            string TABLE_N
+            )
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvReplaceIn);
+
+            txtCustomer.Text = CUST_N;
+            txtFactory.Text = KOJON;
+            txtFormatType.Text = FORMAT_TYPE_N;
+            txtTargetTable.Text = TABLE_N;
+
+            _CUST_CD = CUST_CD;
+            _KOJOCD = KOJOCD;
+            _FORMAT_TYPE = FORMAT_TYPE;
+            _TABLE = TABLE;
+
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                ReplaceInMasterViewModel vm = (ReplaceInMasterViewModel)DataContext;
+
+                // グリッド初期設定
+                gvReplaceIn.IsReadOnly = true;              // 読取専用
+                gvReplaceIn.CanUserDeleteRows = false;      // 行削除禁止
+                gvReplaceIn.CanUserAddRows = false;         // 行挿入禁止
+                gvReplaceIn.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                gvReplaceIn.AutoGenerateColumns = false;    // 列の自動追加禁止
+                //gvReplaceIn.EnableHeadersVisualStyles = false;
+
+                foreach (string col in vm.ColumnRelace)
+                {
+                    DataGridTextColumn textColumn = new DataGridTextColumn();
+                    textColumn.Binding = new Binding(col);
+                    gvReplaceIn.Columns.Add(textColumn);
+                }
+                for (int i = 0; i < vm.ColumnName.Length; i++)
+                {
+                    gvReplaceIn.Columns[i].Header = vm.ColumnName[i];
+                    gvReplaceIn.Columns[i].Width = 130;
+                }
+
+                // 項目名コンボボックスリスト生成
+                if (!CreateItemNList())
+                {
+                    return;
+                }
+
+                // グリッド初期設定
+                dataGrid2.IsReadOnly = true;                // 読取専用
+                dataGrid2.CanUserDeleteRows = false;        // 行削除禁止
+                dataGrid2.CanUserAddRows = false;           // 行挿入禁止
+                dataGrid2.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+                dataGrid2.AutoGenerateColumns = false;      // 列の自動追加禁止
+                //dataGrid2.EnableHeadersVisualStyles = false;
+
+                foreach (string col in vm.ColumnRelace)
+                {
+                    DataGridTextColumn textColumn = new DataGridTextColumn();
+                    textColumn.Binding = new Binding(col);
+                    dataGrid2.Columns.Add(textColumn);
+                }
+                for (int i = 0; i < vm.ColumnName.Length; i++)
+                {
+                    dataGrid2.Columns[i].Header = vm.ColumnName[i];
+                }
+
+                dataGrid2.Visibility = Visibility.Hidden;
+
+                // マスタデータの読み込み
+                if (!GetMasterData())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 項目名コンボボックスリスト生成
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool CreateItemNList()
+        {
+            bool ret = true;
+
+            try
+            {
+                ReplaceInMasterViewModel vm = (ReplaceInMasterViewModel)DataContext;
+
+                // 項目名の読み込み
+                if (vm.GetItemNData(
+                    _CUST_CD,
+                    _KOJOCD,
+                    _TABLE,
+                    _FORMAT_TYPE) == true)
+                {
+                    // コンボボックスを作成
+                    cmbItemN.Items.Clear();
+                    cmbItemN.ItemsSource = vm.ItemNameDT.DefaultView;
+                    cmbItemN.SelectedValuePath = "ITEM_CD";
+                    cmbItemN.DisplayMemberPath = "ITEM_N";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetMasterData()
+        {
+            bool ret = true;
+
+            try
+            {
+                ReplaceInMasterViewModel vm = (ReplaceInMasterViewModel)DataContext;
+
+                // マスタデータ（MDB）の読み込み
+                string strItemN = null;
+                if (cmbItemN.SelectedValue != null) strItemN = cmbItemN.SelectedValue.ToString();
+
+                if (vm.GetMasterData(
+                    _CUST_CD,
+                    _KOJOCD,
+                    _TABLE,
+                    _FORMAT_TYPE,
+                    strItemN) == true)
+                {
+                    gvReplaceIn.ItemsSource = vm.DtMst;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// ダウンロード　ボタンクリック
+        /// </summary>
+        private void btnDownload_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+
+            // 初期ファイル名を指定
+            sfd.FileName = "置換定義マスタ.csv";
+            //タイトル設定
+            sfd.Title = "保存先のファイルを選択してください";
+
+            //ダイアログ表示
+            if (sfd.ShowDialog() == true)
+            {
+                ReplaceInMasterViewModel vm = (ReplaceInMasterViewModel)DataContext;
+
+                DataSetMaster.S_REPLACE_INDataTable dt = new DataSetMaster.S_REPLACE_INDataTable();
+
+                // マスタをロードする
+                if (vm.GetMasterDataForDownload(
+                    ref dt,
+                    _CUST_CD,
+                    _KOJOCD,
+                    _TABLE,
+                    _FORMAT_TYPE) == true)
+                {
+                    dataGrid2.ItemsSource = dt;
+                }
+
+                // マスタデータCSV出力
+                Common.outputCSV(sfd.FileName, dataGrid2);
+            }
+
+        }
+
+        /// <summary>
+        /// アップロード　ボタンクリック
+        /// </summary>
+        private void btnUpload_Click(object sender, EventArgs e)
+        {
+            string strPath = string.Empty;
+            try
+            {
+                ReplaceInMasterViewModel vm = (ReplaceInMasterViewModel)DataContext;
+
+                String filenName;
+                OpenFileDialog ofd = new OpenFileDialog();
+
+                ofd.Title = "ファイル選択";                   // ダイアログのタイトル
+                ofd.Filter = "CSV ファイル (*.csv)|*.csv";    // CSVファイルでフィルタ
+
+                // ダイアログ オープン
+                if (ofd.ShowDialog() == true)
+                {
+                    string message = "以下の置換定義をアップロードしますか？";
+                    message += "\n";
+                    message += "\n会社\t\t" + txtCustomer.Text;
+                    message += "\n工場\t\t" + txtFactory.Text;
+                    message += "\n対象テーブル\t" + txtTargetTable.Text;
+                    message += "\nフォーマット名\t" + txtFormatType.Text;
+
+                    string caption = "アップロード確認";
+
+                    MessageBoxButton buttons = MessageBoxButton.OKCancel;
+
+                    MessageBoxResult result = MessageBox.Show(this, message, caption, buttons, MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.OK)
+                    {
+                        return;
+                    }
+
+                    filenName = ofd.FileName;
+
+                    // エラー情報
+                    List<string> erro_list = new List<string>();
+                    string strMsg = "";
+                    int ret = 0;
+
+                    // CSVファイルをロード
+                    ret = vm.ReadCSVFile(
+                        filenName,
+                        _CUST_CD,
+                        _KOJOCD,
+                        _TABLE,
+                        _FORMAT_TYPE,
+                        ref erro_list,
+                        ref strMsg
+                    );
+
+                    if (ret == -1)
+                    {
+                        MessageBox.Show("CSVファイルの場合はShift-JISまたはUTF-8を指定して下さい。",
+                            "文字コードエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                    else if (ret == -2)
+                    {
+                        MessageBox.Show("CSVファイル読み込みエラー\n" + strMsg);
+                        return;
+                    }
+                    else if (ret == -3)
+                    {
+                        MessageBox.Show("マスタデータアップロードに失敗しました。\n" + strMsg);
+                        return;
+                    }
+                    else
+                    {
+                        if (erro_list.Count > 0)
+                        {
+                            ErrorDialog frm = new ErrorDialog();
+                            frm.Message = erro_list;
+                            frm.ShowDialog();
+                        }
+                        else
+                        {
+                            // マスタデータの読み込み
+                            if (!GetMasterData())
+                            {
+                                return;
+                            }
+
+                            MessageBox.Show(ret.ToString() + "件追加しました。");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        /// <summary>
+        /// 検索　ボタンクリック
+        /// </summary>
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            GetMasterData();
+        }
+    }
+}

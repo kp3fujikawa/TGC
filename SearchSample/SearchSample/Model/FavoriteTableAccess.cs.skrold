@@ -1,0 +1,840 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.Model
+{
+    /// <summary>
+    /// お気に入りテーブル アクセスモデル
+    /// </summary>
+    class FavoriteTableAccess
+    {
+
+        #region "定数"
+
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        public string connectionStringBase = Common.connectionStringBase;
+
+        /// <summary>
+        /// 内部保持データ（MDB）
+        /// </summary>
+        //private string LocalDBName = Common.LocalMasterDBName;
+        private string LocalDBName = Common.LocalDBName;
+        private string LocalMasterDBName = Common.LocalMasterDBName;
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public FavoriteTableAccess()
+        {
+
+        }
+
+        /// <summary>
+        /// お気に入りテーブルの読み込み
+        /// </summary>
+        /// <param name="loginUserId">ユーザID</param>
+        /// <param name="dtFavorite">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetFavoriteTable(
+            string loginUserId,
+            ref DataTable dtFavorite
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE WHERE USER_ID = 'system' OR USER_ID = '" + loginUserId + "' ORDER BY FAVORITE_ID";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtFavorite);
+                    adapter.Dispose();
+
+                    connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り表示条件テーブルの読み込み
+        /// </summary>
+        /// <param name="prvSelectedFavoriteID">お気に入りID</param>
+        /// <param name="dicTableItemName">情報テーブルアイテム名</param>
+        /// <param name="dtFavoriteCon">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetFavoriteConTable(
+            string prvSelectedFavoriteID,
+            Dictionary<string, string> dicTableItemName,
+            ref DataTable dtFavoriteCon
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                // テーブルを読み込む
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE_CON WHERE FAVORITE_ID = '" + prvSelectedFavoriteID
+                        + "' ORDER BY CONDITION_NO";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtFavoriteCon);
+                    adapter.Dispose();
+
+                    connection.Close();
+                }
+                // 項目の表示用文字列を設定する
+                foreach (DataRow row in dtFavoriteCon.Rows)
+                {
+                    // アイテム名を取得
+                    string itemName = row["ITEM_N"].ToString();
+                    try
+                    {
+                        row["CAPTION"] = dicTableItemName[itemName];
+                    }
+                    catch
+                    {
+                        row["CAPTION"] = itemName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り並べ替えテーブルの読み込み
+        /// </summary>
+        /// <param name="prvSelectedFavoriteID">お気に入りID</param>
+        /// <param name="dicTableItemName">情報テーブルアイテム名</param>
+        /// <param name="dtFavoriteCon">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetFavoriteSortTable(
+            string prvSelectedFavoriteID,
+            Dictionary<string, string> dicTableItemName,
+            ref DataTable dtFavoriteSort
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                // テーブルを読み込む
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE_SORT WHERE FAVORITE_ID = '" + prvSelectedFavoriteID
+                        + "' ORDER BY ITEM_NO, ORDER_PRIORITY";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtFavoriteSort);
+                    adapter.Dispose();
+
+                    connection.Close();
+                }
+                // 項目の表示用文字列を設定する
+                foreach (DataRow row in dtFavoriteSort.Rows)
+                {
+                    // アイテム名を取得
+                    string itemName = row["ITEM_N"].ToString();
+                    try
+                    {
+                        row["CAPTION"] = dicTableItemName[itemName];
+                    }
+                    catch
+                    {
+                        row["CAPTION"] = itemName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り名の取得
+        /// </summary>
+        /// <param name="strFavoriteName">お気に入り名</param>
+        /// <param name="SystemUserId">システムユーザID</param>
+        /// <returns>1:存在する 0:存在しない 2:システムテンプレート</returns>
+        public int GetExistFavoriteName(
+            String strFavoriteName,
+            string SystemUserId
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            int ret = 0;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE WHERE FAVORITE_N = '" + strFavoriteName + "'";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        // 存在しない場合
+                        ret = 0;
+                    }
+                    else
+                    {
+                        // 存在する場合
+                        DataRow row = dt.Rows[0];
+                        if (row["USER_ID"].ToString().Equals(SystemUserId))
+                        {
+                            // システムテンプレート
+                            ret = 2;
+                        }
+                        else
+                        {
+                            // システムテンプレートでない
+                            ret = 1;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = 0;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 既存のお気に入りIDの取得
+        /// </summary>
+        /// <param name="strFavoriteName">お気に入り名</param>
+        /// <returns>お気に入りID</returns>
+        public String GetExistFavoriteID(
+            String strFavoriteName
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            String favoriteID = "";
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT FAVORITE_ID FROM I_FAVORITE WHERE FAVORITE_N = '" + strFavoriteName + "'";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        // 存在しない場合
+                        favoriteID = "";
+                    }
+                    else
+                    {
+                        // 存在する場合
+                        DataRow row = dt.Rows[0];
+                        favoriteID = row["FAVORITE_ID"].ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                favoriteID = "";
+            }
+
+            return favoriteID;
+        }
+
+        /// <summary>
+        /// 新規お気に入りIDの取得
+        /// </summary>
+        /// <returns>お気に入りID</returns>
+        public String GetNewFavoriteID()
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            String newFavoriteID = "";
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // お気に入りIDの最大値を求める
+                    string queryString = "SELECT FAVORITE_ID FROM I_FAVORITE WHERE FAVORITE_ID LIKE 'F%' ORDER BY FAVORITE_ID DESC";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    // 最大値＋１を設定
+                    int cnt = 0;
+                    if (dt.Rows.Count > 0)
+                    {
+                        DataRow row = dt.Rows[0];
+                        cnt = int.Parse(row["FAVORITE_ID"].ToString().Substring(1));
+                    }
+                    newFavoriteID = $"F{cnt + 1:0000}";
+                }
+            }
+            catch (Exception ex)
+            {
+                newFavoriteID = "";
+            }
+
+            return newFavoriteID;
+        }
+
+        /// <summary>
+        /// お気に入り情報の登録
+        /// </summary>
+        /// <param name="newFavoriteId">お気に入りID</param>
+        /// <param name="newFavoriteName">お気に入り名</param>
+        /// <param name="loginUserId">ログインユーザID</param>
+        /// <param name="strTargetTable">対象テーブル名</param>
+        /// <param name="dtFavWork">お気に入りテーブル</param>
+        /// <param name="dtFavConWork">お気に入り表示条件テーブル</param>
+        /// <param name="dtFavSortWork">お気に入り並べ替えテーブル</param>
+        /// <param name="existFavoriteName">1:上書き, 0:新規</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool RegistFavoriteTable(
+            string newFavoriteId,
+            string newFavoriteName,
+            String loginUserId,
+            string strTargetTable,
+            DataTable dtFavWork,
+            DataTable dtFavConWork,
+            DataTable dtFavSortWork,
+            int existFavoriteName,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+            strMsg = "";
+
+            try
+            {
+                // DB登録処理
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    OleDbTransaction transaction = null;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        OleDbCommand command = new OleDbCommand();
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        #region "既存データを削除する"
+
+                        // 上書きの場合は既存データを削除
+                        if (existFavoriteName != 0)
+                        {
+                            string whereString = " WHERE USER_ID = '" + loginUserId + "' AND FAVORITE_ID = '" + newFavoriteId + "'";
+                            command.CommandText = "DELETE FROM I_FAVORITE" + whereString;
+                            command.ExecuteNonQuery();
+                            command.CommandText = "DELETE FROM I_FAVORITE_CON" + whereString;
+                            command.ExecuteNonQuery();
+                            command.CommandText = "DELETE FROM I_FAVORITE_SORT" + whereString;
+                            command.ExecuteNonQuery();
+                        }
+                        #endregion
+
+                        #region "設定データを登録する"
+
+                        // お気に入りテーブル
+                        string queryString = "INSERT INTO I_FAVORITE (USER_ID, FAVORITE_ID, FAVORITE_N, TABLE_N)"
+                            + " VALUES ('" + loginUserId + "', '" + newFavoriteId + "'"
+                            + ", '" + newFavoriteName + "', '" + strTargetTable + "')";
+                        command.CommandText = queryString;
+                        command.ExecuteNonQuery();
+
+                        #region "お気に入り表示条件テーブル"
+
+                        // お気に入り表示条件テーブル
+                        if (dtFavConWork.Rows.Count > 0)
+                        {
+                            string insConStr = "INSERT INTO I_FAVORITE_CON"
+                                + " (USER_ID, FAVORITE_ID, CONDITION_NO, ITEM_N, CONDITIONAL, CON_VALUE, LOGICAL_EXP)"
+                                + " VALUES (@User_id, @Favorite_id, @Condition_no, @Item_n, @Conditional, @Con_value, @Logical_exp)";
+                            OleDbCommand cmdCon = new OleDbCommand(insConStr);
+                            cmdCon.Parameters.Add("@User_id", OleDbType.VarChar, 255);
+                            cmdCon.Parameters.Add("@Favorite_id", OleDbType.VarChar, 255);
+                            cmdCon.Parameters.Add("@Condition_no", OleDbType.BigInt);
+                            cmdCon.Parameters.Add("@Item_n", OleDbType.VarChar, 255);
+                            cmdCon.Parameters.Add("@Conditional", OleDbType.VarChar, 255);
+                            cmdCon.Parameters.Add("@Con_value", OleDbType.VarChar, 255);
+                            cmdCon.Parameters.Add("@Logical_exp", OleDbType.VarChar, 255);
+                            cmdCon.Connection = connection;
+                            cmdCon.Transaction = transaction;
+
+                            for (int i = 0; i < dtFavConWork.Rows.Count; i++)
+                            {
+                                DataRow row = dtFavConWork.Rows[i];
+
+                                cmdCon.Parameters["@User_id"].Value = row["USER_ID"].ToString();
+                                cmdCon.Parameters["@Favorite_id"].Value = row["FAVORITE_ID"].ToString();
+                                cmdCon.Parameters["@Condition_no"].Value = row["CONDITION_NO"].ToString();
+                                cmdCon.Parameters["@Item_n"].Value = row["ITEM_N"].ToString();
+                                cmdCon.Parameters["@Conditional"].Value = row["CONDITIONAL"].ToString();
+                                cmdCon.Parameters["@Con_value"].Value = row["CON_VALUE"].ToString();
+                                cmdCon.Parameters["@Logical_exp"].Value = row["LOGICAL_EXP"].ToString();
+
+                                cmdCon.ExecuteNonQuery();
+                            }
+                        }
+                        #endregion
+
+                        #region "お気に入り並べ替えテーブル"
+
+                        // お気に入り並べ替えテーブル
+                        string insSortStr = "INSERT INTO I_FAVORITE_SORT"
+                            + " (USER_ID, FAVORITE_ID, ITEM_NO, ITEM_N, DISP_FLG, ORDER_PRIORITY, ORDER_FLG, SORT_NO)"
+                            + " VALUES (@User_id, @Favorite_id, @Item_no, @Item_n, @Disp_flg, @Order_priority, @Order_flg, @Sort_no)";
+                        OleDbCommand cmdSort = new OleDbCommand(insSortStr);
+                        cmdSort.Parameters.Add("@User_id", OleDbType.VarChar, 255);
+                        cmdSort.Parameters.Add("@Favorite_id", OleDbType.VarChar, 255);
+                        cmdSort.Parameters.Add("@Item_no", OleDbType.BigInt);
+                        cmdSort.Parameters.Add("@Item_n", OleDbType.VarChar, 255);
+                        cmdSort.Parameters.Add("@Disp_flg", OleDbType.VarChar, 255);
+                        cmdSort.Parameters.Add("@Order_priority", OleDbType.BigInt);
+                        cmdSort.Parameters.Add("@Order_flg", OleDbType.VarChar, 255);
+                        cmdSort.Parameters.Add("@Sort_no", OleDbType.BigInt);
+                        cmdSort.Connection = connection;
+                        cmdSort.Transaction = transaction;
+
+                        for (int i = 0; i < dtFavSortWork.Rows.Count; i++)
+                        {
+                            DataRow row = dtFavSortWork.Rows[i];
+
+                            cmdSort.Parameters["@User_id"].Value = row["USER_ID"].ToString();
+                            cmdSort.Parameters["@Favorite_id"].Value = row["FAVORITE_ID"].ToString();
+                            cmdSort.Parameters["@Item_no"].Value = row["ITEM_NO"].ToString();
+                            cmdSort.Parameters["@Item_n"].Value = row["ITEM_N"].ToString();
+                            cmdSort.Parameters["@Disp_flg"].Value = row["DISP_FLG"].ToString();
+                            cmdSort.Parameters["@Order_priority"].Value = row["ORDER_PRIORITY"].ToString();
+                            cmdSort.Parameters["@Order_flg"].Value = row["ORDER_FLG"].ToString();
+                            cmdSort.Parameters["@Sort_no"].Value = row["SORT_NO"].ToString();
+
+                            cmdSort.ExecuteNonQuery();
+                        }
+                        #endregion
+
+                        #endregion
+
+                        // コミット
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        strMsg = ex.Message;
+                        ret = false;
+                        try
+                        {
+                            // ロールバック
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入りテーブル情報の読み込み
+        /// </summary>
+        /// <param name="dicTableName">情報テーブル名</param>
+        /// <param name="dicTableItemName">情報テーブルアイテム名</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool GetFavoriteTableItem(
+            ref Dictionary<string, string> dicTableName,
+            ref Dictionary<string, Dictionary<string, string>> dicTableItemName,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    // 接続を開く
+                    connection.Open();
+
+                    // 列のスキーマ情報を取得
+                    foreach (string key in dicTableName.Keys)
+                    {
+                        dicTableItemName[key].Clear();
+
+                        // 1件だけ読み込む
+                        string queryString = "SELECT TOP 1 * FROM " + dicTableName[key];
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        adapter.Dispose();
+
+                        string[] restrictionValues = {
+                        null,
+                        null,
+                        dicTableName[key]
+                    };
+                        DataTable dtSchema = connection.GetSchema("Columns", restrictionValues);
+
+                        // アイテム名と説明文を設定
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            try
+                            {
+                                DataRow rowSchema = dtSchema.Select("COLUMN_NAME='" + col.ColumnName + "'")[0];
+                                dicTableItemName[key].Add(col.ColumnName,
+                                    rowSchema["Description"].ToString());
+                            }
+                            catch
+                            {
+                                dicTableItemName[key].Add(col.ColumnName,
+                                    col.ColumnName);
+                            }
+                        }
+
+                        // ロス種別追加
+                        dicTableItemName[key].Add(Common.ColLossType, "ロス種別");
+
+                    }
+                    // 接続を閉じる
+                    connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入りテーブルの読み込み
+        /// </summary>
+        /// <param name="loginUserId">ログインユーザID</param>
+        /// <param name="dtFavorite">お気に入りテーブル</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool GetFavoriteTable(
+            String loginUserId,
+            ref DataTable dtFavorite,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            dtFavorite = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE WHERE USER_ID = 'system' OR USER_ID = '" + loginUserId + "' ORDER BY FAVORITE_ID";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtFavorite);
+                    adapter.Dispose();
+
+                    connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り名の取得
+        /// </summary>
+        /// <param name="strFavoriteName">お気に入り名</param>
+        /// <param name="SystemUserId">システムユーザID</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>1:存在する 0:存在しない 2:システムテンプレート</returns>
+        public int GetExistFavoriteName(
+            String strFavoriteName,
+            string SystemUserId,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            int ret = 0;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM I_FAVORITE WHERE FAVORITE_N = '" + strFavoriteName + "'";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        // 存在しない場合
+                        ret = 0;
+                    }
+                    else
+                    {
+                        // 存在する場合
+                        DataRow row = dt.Rows[0];
+                        if (row["USER_ID"].ToString().Equals(SystemUserId))
+                        {
+                            // システムテンプレート
+                            ret = 2;
+                        }
+                        else
+                        {
+                            // システムテンプレートでない
+                            ret = 1;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = 0;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り名の変更
+        /// </summary>
+        /// <param name="favoriteID">お気に入りID</param>
+        /// <param name="userId">ユーザID</param>
+        /// <param name="newFavoriteName">変更お気に入り名</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool RenameFavoriteName(
+            string favoriteId,
+            string userId,
+            string newFavoriteName,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    OleDbTransaction transaction = null;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        OleDbCommand command = new OleDbCommand();
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // お気に入り名を変更
+                        command.CommandText = "UPDATE I_FAVORITE SET FAVORITE_N ='" + newFavoriteName + "'"
+                            + " WHERE USER_ID = '" + userId + "' AND FAVORITE_ID = '" + favoriteId + "'";
+                        command.ExecuteNonQuery();
+
+                        // コミット
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        strMsg = ex.Message;
+                        ret = false;
+                        try
+                        {
+                            // ロールバック
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り情報の削除
+        /// </summary>
+        /// <param name="FavoriteID">お気に入りID</param>
+        /// <param name="loginUserId">ログインユーザID</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool DeleteFavoriteTable(
+            string FavoriteID,
+            String loginUserId,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    OleDbTransaction transaction = null;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        OleDbCommand command = new OleDbCommand();
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // 既存データを削除
+                        string whereString = " WHERE USER_ID = '" + loginUserId + "' AND FAVORITE_ID = '" + FavoriteID + "'";
+                        command.CommandText = "DELETE FROM I_FAVORITE" + whereString;
+                        command.ExecuteNonQuery();
+                        command.CommandText = "DELETE FROM I_FAVORITE_CON" + whereString;
+                        command.ExecuteNonQuery();
+                        command.CommandText = "DELETE FROM I_FAVORITE_SORT" + whereString;
+                        command.ExecuteNonQuery();
+
+                        // コミット
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        strMsg = ex.Message;
+                        ret = false;
+                        try
+                        {
+                            // ロールバック
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                ret = false;
+            }
+
+            return ret;
+        }
+    }
+}

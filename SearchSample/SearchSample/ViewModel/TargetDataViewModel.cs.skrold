@@ -1,0 +1,135 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 対象リスト画面 ViewModel
+    /// </summary>
+    class TargetDataViewModel
+    {
+        #region "DBアクセスモデル"
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataTable dtMain = new DataTable();
+
+        public DataTable DtMain { get => dtMain; set => dtMain = value; }
+
+        public DataTable GetDtMain()
+        {
+            DataTable dt = dtMain.Clone();
+            foreach (DataRow row in dtMain.Rows)
+            {
+                DataRow newrow = dt.NewRow();
+
+                for (int i = 0; i < row.ItemArray.Length; i++)
+                {
+                    newrow[i] = row[i];
+                }
+                // 空白置換
+                changeBlank(newrow);
+
+                dt.Rows.Add(newrow);
+            }
+
+            return dt;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public TargetDataViewModel()
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+        }
+
+        /// <summary>
+        /// DBデータセット
+        /// </summary>
+        /// <param name="dtMain">DB</param>
+        public void SetDtMain(
+            DataTable dtMain
+        )
+        {
+            try
+            {
+                DataTable dt = dtMain.Clone();
+                foreach (DataRow row in dtMain.Rows)
+                {
+                    DataRow newrow = dt.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    // 空白置換
+                    changeBlank(newrow);
+
+                    dt.Rows.Add(newrow);
+                }
+                // DBデータセット
+                this.dtMain = dt;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 空白置換
+        /// </summary>
+        private void changeBlank(DataRow newrow)
+        {
+            if (newrow["STATUS_NAME"].ToString().Equals("計画停止"))
+            {
+                if (string.IsNullOrEmpty(newrow["SCHEDULED_STOP_WORK_1"].ToString()))
+                    newrow["SCHEDULED_STOP_WORK_1"] = "(空白)";
+                if (string.IsNullOrEmpty(newrow["SCHEDULED_STOP_WORK_2"].ToString()))
+                    newrow["SCHEDULED_STOP_WORK_2"] = "(空白)";
+                if (string.IsNullOrEmpty(newrow["SCHEDULED_STOP_WORK_3"].ToString()))
+                    newrow["SCHEDULED_STOP_WORK_3"] = "(空白)";
+                if (string.IsNullOrEmpty(newrow["SCHEDULED_STOP_WORK_4"].ToString()))
+                    newrow["SCHEDULED_STOP_WORK_4"] = "(空白)";
+
+                if (string.IsNullOrEmpty(newrow["OTHER_DATA_1"].ToString()))
+                    newrow["OTHER_DATA_1"] = newrow["SCHEDULED_STOP_WORK_1"];
+            }
+            if (newrow["STATUS_NAME"].ToString().Equals("ライン停止"))
+            {
+                if (string.IsNullOrEmpty(newrow["UNSCHEDULED_STOP_REASON_1"].ToString()))
+                    newrow["UNSCHEDULED_STOP_REASON_1"] = "(空白)";
+                if (string.IsNullOrEmpty(newrow["UNSCHEDULED_STOP_REASON_2"].ToString()))
+                    newrow["UNSCHEDULED_STOP_REASON_2"] = "(空白)";
+                if (string.IsNullOrEmpty(newrow["UNSCHEDULED_STOP_REASON_3"].ToString()))
+                    newrow["UNSCHEDULED_STOP_REASON_3"] = "(空白)";
+            }
+
+            if (string.IsNullOrEmpty(newrow["REMARKS"].ToString()))
+                newrow["REMARKS"] = "(空白)";
+        }
+    }
+}

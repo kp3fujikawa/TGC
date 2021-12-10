@@ -1,0 +1,125 @@
+﻿using MRILossTool.DataModel;
+using MRILossTool.Model;
+using System;
+using System.Collections.Generic;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 会社マスタメンテナンス ViewModel
+    /// </summary>
+    class CompanyMasterViewModel
+    {
+        #region "DBアクセスモデル"
+
+        private CompanyMasterAccess acCompamyMaster = new CompanyMasterAccess();
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataSetMaster.M_COMPANYDataTable dtMst = new DataSetMaster.M_COMPANYDataTable();   // マスタ
+        public DataSetMaster.M_COMPANYDataTable DtMst { get => dtMst; set => dtMst = value; }
+
+        /// <summary>
+        /// 一覧ヘッダ
+        /// </summary>
+        private String[] columnName = {
+            "会社コード",
+            "会社名" ,
+            "備考"
+        };
+        public string[] ColumnName { get => columnName; set => columnName = value; }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public CompanyMasterViewModel()
+        {
+            try
+            {
+                // マスタデータの読み込み
+                if (!GetMasterData())
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetMasterData()
+        {
+            bool ret = true;
+
+            try
+            {
+                // 会社マスタの読み込み
+                if (!acCompamyMaster.GetMasterData(ref dtMst))
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns></returns>
+        public int ReadCSVFile(
+            String filenName,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            int ret = 0;
+
+            try
+            {
+                // CSVファイルをロード
+                ret = acCompamyMaster.ReadCSVFile(
+                    ColumnName,
+                    filenName,
+                    ref dtMst,
+                    ref erro_list,
+                    ref strMsg
+                    );
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+
+            }
+            return ret;
+        }
+    }
+}

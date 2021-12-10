@@ -1,0 +1,407 @@
+﻿using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using static MRILossTool.DataExtractClass;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// FavoriteDispItem.xaml の相互作用ロジック
+    /// </summary>
+    public partial class FavoriteDispItem : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+        /// <summary>
+        /// 表示項目選択画面
+        /// </summary>
+        public FavoriteDispItem()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvList);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="favoriteID">お気に入りID</param>
+        /// <param name="tableId">対象テーブルID</param>
+        /// <param name="tableName">対象テーブル名</param>
+        /// <param name="paradtFavoriteSort">お気に入り並べ替えテーブル</param>
+        public FavoriteDispItem(String favoriteID, String tableId, String tableName,
+            DataTable paradtFavoriteSort)
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvList);
+
+            FavoriteDispItemViewModel vm = (FavoriteDispItemViewModel)DataContext;
+
+            // お気に入りIDを設定
+            vm.FavoriteID = favoriteID;
+
+            // 対象テーブルを設定
+            vm.SetTargetTable(tableId, tableName);
+            txtTargetTable.Text = vm.TargetTableName;
+
+            // お気に入り並べ替えテーブルを設定
+            vm.DtFavoriteSort = paradtFavoriteSort;
+
+            // 一覧を生成
+            gvList.Items.Clear();
+            for (int i = 0; i < vm.DtFavoriteSort.Rows.Count; i++)
+            {
+                DataRow row = vm.DtFavoriteSort.Rows[i];
+
+                /*
+                gvList.Rows.Add();
+                gvList.Rows[i].Cells["colItem_n"].Value = row["CAPTION"].ToString();
+                gvList.Rows[i].Cells["colDisp_flg"].Value = Convert.ToBoolean(int.Parse(row["DISP_FLG"].ToString()));
+                gvList.Rows[i].Cells["colSort_no"].Value = row["SORT_NO"].ToString();
+                */
+                DataExtractDispItem strCells = new DataExtractDispItem();
+                strCells.ColItem_n = row["CAPTION"].ToString();
+                strCells.ColDisp_flg = Convert.ToBoolean(int.Parse(row["DISP_FLG"].ToString())).ToString();
+                strCells.ColSort_no = row["SORT_NO"].ToString();
+
+                gvList.Items.Add(strCells);
+            }
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        #region DB処理
+
+        #endregion
+
+        #region ボタン
+
+        /// <summary>
+        /// 全選択　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSelect_Click(object sender, EventArgs e)
+        {
+            FavoriteDispItemViewModel vm = (FavoriteDispItemViewModel)DataContext;
+
+            for (int i = 0; i < vm.DtFavoriteSort.Rows.Count; i++)
+            {
+                //gvList.Rows[i].Cells["colDisp_flg"].Value = Convert.ToBoolean("True");
+                ((DataExtractDispItem)gvList.Items[i]).ColDisp_flg = "True";
+            }
+            gvList.Items.Refresh();
+        }
+
+        /// <summary>
+        /// 全解除　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDeselect_Click(object sender, EventArgs e)
+        {
+            FavoriteDispItemViewModel vm = (FavoriteDispItemViewModel)DataContext;
+
+            for (int i = 0; i < vm.DtFavoriteSort.Rows.Count; i++)
+            {
+                //gvList.Rows[i].Cells["colDisp_flg"].Value = Convert.ToBoolean("False");
+                ((DataExtractDispItem)gvList.Items[i]).ColDisp_flg = "False";
+            }
+            gvList.Items.Refresh();
+        }
+
+        /// <summary>
+        /// 表示順解除　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClearSort_Click(object sender, EventArgs e)
+        {
+            FavoriteDispItemViewModel vm = (FavoriteDispItemViewModel)DataContext;
+
+            for (int i = 0; i < vm.DtFavoriteSort.Rows.Count; i++)
+            {
+                //gvList.Rows[i].Cells["colSort_no"].Value = 0;
+                ((DataExtractDispItem)gvList.Items[i]).ColSort_no = "0";
+            }
+            gvList.Items.Refresh();
+        }
+
+        /// <summary>
+        /// 設定　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            // エラーチェック
+            if (!CheckInputData())
+            {
+                // 入力エラー
+                return;
+            }
+
+            FavoriteDispItemViewModel vm = (FavoriteDispItemViewModel)DataContext;
+
+            // 設定内容を保存する
+            for (int i = 0; i < vm.DtFavoriteSort.Rows.Count; i++)
+            {
+                DataRow row = vm.DtFavoriteSort.Rows[i];
+
+                /*
+                row["DISP_FLG"] = Convert.ToInt32(gvList.Rows[i].Cells["colDisp_flg"].Value);
+                row["SORT_NO"] = gvList.Rows[i].Cells["colSort_no"].Value;
+                */
+                DataExtractDispItem strCells = (DataExtractDispItem)gvList.Items[i];
+                row["DISP_FLG"] = $"{Convert.ToInt32(Convert.ToBoolean(strCells.ColDisp_flg)):0}";
+                row["SORT_NO"] = strCells.ColSort_no;
+            }
+
+            this.DialogResult = true;
+            this.Close();
+        }
+
+        /// <summary>
+        /// 入力データチェック
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckInputData()
+        {
+            bool ret = true;
+
+            try
+            {
+                gvList.SelectedItems.Clear();
+
+                // 表示順入力チェック
+                int cnt = 0;                        // 表示対象設定数
+                for (int i = 0; i < gvList.Items.Count; i++)
+                {
+                    var row = gvList.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                    DataExtractDispItem strCells = (DataExtractDispItem)gvList.Items[i];
+                    //if (Convert.ToBoolean(gvList.Rows[i].Cells["colDisp_flg"].Value.ToString()) == true)
+                    if (Convert.ToBoolean(strCells.ColDisp_flg) == true)
+                    {
+                        // 表示選択にチェックがある場合は表示順をチェック
+                        //if (!IsNullOrZero(gvList.Rows[i].Cells["colSort_no"].Value))
+                        if (!IsNullOrZero(strCells.ColSort_no))
+                        {
+                            try
+                            {
+                                //int intval = int.Parse(gvList.Rows[i].Cells["colSort_no"].Value.ToString());
+                                int intval = int.Parse(strCells.ColSort_no);
+                                if (intval < 1 || intval > gvList.Items.Count)
+                                {
+                                    ret = false;
+                                }
+                            }
+                            catch
+                            {
+                                ret = false;
+                            }
+                            if (ret == false)
+                            {
+                                MessageBox.Show("表示順に間違いがあります。",
+                                    "入力エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                                //gvList.Rows[i].Cells["colSort_no"].Selected = true;
+                                var cellInfo = new DataGridCellInfo(row, gvList.Columns[2]);
+                                gvList.CurrentCell = cellInfo;
+                                return false;
+                            }
+                        }
+                        cnt++;
+                    }
+                }
+                if (cnt == 0)
+                {
+                    MessageBox.Show("表示項目を選択してください。",
+                        "入力エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    return false;
+                }
+                // 表示順整合性チェック
+                cnt = 0;
+                bool IsNoSet = false;               // 表示順指定有無
+                for (int i = 0; i < gvList.Items.Count; i++)
+                {
+                    var row = gvList.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                    DataExtractDispItem strCells = (DataExtractDispItem)gvList.Items[i];
+                    //if (Convert.ToBoolean(gvList.Rows[i].Cells["colDisp_flg"].Value.ToString()) == true)
+                    if (Convert.ToBoolean(strCells.ColDisp_flg) == true)
+                    {
+                        // 表示選択にチェックがある
+                        //DataGridViewCell sortCell = gvList.Rows[i].Cells["colSort_no"];
+                        if (cnt == 0)
+                        {
+                            // 先頭データの場合
+                            //if (!IsNullOrZero(sortCell.Value))
+                            if (!IsNullOrZero(strCells.ColSort_no))
+                            {
+                                // 表示順入力あり
+                                IsNoSet = true;
+                            }
+                        }
+                        else
+                        {
+                            // 2番目以降のデータの場合
+                            //if ((IsNullOrZero(sortCell.Value) && IsNoSet == true)
+                            // || (!IsNullOrZero(sortCell.Value) && IsNoSet == false))
+                            if ((IsNullOrZero(strCells.ColSort_no) && IsNoSet == true)
+                             || (!IsNullOrZero(strCells.ColSort_no) && IsNoSet == false))
+                            {
+                                // 表示順入力エラー
+                                //sortCell.Selected = true;
+                                var cellInfo = new DataGridCellInfo(row, gvList.Columns[2]);
+                                gvList.CurrentCell = cellInfo;
+                                ret = false;
+                                break;
+                            }
+                        }
+                        cnt++;
+                    }
+                }
+                // チェック結果判定
+                if (ret == true)
+                {
+                    // 表示順未指定の場合は自動設定
+                    if (IsNoSet == false)
+                    {
+                        cnt = 1;
+                        for (int i = 0; i < gvList.Items.Count; i++)
+                        {
+                            DataExtractDispItem strCells = (DataExtractDispItem)gvList.Items[i];
+                            //if (Convert.ToBoolean(gvList.Rows[i].Cells["colDisp_flg"].Value.ToString()) == true)
+                            if (Convert.ToBoolean(strCells.ColDisp_flg) == true)
+                            {
+                                //gvList.Rows[i].Cells["colSort_no"].Value = cnt;
+                                ((DataExtractDispItem)gvList.Items[i]).ColSort_no = $"{cnt:0}";
+                                cnt++;
+                            }
+                        }
+                        gvList.Items.Refresh();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("表示順を設定する場合は、選択した全項目に順番を入力してください。",
+                        "入力エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("システムエラーが発生しました。\n" + ex.Message,
+                    "システムエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// Nullまたは0入力チェック
+        /// </summary>
+        /// <param name="objValue">入力オブジェクト</param>
+        /// <returns>true:NULLまたは0, false:入力あり</returns>
+        private bool IsNullOrZero(object objValue)
+        {
+            bool ret = false;
+
+            if (objValue == null)
+            {
+                ret = true;
+            }
+            else if (objValue.ToString().Equals("0"))
+            {
+                ret = true;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = false;
+            this.Close();
+        }
+        #endregion
+
+        /// <summary>
+        /// BeginningEditイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void gvList_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            // 編集するとエラーになる為、無効にする
+            e.Cancel = true;
+        }
+
+        /// <summary>
+        /// CurrentCellChangedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void gvList_CurrentCellChanged(object sender, EventArgs e)
+        {
+            var cell = DataGridHelper.GetCell((DataGridCellInfo)gvList.CurrentCell);
+            if (cell == null) return;
+
+            if (cell.Column.Header.ToString() == "表示順")
+            {
+                // DataGridを編集モードにする
+                cell.Focus();
+                gvList.BeginEdit();
+            }
+        }
+    }
+}

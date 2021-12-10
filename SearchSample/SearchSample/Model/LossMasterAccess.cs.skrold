@@ -1,0 +1,456 @@
+﻿using MRILossTool.DataModel;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.Model
+{
+    /// <summary>
+    /// ロス変換テーブル　アクセスモデル
+    /// </summary>
+    class LossMasterAccess
+    {
+
+        #region "定数"
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        public string connectionStringBase = Common.connectionStringBase;
+
+        /// <summary>
+        /// データ（MDB）
+        /// </summary>
+        private string LocalDBName = Common.LocalDBName;
+        //private string LocalMasterDBName = Common.LocalMasterDBName;
+        private string LocalMasterDBName = Common.LocalDBName;
+
+        /// <summary>
+        /// テーブル
+        /// </summary>
+        private string MasterTableName = "S_LOSS";
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public LossMasterAccess()
+        {
+
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み：全項目
+        /// </summary>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strItemN">項目名</param>
+        /// <returns>true/false</returns>
+        public bool GetMasterData(
+            ref DataSetMaster.S_LOSSDataTable dtMst,
+            string strTargetTable,
+            string strItemN
+            )
+        {
+
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalMasterDBName;
+            bool ret = true;
+
+            // マスタをロードする
+            dtMst = new DataSetMaster.S_LOSSDataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string where = string.Empty;
+                    if (strTargetTable != null && !string.IsNullOrEmpty(strTargetTable))
+                        where += " AND TABLE_N='" + strTargetTable + "'";
+                    if (strItemN != null && !string.IsNullOrEmpty(strItemN))
+                        where += " AND ITEM_N='" + strItemN + "'";
+
+                    string queryString = "SELECT * FROM " + MasterTableName + " WHERE 0=0 " + where + " ORDER BY TABLE_N,ITEM_N,VALUE";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtMst);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    DataSetMaster.S_LOSSDataTable dtNew = new DataSetMaster.S_LOSSDataTable();
+                    foreach (DataSetMaster.S_LOSSRow row in dtMst.Rows)
+                    {
+                        DataSetMaster.S_LOSSRow newrow = dtNew.NewS_LOSSRow();
+                        newrow.ItemArray = row.ItemArray;
+                        string LOSS_TYPE = row["LOSS_TYPE"].ToString();
+                        newrow["LOSS_TYPE"] = Common.loss_type_dic.ContainsKey(LOSS_TYPE) ? Common.loss_type_dic[LOSS_TYPE] : LOSS_TYPE;
+                        dtNew.Rows.Add(newrow);
+                    }
+
+                    dtMst = dtNew;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み：ダウンロード用
+        /// </summary>
+        /// <param name="dt">データテーブル</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <returns>true/false</returns>
+        /// </summary>
+        public bool GetMasterDataForDownload(
+            ref DataTable dt,
+            string strTargetTable
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalMasterDBName;
+            bool ret = true;
+
+            // マスタをロードする
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalMasterDBName))
+                {
+                    connection.Open();
+
+                    dt = new DataTable();
+
+                    string where = string.Empty;
+                    where += " AND TABLE_N='" + strTargetTable + "'";
+
+                    string queryString = "SELECT * FROM " + MasterTableName + " WHERE 0=0 " + where + " ORDER BY ITEM_N,VALUE";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>0>:登録件数,-1:文字コードエラー,-2:CSVファイル読み込みエラー,-3:システムエラー</returns>
+        public int ReadCSVFile(
+            String filenName,
+            DataSetMaster.S_LOSSDataTable dtMst,
+            string strTargetTable,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            string strPath = string.Empty;
+
+            int ret = 0;
+            strMsg = "";
+
+            try
+            {
+                String strCharSet = "";                                  // 文字コード（CSV用）：未指定時はShift-JIS
+                String strDataSource = System.IO.Path.GetDirectoryName(filenName); // 対象ファイル名
+                String strFileName = System.IO.Path.GetFileName(filenName);
+                String strTableName = Guid.NewGuid().ToString("N").Substring(0, 8) + DateTime.Now.ToString("yyyyMMddHHmmss") + strFileName; // 対象テーブル名
+                strPath = strDataSource + "\\" + strTableName;
+
+                // 文字コードをチェック
+                string strInpCode = Common.getStringCode(filenName);
+                if (!strInpCode.Equals("Shift-JIS") && !strInpCode.Equals("UTF-8"))
+                {
+                    ret = -1;
+                    return ret;
+                }
+                if (strInpCode.Equals("UTF-8"))
+                {
+                    strCharSet = "CharacterSet=65001;";
+                }
+
+                List<string> column = new List<string>();
+                foreach (DataColumn col in dtMst.Columns)
+                {
+                    column.Add(col.ColumnName);
+                }
+
+                //ファイルの内容を読み込む
+                StreamReader sr =
+                    new StreamReader(filenName, Encoding.GetEncoding(strInpCode));
+
+                StringBuilder sb = new StringBuilder();
+                // ヘッダー
+                sb.AppendLine(string.Join(",", column));
+                string line;
+                int counter = 0;
+                string fix_col = strTargetTable;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (counter == 0) { counter++; continue; }
+                    sb.AppendLine(fix_col + "," + line);
+                    counter++;
+                }
+                sr.Close();
+
+                //書き込むファイルが既に存在している場合は上書き
+                StreamWriter sw = new StreamWriter(
+                    strPath,
+                    false,
+                    Encoding.GetEncoding(strInpCode));
+                sw.Write(sb.ToString());
+                sw.Close();
+
+                // ファイル読み込み
+                string connectionString = connectionStringBase + strDataSource + "; "
+                        + "Extended Properties=\"Text;" // ファイルプロパティ指定
+                        + "HDR=YES;"                    // ヘッダー設定
+                        + "FMT=Delimited;"              // フィールドの型
+                        + strCharSet                    // 文字コード
+                        + "\"";
+
+                // CSVファイル読み込み時の定義ファイル出力
+                Common.outputSchemaIni(strTableName, strDataSource, new List<string>(column), strCharSet);
+
+                // CSVファイルをロード
+                DataTable dtAdd = new DataTable();
+                string queryString = "SELECT * FROM [" + strTableName + "]";
+                try
+                {
+                    using (OleDbConnection connection = new OleDbConnection(connectionString))
+                    {
+                        connection.Open();
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                        adapter.Fill(dtAdd);
+
+                        connection.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ret = -2;
+                    strMsg = ex.Message;
+                    return ret;
+                }
+                finally
+                {
+                    if (File.Exists(strPath)) File.Delete(strPath);
+                }
+
+                var reverse_loss_type = Common.loss_type_dic.ToDictionary(x => x.Value, x => x.Key);
+
+                // エラー情報
+                erro_list = new List<string>();
+
+                // データをDelete/Insert
+                using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalMasterDBName))
+                {
+
+                    OleDbCommand command = new OleDbCommand();
+                    OleDbTransaction transaction = null;
+                    command.Connection = connection;
+                    int cnt = 0;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        // Assign transaction object for a pending local transaction.
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // マスタ削除
+                        String target_table = strTableName;
+                        string where = string.Empty;
+                        where += " AND TABLE_N='" + target_table + "'";
+                        command.CommandText = "DELETE FROM " + MasterTableName + " WHERE 0=0 " + where;
+                        int delcnt = command.ExecuteNonQuery();
+
+                        DataSetMaster.S_LOSSDataTable dt = new DataSetMaster.S_LOSSDataTable();
+
+                        // マスタ登録
+                        int lineno = 0;
+                        foreach (DataRow row in dtAdd.Rows)
+                        {
+                            try
+                            {
+                                lineno++;
+
+                                List<string> err_list2 = new List<string>();
+                                DataSetMaster.S_LOSSRow newrow = dt.NewS_LOSSRow();
+                                foreach (DataColumn col in dtAdd.Columns)
+                                {
+                                    string data = row[col.ColumnName].ToString();
+                                    if (!dt.Columns[col.ColumnName].AllowDBNull && string.IsNullOrEmpty(data))
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は必須です。"));
+                                    }
+                                    else if (data.Length > dt.Columns[col.ColumnName].MaxLength)
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は最大文字数を超えています。"));
+                                    }
+                                    else
+                                    {
+                                        newrow[col.ColumnName] = row[col.ColumnName];
+                                    }
+                                }
+
+                                if (err_list2.Count > 0)
+                                {
+                                    erro_list.AddRange(err_list2);
+                                    continue;
+                                }
+                                dt.Rows.Add(newrow);
+
+                                string LOSS_TYPE = row["LOSS_TYPE"] != null ? row["LOSS_TYPE"].ToString() : "";
+                                row["LOSS_TYPE"] = reverse_loss_type.ContainsKey(LOSS_TYPE) ? reverse_loss_type[LOSS_TYPE] : LOSS_TYPE;
+
+                                List<string> values = new List<string>();
+                                foreach (DataColumn col in dtAdd.Columns)
+                                {
+                                    values.Add("'" + row[col.ColumnName] + "'");
+                                }
+                                command.CommandText =
+                                    "INSERT INTO " + MasterTableName + " VALUES ( " + string.Join(",", values) + " )";
+                                cnt += command.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                erro_list.Add(string.Format("{0}行目：{1}", lineno, ex.Message));
+                            }
+                        }
+
+                        if (erro_list.Count > 0)
+                        {
+                            transaction.Rollback();
+                        }
+                        else
+                        {
+                            // コミット
+                            transaction.Commit();
+
+                            ret = cnt;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = -3;
+                        strMsg = ex.Message;
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = -3;
+                strMsg = ex.Message;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(strPath) && File.Exists(strPath))
+                {
+                    File.Delete(strPath);
+                }
+            }
+
+            return ret;
+        }
+
+        [HandleProcessCorruptedStateExceptions]
+        /// <summary>
+        /// ロス変換対象項目の取得
+        /// </summary>
+        /// <param name="strLossTableKey">ロス変換情報テーブル名</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>項目名</returns>
+        public String GetLossItemName(
+            string strLossTableKey,
+            ref string strMsg
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            String LossItemName = "";
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // テーブル名をキーにロス変換対象の項目名を求める
+                    string queryString = string.Format("SELECT ITEM_N FROM {0} WHERE TABLE_N = '{1}'",
+                        MasterTableName, strLossTableKey);
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    // 項目名を設定
+                    if (dt.Rows.Count > 0)
+                    {
+                        DataRow row = dt.Rows[0];
+                        LossItemName = row["ITEM_N"].ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strMsg = ex.Message;
+                LossItemName = "";
+            }
+
+            return LossItemName;
+        }
+    }
+}

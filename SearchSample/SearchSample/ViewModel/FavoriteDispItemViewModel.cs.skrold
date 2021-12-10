@@ -1,0 +1,68 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// 表示項目選択画面 ViewModel
+    /// </summary>
+    class FavoriteDispItemViewModel
+    {
+        #region "DBアクセスモデル"
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        /// <summary>
+        /// お気に入り並べ替えテーブル
+        /// </summary>
+        private DataTable dtFavoriteSort = new DataTable();
+        public DataTable DtFavoriteSort { get => dtFavoriteSort; set => dtFavoriteSort = value; }
+
+        public DataTable GetDtFavoriteSort()
+        {
+            return dtFavoriteSort.Copy();
+        }
+
+        /// <summary>
+        /// お気に入りID
+        /// </summary>
+        private String prvFavoriteID = "";
+        public string FavoriteID { get => prvFavoriteID; set => prvFavoriteID = value; }
+
+        /// <summary>
+        /// 対象テーブル
+        /// </summary>
+        private String prvTargetTableID = "";
+        public string TargetTableID { get => prvTargetTableID; set => prvTargetTableID = value; }
+
+        private String prvTargetTableName = "";
+        public string TargetTableName { get => prvTargetTableName; set => prvTargetTableName = value; }
+
+
+        public void SetTargetTable(String tableId, String tableName)
+        {
+            prvTargetTableID = tableId;
+            prvTargetTableName = tableName;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public FavoriteDispItemViewModel()
+        {
+
+        }
+    }
+}

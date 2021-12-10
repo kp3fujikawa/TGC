@@ -1,0 +1,157 @@
+﻿using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// GraphData.xaml の相互作用ロジック
+    /// </summary>
+    public partial class GraphData : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// 画面タイトルセット
+        /// </summary>
+        /// <param name="title"></param>
+        public void SetTitle(string title)
+        {
+            this.Title = title;
+        }
+
+        /// <summary>
+        /// グラフデータ
+        /// </summary>
+        public GraphData()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvMain);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="dtMain">DB</param>
+        /// <param name="kind">表示グラフ種類:1=グラフデータ, 2=控除データ</param>
+        /// <param name="title">画面タイトル</param>
+        public GraphData(
+            DataTable dtMain,
+            int kind,
+            string title
+        )
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvMain);
+
+            try
+            {
+                GraphDataViewModel vm = (GraphDataViewModel)DataContext;
+
+                // 表示グラフ種類セット
+                vm.SetKindGraph(kind);
+
+                // 画面タイトルセット
+                SetTitle(title);
+
+                // DBデータセット
+                vm.DtMain = dtMain;
+
+                // 表示データ設定
+                gvMain.ItemsSource = dtMain.DefaultView;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                GraphDataViewModel vm = (GraphDataViewModel)DataContext;
+
+                // 列ヘッダを設定
+                for (int i = 0; i < gvMain.Columns.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(vm.DtMain.Columns[i].Caption))
+                    {
+                        gvMain.Columns[i].Header = vm.DtMain.Columns[i].Caption;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// GvMain_DataBindingComplete
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void gvMain_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            // 行スタイルを設定
+            //for (int i = 0; i < gvMain.Rows.Count; i++)
+            //{
+            //    string row_top_data = (string)gvMain.Rows[i].Cells[0].Value;
+            //    if (row_top_data.Equals("総計"))
+            //    {
+            //        // 総計行の背景色を設定:System.Drawing.Color.DarkTurquoise;
+            //        gvMain.Rows[i].DefaultCellStyle.BackColor = gvMain.ColumnHeadersDefaultCellStyle.BackColor;
+            //    }
+            //}
+            //string row_top_data = (string)gvMain.Rows[i].Cells[0].Value;
+            DataRowView item = (DataRowView)e.Row.Item;
+            string row_top_data = (string)item[0];
+            if (row_top_data.Equals("総計"))
+            {
+                // 総計行の背景色を設定:System.Drawing.Color.DarkTurquoise;
+                //gvMain.Rows[i].DefaultCellStyle.BackColor = gvMain.ColumnHeadersDefaultCellStyle.BackColor;
+
+                // WPF版：テーマの表示色取得
+                //e.Row.Style = gvMain.ColumnHeaderStyle;
+                Brush colForeColor = new SolidColorBrush();
+                Brush colBackColor = new SolidColorBrush();
+                Common.GetDataGridColor(ref colForeColor, ref colBackColor);
+                e.Row.Background = colBackColor;
+                e.Row.Foreground = colForeColor;
+            }
+        }
+    }
+}

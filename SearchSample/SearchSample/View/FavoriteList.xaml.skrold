@@ -1,0 +1,95 @@
+﻿<mahApps:MetroWindow x:Class="MRILossTool.View.FavoriteList"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MRILossTool.ViewModel"
+        mc:Ignorable="d"
+        xmlns:mahApps="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        ResizeMode="CanResizeWithGrip"
+        Title="お気に入りリスト" Height="450" Width="650"
+        Loaded="Window_Loaded"
+        WindowStartupLocation="CenterOwner">
+    <mahApps:MetroWindow.DataContext>
+        <local:FavoriteListViewModel/>
+    </mahApps:MetroWindow.DataContext>
+    <Window.Resources>
+        <ResourceDictionary Source="../Style/DataExtractStyleDic.xaml"/>
+    </Window.Resources>
+    <Grid>
+        <DataGrid x:Name="gvList" Margin="10,10,10,59" CanUserAddRows="False" CanUserDeleteRows="False" BeginningEdit="gvList_BeginningEdit"
+                  Style="{StaticResource MyGridStyle}" ColumnHeaderStyle="{StaticResource MyColumnHeaderStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding ColFavorite_n}" Header="お気に入り" IsReadOnly="True" Width="200"/>
+                <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Width="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="選択" Click="btnCell_Click" Tag="colSelect" IsEnabled="{Binding ColSelect}"
+                                    Style="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconZondicons Width="16" Height="16" VerticalAlignment="Center" Kind="Checkmark" />
+                                            <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="名前変更" Click="btnCell_Click" Tag="colModify" IsEnabled="{Binding ColModify}"
+                                    Style="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconZondicons Width="16" Height="16" VerticalAlignment="Center" Kind="Wrench" />
+                                            <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="削除" Click="btnCell_Click" Tag="colDelete" IsEnabled="{Binding ColDelete}"
+                                    Style="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconZondicons Width="16" Height="16" VerticalAlignment="Center" Kind="Trash" />
+                                            <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Binding="{Binding ColFavorite_id}" ClipboardContentBinding="{x:Null}" Visibility="Hidden"/>
+                <DataGridTextColumn Binding="{Binding ColTable_n}" ClipboardContentBinding="{x:Null}" Visibility="Hidden"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button x:Name="btnClose" Content="閉じる" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="117" Height="34" Click="btnClose_Click"
+                Style="{DynamicResource MahApps.Styles.Button.Square}" ToolTip="閉じる">
+            <Button.ContentTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconZondicons Width="22" Height="22" VerticalAlignment="Center" Kind="CloseOutline" />
+                        <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Button.ContentTemplate>
+        </Button>
+
+    </Grid>
+</mahApps:MetroWindow>

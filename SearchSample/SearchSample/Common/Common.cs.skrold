@@ -1,0 +1,547 @@
+﻿using ControlzEx.Theming;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
+namespace MRILossTool
+{
+    static class Common
+    {
+
+
+        #region "定数"
+
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        static public string connectionStringBase = "Provider=Microsoft.ACE.OLEDB.15.0; Data Source=";
+
+        /// <summary>
+        /// マスタデータ（MDB）
+        /// </summary>
+        static public string LocalDBName = "Data\\MRI_DB.accdb";
+        static public string LocalMasterDBName = "Data\\MRI_MASTERDB.accdb";
+
+        /// <summary>
+        /// 対象
+        /// </summary>
+        static public string Target = "0";
+
+        /// <summary>
+        /// 対象外
+        /// </summary>
+        static public string NonTarget = "1";
+
+        /// <summary>
+        /// ライン停止 その他
+        /// </summary>
+        static public string LineStopETC1 = "E:その他";
+        static public string LineStopETC2 = "その他";
+
+        /// <summary>
+        /// 変換種類
+        /// </summary>
+        static public Dictionary<string, string> change_type_dic = 
+            new Dictionary<string, string>()
+            {
+                {"00", "無変換"},
+                {"01", "固定値"},
+                {"02", "差分_時"},
+                {"03", "差分_分"},
+                {"04", "差分_秒"},
+                {"05", "加算"},
+                {"06", "減算"},
+                {"07", "積算"},
+                {"08", "除算"},
+                {"09", "文字抜き出し"},
+                {"10", "文字変換"}
+            };
+
+        /// <summary>
+        /// 丸め種類
+        /// </summary>
+        static public Dictionary<string, string> round_type_dic = 
+            new Dictionary<string, string>()
+            {
+                {"0", "切捨て"},
+                {"1", "切上げ"},
+                {"2", "四捨五入"}
+            };
+
+        /// <summary>
+        /// 対象テーブル
+        /// </summary>
+        static public Dictionary<string, string> target_table_dic =
+            new Dictionary<string, string>()
+            {
+                {"t_work_org", "稼働テーブル"},
+                {"t_man_org", "人テーブル"}
+            };
+
+        /// <summary>
+        /// 一時／本番テーブル
+        /// </summary>
+        static public Dictionary<string, string> table_dic =
+            new Dictionary<string, string>()
+            {
+                {"t_work_org", "i_work"},
+                {"t_man_org", "i_man"}
+            };
+
+        /// <summary>
+        /// 対象テーブル必須項目
+        /// </summary>
+        static public Dictionary<string, Dictionary<string, int>> target_table_required_dic =
+            new Dictionary<string, Dictionary<string, int>>()
+            {
+                {"t_work_org", new Dictionary<string, int>()
+                    {
+                        {"COMPANY_CODE", 0},
+                        {"FACTORY_CODE", 0},
+                        {"MACHINE_CODE", 0},
+                        {"EQUIP_CODE", 0},
+                        {"DAY", 0},
+                    }
+                },
+                {"t_man_org", new Dictionary<string, int>()
+                    {
+                        {"COMPANY_CODE", 0},
+                        {"FACTORY_CODE", 0},
+                        {"MACHINE_CODE", 0},
+                        {"EQUIP_CODE", 0},
+                        {"DAY", 0},
+                        {"USER_ID", 0},
+                    }
+                }
+            };
+
+        /// <summary>
+        /// ロス種別
+        /// </summary>
+        static public Dictionary<string, string> loss_type_dic =
+            new Dictionary<string, string>()
+            {
+                {"A01", "計画停止"},
+                {"B01", "故障"},
+                {"B02", "切替調整"},
+                {"B03", "治具調整"},
+                {"B04", "立上り"},
+                {"B05", "その他停止"},
+                {"C01", "チョコ停"},
+                {"C02", "速度低下"},
+                {"D01", "不良手直し"},
+                {"E01", "指示待ち"},
+                {"E02", "材料待ち"},
+                {"F01", "設備停止"},
+                {"F02", "設備性能"},
+                {"F03", "方法手順"},
+                {"F04", "スキルモラル"},
+                {"G01", "編成"},
+                {"G02", "自動化置換"},
+                {"H01", "物流"},
+                {"I01", "測定調整"}
+            };
+
+        /// <summary>
+        /// ロス種別アイテム名
+        /// </summary>
+        static public string ColLossType = "LOSS_TYPE";
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// CSV出力
+        /// </summary>
+        static public void outputCSV(String fileName, DataGrid gv)
+        {
+            try
+            {
+
+                //CSVファイルに書き込むときに使うEncoding
+                Encoding enc = Encoding.GetEncoding("UTF-8");
+
+                //書き込むファイルを開く
+                StreamWriter sr = new StreamWriter(fileName, false, enc);
+                try
+                {
+                    gv.UpdateLayout();
+
+                    //ヘッダを書き込む
+                    List<string> headerrow = new List<string>();
+                    foreach (DataGridColumn column in gv.Columns)
+                    {
+                        //フィールドを書き込む
+                        //sr.Write(EncloseDoubleQuotesIfNeed(column.HeaderText));
+                        if (string.IsNullOrEmpty(column.Header.ToString())) continue; // ヘッダ空白の場合は除外
+                        headerrow.Add(column.Header.ToString());
+                    }
+                    sr.Write(string.Join(",", headerrow) + "\r\n");
+
+                    //レコードを書き込む
+                    for (int i = 0; i < gv.Items.Count; ++i)
+                    { 
+                        var row = gv.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                        if (row == null)
+                        {
+                            // 対象の行が表示されていない場合、行オブジェクトが取得できないため
+                            // 対象の行が表示されるようスクロールします。
+                            gv.UpdateLayout();
+                            gv.ScrollIntoView(gv.Items[i]);
+                            // 再度、行オブジェクトを取得します。
+                            row = gv.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                        }
+
+                        List<string> datarow = new List<string>();
+                        foreach (DataGridColumn column in gv.Columns)
+                        {
+                            //フィールドを書き込む
+                            //sr.Write(EncloseDoubleQuotesIfNeed(gv[column.Index, row.Index].Value.ToString()));
+                            if (string.IsNullOrEmpty(column.Header.ToString())) continue; // ヘッダ空白の場合は除外
+
+                            var cell = gv.Columns[column.DisplayIndex].GetCellContent(row);
+                            if (cell == null)
+                            {
+                                gv.UpdateLayout();
+                                gv.ScrollIntoView(gv.Columns[column.DisplayIndex]);
+                                // 再度、セルオブジェクトを取得します。
+                                cell = gv.Columns[column.DisplayIndex].GetCellContent(row);
+                            }
+
+                            if (column.Header.ToString().Equals("演算値"))
+                            {
+                                datarow.Add("\"" + (cell as TextBlock)?.Text + "\"");
+                            }
+                            else
+                            {
+                                datarow.Add((cell as TextBlock)?.Text);
+                            }
+
+                        }
+                        sr.Write(string.Join(",", datarow) + "\r\n");
+                    }
+                }
+                finally
+                {
+                    sr.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 文字列をダブルクォートで囲む
+        /// </summary>
+        static private string EncloseDoubleQuotesIfNeed(string field)
+        {
+            if (field.IndexOf('"') > -1)
+            {
+                //"を""とする
+                field = field.Replace("\"", "\"\"");
+            }
+            return "\"" + field + "\"";
+        }
+
+        /// <summary>
+        /// ファイルの文字コード取得
+        /// </summary>
+        /// <param name="fname">ファイル名</param>
+        /// <returns>文字コード:Shift-JIS,EUC,UTF-8</returns>
+        static public string getStringCode(string fname)
+        {
+            FileStream fs = new FileStream(fname, FileMode.Open, FileAccess.Read);
+            byte[] bs = new byte[fs.Length];
+            fs.Read(bs, 0, bs.Length);
+            fs.Close();
+            for (int i = 0; i < bs.Length; i++)
+            {
+                if (bs[i] >= 130 && bs[i] <= 152) return "Shift-JIS";   // Shift-JISに決定
+                if (bs[i] >= 161 && bs[i] <= 193) return "EUC";         // EUCに決定
+                if (bs[i] >= 194 && bs[i] <= 207) i++;                  // 判別不能次の先頭コードに
+                if (bs[i] >= 208 && bs[i] <= 239) return "UTF-8";       // UTF-8
+            }
+
+            return "???";
+        }
+
+        /// <summary>
+        /// CSVファイル読み込み時の定義ファイル出力
+        /// </summary>
+        /// <param name="fname">ファイル名</param>
+        static public void outputSchemaIni(string filenName, string dir, List<string> cols, string charset)
+        {
+
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("[" + filenName + "]");
+                sb.AppendLine("ColNameHeader=True");
+                sb.AppendLine("Format=CSVDelimited");
+                sb.AppendLine("MaxScanRows=0");
+                sb.AppendLine(charset.Replace(";", ""));
+                int count = 1;
+                foreach (string col in cols)
+                {
+                    if (string.IsNullOrEmpty(col)) continue;
+                    sb.AppendLine("Col" + count + "=" + col + " LongChar");
+                    count++;
+                }
+
+                //書き込むファイルが既に存在している場合は上書き
+                StreamWriter sw = new StreamWriter(
+                    dir+ "\\schema.ini",
+                    false,
+                    Encoding.GetEncoding("Shift-JIS"));
+                sw.Write(sb.ToString());
+                sw.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// データチェック
+        /// </summary>
+        static public bool check(DataColumn col, string data, out string errmessage)
+        {
+            errmessage = "";
+
+            if (string.IsNullOrEmpty(data)) return true;
+            if (col == null) return true;
+
+            // 数値チェック
+            if (!checkNumber(col, data, out errmessage))
+            {
+                return false;
+            }
+
+            // 文字数チェック
+            if (!checkLength(col, data, out errmessage))
+            {
+                return false;
+            }
+
+            return true;
+
+        }
+
+        /// <summary>
+        /// 数値チェック
+        /// </summary>
+        static public bool checkNumber(DataColumn col, string data, out string errmesasge)
+        {
+            errmesasge = "";
+
+            if (string.IsNullOrEmpty(data)) return true;
+            if (col == null) return true;
+
+            string type = col.DataType.ToString();
+
+            try
+            {
+                if (type.IndexOf("Int") >= 0)
+                {
+                    int.Parse(data);
+                }
+                if (type.IndexOf("Double") >= 0)
+                {
+                    Double.Parse(data);
+                }
+                return true;
+
+            }
+            catch (OverflowException)
+            {
+                errmesasge = "項目[" + col.ColumnName + "]は最大値を超えています。";
+                return false;
+            }
+            catch
+            {
+                errmesasge = "数値型の項目[" + col.ColumnName + "]に文字列がセットされています。";
+                return false;
+            }
+
+        }
+
+        /// <summary>
+        /// 文字数チェック
+        /// </summary>
+        static public bool checkLength(DataColumn col, string data, out string errmesasge)
+        {
+            errmesasge = "";
+
+            if (string.IsNullOrEmpty(data)) return true;
+            if (col == null) return true;
+
+            string type = col.DataType.ToString();
+            if (type.IndexOf("String") >= 0)
+            {
+                if (data.Length > 255)
+                {
+                    errmesasge = "項目[" + col.ColumnName + "]の最大文字数をオーバーしています。";
+                    return false;
+                }
+            }
+
+            return true;
+
+        }
+
+        /// <summary>
+        /// WPF版：テーマ設定
+        /// </summary>
+        static public void SettingTheme(FrameworkElement frameworkElement)
+        {
+            // MahApps.Metro スタイル
+            var Metro_BaseColor = System.Configuration.ConfigurationManager.AppSettings["Metro_BaseColor"];
+            var Metro_BaseStyle = "Light.";
+
+            if (Metro_BaseColor != null && Metro_BaseColor.Equals("Black"))
+            {
+                ThemeManager.Current.ChangeThemeBaseColor(frameworkElement, "BaseDark");
+                Metro_BaseStyle = "Dark.";
+            }
+            else
+            {
+                ThemeManager.Current.ChangeThemeBaseColor(frameworkElement, "BaseLight");
+            }
+            // MahApps.Metro テーマ
+            var Metro_Themes = System.Configuration.ConfigurationManager.AppSettings["Metro_Themes"];
+            if (Metro_Themes == null) Metro_Themes = "Blue";
+
+            if (Metro_Themes.Equals("Red"))
+            {
+                ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Red");
+            }
+            else if (Metro_Themes.Equals("Blue"))
+            {
+                ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Blue");
+            }
+            else if (Metro_Themes.Equals("Yellow"))
+            {
+                ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Yellow");
+            }
+            else if (Metro_Themes.Equals("Green"))
+            {
+                ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Green");
+            }
+            else if (Metro_Themes.Equals("Purple"))
+            {
+                ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Purple");
+            }
+            else
+            {
+                try
+                {
+                    ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + Metro_Themes);
+                }
+                catch
+                {
+                    ThemeManager.Current.ChangeTheme(frameworkElement, Metro_BaseStyle + "Blue");
+                }
+            }
+        }
+
+        /// <summary>
+        /// WPF版：DataGrid ColumnHeaderStyle設定
+        /// </summary>
+        static public void SettingColumnHeaderStyle(DataGrid dataGrid)
+        {
+            // MahApps.Metro テーマを求める
+            var Metro_Themes = System.Configuration.ConfigurationManager.AppSettings["Metro_Themes"];
+            if (Metro_Themes == null) Metro_Themes = "Blue";
+
+            Brush colHeader = Brushes.LightBlue;
+            if (Metro_Themes.Equals("Red"))
+            {
+                colHeader = Brushes.LightPink;
+            }
+            else if (Metro_Themes.Equals("Blue"))
+            {
+                colHeader = Brushes.LightBlue;
+            }
+            else if (Metro_Themes.Equals("Yellow"))
+            {
+                colHeader = Brushes.LightYellow;
+            }
+            else if (Metro_Themes.Equals("Green"))
+            {
+                colHeader = Brushes.LightGreen;
+            }
+            else if (Metro_Themes.Equals("Purple"))
+            {
+                colHeader = Brushes.Lavender;
+            }
+
+            // 背景色を設定
+            Style style = dataGrid.ColumnHeaderStyle;
+            style.Setters.Add(new Setter
+            {
+                Property = System.Windows.Controls.Control.BackgroundProperty,
+                Value = colHeader
+            });;
+            style.Setters.Add(new Setter
+            {
+                Property = System.Windows.Controls.Control.ForegroundProperty,
+                Value = Brushes.Black
+            });;
+            dataGrid.ColumnHeaderStyle = style;
+        }
+
+        /// <summary>
+        /// WPF版：DataGrid 表示色取得
+        /// </summary>
+        /// <param name="colForeColor">前景色</param>
+        /// <param name="colBackColor">背景色</param>
+        static public void GetDataGridColor(
+            ref Brush colForeColor,
+            ref Brush colBackColor
+            )
+        {
+            // MahApps.Metro テーマを求める
+            var Metro_Themes = System.Configuration.ConfigurationManager.AppSettings["Metro_Themes"];
+            if (Metro_Themes == null) Metro_Themes = "Blue";
+
+            colBackColor = Brushes.LightBlue;
+            if (Metro_Themes.Equals("Red"))
+            {
+                colBackColor = Brushes.LightPink;
+            }
+            else if (Metro_Themes.Equals("Blue"))
+            {
+                colBackColor = Brushes.LightBlue;
+            }
+            else if (Metro_Themes.Equals("Yellow"))
+            {
+                colBackColor = Brushes.LightYellow;
+            }
+            else if (Metro_Themes.Equals("Green"))
+            {
+                colBackColor = Brushes.LightGreen;
+            }
+            else if (Metro_Themes.Equals("Purple"))
+            {
+                colBackColor = Brushes.Lavender;
+            }
+
+            colForeColor = Brushes.Black;
+        }
+    }
+
+
+}

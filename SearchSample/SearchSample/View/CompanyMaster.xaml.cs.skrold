@@ -1,0 +1,212 @@
+﻿using NLog;
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using Microsoft.Win32;
+using MRILossTool.ViewModel;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// CompanyMaster.xaml の相互作用ロジック
+    /// </summary>
+    public partial class CompanyMaster : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// 会社マスタメンテナンス
+        /// </summary>
+        public CompanyMaster()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvCompany);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                // マスタデータの読み込み
+                if (!GetMasterData())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetMasterData()
+        {
+            bool ret = true;
+
+            // 会社マスタをロードする
+            try
+            {
+                CompanyMasterViewModel vm = (CompanyMasterViewModel)DataContext;
+
+                gvCompany.ItemsSource = vm.DtMst;
+
+                for (int i = 0; i < vm.ColumnName.Length; i++)
+                {
+                    gvCompany.Columns[i].Header = vm.ColumnName[i];
+                    gvCompany.Columns[i].Width = 170;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("マスタデータの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// ダウンロード　ボタンクリック
+        /// </summary>
+        private void btnDownload_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+
+            // 初期ファイル名を指定
+            sfd.FileName = "会社マスタ.csv";
+            //タイトル設定
+            sfd.Title = "保存先のファイルを選択してください";
+
+            //ダイアログ表示
+            if (sfd.ShowDialog() == true)
+            {
+                // マスタデータCSV出力
+                Common.outputCSV(sfd.FileName, gvCompany);
+            }
+
+        }
+
+        /// <summary>
+        /// アップロード　ボタンクリック
+        /// </summary>
+        private void btnUpload_Click(object sender, EventArgs e)
+        {
+            string strPath = string.Empty;
+            try
+            {
+                CompanyMasterViewModel vm = (CompanyMasterViewModel)DataContext;
+
+                String filenName;
+                OpenFileDialog ofd = new OpenFileDialog();
+
+                ofd.Title = "ファイル選択";                   // ダイアログのタイトル
+                ofd.Filter = "CSV ファイル (*.csv)|*.csv";    // CSVファイルでフィルタ
+
+                // ダイアログ オープン
+                if (ofd.ShowDialog() == true)
+                {
+                    filenName = ofd.FileName;
+
+                    // エラー情報
+                    List<string> erro_list = new List<string>();
+                    string strMsg = "";
+                    int ret = 0;
+
+                    // CSVファイルをロード
+                    ret = vm.ReadCSVFile(
+                        filenName,
+                        ref erro_list,
+                        ref strMsg
+                    );
+
+                    if (ret == -1)
+                    {
+                        MessageBox.Show("CSVファイルの場合はShift-JISまたはUTF-8を指定して下さい。",
+                            "文字コードエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                    else if (ret == -2)
+                    {
+                        MessageBox.Show("CSVファイル読み込みエラー\n" + strMsg);
+                        return;
+                    }
+                    else if (ret == -3)
+                    {
+                        MessageBox.Show("マスタデータアップロードに失敗しました。\n" + strMsg);
+                        return;
+                    }
+                    else
+                    {
+                        if (erro_list.Count > 0)
+                        {
+                            ErrorDialog frm = new ErrorDialog();
+                            frm.Message = erro_list;
+                            frm.ShowDialog();
+                        }
+                        else
+                        {
+                            gvCompany.ItemsSource = vm.DtMst;
+
+                            MessageBox.Show(ret.ToString() + "件追加しました。");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+            }
+        }
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                DialogResult = true;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+    }
+}

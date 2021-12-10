@@ -1,0 +1,3517 @@
+﻿using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Forms.DataVisualization.Charting;
+using System.Windows.Forms.Integration;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
+using Color = System.Windows.Media.Color;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// GraphArea.xaml の相互作用ロジック
+    /// </summary>
+    public partial class GraphArea : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "変数"
+        /// <summary>
+        /// カスタムカラーパレット
+        /// </summary>
+        /// <remarks>
+        /// BrightPastel: 418CF0,FCB441,DF3A02,056492,BFBFBF,1A3B69,FFE382,129CDD,CA6B4B,005CDB,F3D288,506381,F1B9A8,E0830A,7893BE
+        /// </remarks>
+        private System.Windows.Media.Color[] MyChartColors = new System.Windows.Media.Color[] {
+            //System.Drawing.ColorTranslator.FromHtml("#418CF0"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#418CF0"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#FCB441"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#DF3A02"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#056492"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#BFBFBF"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#1A3B69"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#FFE382"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#129CDD"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#CA6B4B"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#005CDB"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#F3D288"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#506381"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#F1B9A8"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#E0830A"),
+            (Color)System.Windows.Media.ColorConverter.ConvertFromString("#7893BE")
+        };
+
+        #endregion
+
+        #region "DataGrid用リスト"
+        /// <summary>
+        /// gvGraph1
+        /// </summary>
+        private IList<DataRow> Graph1List { get; set; }
+
+        #endregion
+
+        /// <summary>
+        /// 画面タイトルセット
+        /// </summary>
+        /// <param name="title"></param>
+        public void SetTitle(string title)
+        {
+            this.Title = title;
+        }
+
+        /// <summary>
+        /// グラフ画面
+        /// </summary>
+        public GraphArea()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            //Common.SettingColumnHeaderStyle(gvMain);
+            Common.SettingColumnHeaderStyle(gvGraph1);
+
+            // WPF版：コントロールを非表示にする
+            txtFactoryCode.Visibility = Visibility.Hidden;
+            gvMain.Visibility = Visibility.Hidden;
+        }
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="frmTargetData">対象データ画面</param>
+        /// <param name="kind">表示グラフ種類:1,2,3</param>
+        /// <param name="title">画面タイトル</param>
+        public GraphArea(
+            TargetData frmTargetData,
+            int kind,
+            string title)
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            //Common.SettingColumnHeaderStyle(gvMain);
+            Common.SettingColumnHeaderStyle(gvGraph1);
+
+            // WPF版：チェックボックス文字列の前景色設定
+            txtDeduction.Foreground = btnExcSelect.Foreground;
+
+            // WPF版：コントロールを非表示にする
+            txtFactoryCode.Visibility = Visibility.Hidden;
+            gvMain.Visibility = Visibility.Hidden;
+
+            // WPF版：Chartコントロールの作成
+            var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+            var chtGraph1 = (Chart)windowsFormsHost.Child;
+            chtGraph1.ChartAreas.Add("ChartArea1");
+            chtGraph1.Legends.Add("Legend1");
+
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // 初期データ設定
+                vm.SetInitialData(frmTargetData, kind, title);
+
+                // 画面タイトルセット
+                SetTitle(title);
+
+                // DBデータセット
+                DataTable dtAll = frmTargetData.GetDtMain();        // 全データ
+
+                DataRow row1 = dtAll.Rows[0];
+                txtCompany.Text = row1["COMPANY_NAME"].ToString();
+                txtFactory.Text = row1["FACTORY_NAME"].ToString();
+                txtFactoryCode.Text = row1["FACTORY_CODE"].ToString();
+                var machines = dtAll.AsEnumerable().GroupBy(x => x["MACHINE_NAME"].ToString());
+                List<string> machine_list = new List<string>();
+                foreach (var machine in machines)
+                {
+                    machine_list.Add(machine.Key);
+                }
+                txtMachine.Text = string.Join(",", machine_list);
+
+                // コンボボックスデータ設定
+                // 対象月リスト
+                clstMonth.Items.Clear();
+                var months = dtAll.AsEnumerable().GroupBy(x => x["MONTH"].ToString()).OrderBy(x => x.Key);
+                foreach (var month in months)
+                {
+                    //clstMonth.Items.Add(month.Key, true);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = month.Key;
+                    chk.IsChecked = true;
+                    clstMonth.Items.Add(chk);
+                }
+
+                string whereMAIN_STOP_REASON = "SCHEDULED_STOP_WORK_1";
+                string where_line_stop = string.Empty;
+                switch (vm.KindGraph())
+                {
+                    case 1:
+                        // 稼働時間
+                        whereMAIN_STOP_REASON = "SCHEDULED_STOP_WORK_1";
+                        where_line_stop = " AND (EXCLUDE_UNSCHEDULED_STOP = '" + Common.NonTarget + "' OR EXCLUDE_UNSCHEDULED_STOP = '*')";
+                        break;
+                    case 2:
+                        // 計画停止時間
+                        whereMAIN_STOP_REASON = "OTHER_DATA_1";
+                        break;
+                    case 3:
+                        // ライン停止
+                        whereMAIN_STOP_REASON = "UNSCHEDULED_STOP_REASON_1";
+                        break;
+                    default:
+                        break;
+                }
+
+                // ライン停止1除外リスト
+                // 絞り込み実行
+                string whereLS1 = "(UNSCHEDULED_STOP_REASON_1 <> '' OR UNSCHEDULED_STOP_REASON_1 IS NOT NULL)" + where_line_stop;
+                DataRow[] selDtLS1 = dtAll.Select(whereLS1, "UNSCHEDULED_STOP_REASON_1");
+                DataTable dtSelectLS1 = dtAll.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDtLS1)
+                {
+                    DataRow newrow = dtSelectLS1.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelectLS1.Rows.Add(newrow);
+
+                }
+                clstLineStopExclusion1.Items.Clear();
+                var exclusLS1 = dtSelectLS1.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_1"].ToString());
+                foreach (var exclu in exclusLS1)
+                {
+                    //clstLineStopExclusion1.Items.Add(exclu.Key, false);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = exclu.Key;
+                    chk.IsChecked = false;
+                    clstLineStopExclusion1.Items.Add(chk);
+                }
+
+                // ライン停止2除外リスト
+                // 絞り込み実行
+                string whereLS2 = "(UNSCHEDULED_STOP_REASON_2 <> '' OR UNSCHEDULED_STOP_REASON_2 IS NOT NULL)" + where_line_stop;
+                DataRow[] selDtLS2 = dtAll.Select(whereLS2, "UNSCHEDULED_STOP_REASON_2");
+                DataTable dtSelectLS2 = dtAll.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDtLS2)
+                {
+                    DataRow newrow = dtSelectLS2.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelectLS2.Rows.Add(newrow);
+
+                }
+                clstLineStopExclusion2.Items.Clear();
+                var exclusLS2 = dtSelectLS2.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_2"].ToString());
+                foreach (var exclu in exclusLS2)
+                {
+                    //clstLineStopExclusion2.Items.Add(exclu.Key, false);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = exclu.Key;
+                    chk.IsChecked = false;
+                    clstLineStopExclusion2.Items.Add(chk);
+                }
+
+                // 計画停止1除外リスト
+                // 絞り込み実行
+                string wherePS1 = "(UNSCHEDULED_STOP_REASON_1 <> '' OR UNSCHEDULED_STOP_REASON_1 IS NOT NULL)" +
+                                    " AND (EXCLUDE_UNSCHEDULED_STOP = '" + Common.NonTarget + "' OR EXCLUDE_UNSCHEDULED_STOP = '*')";
+                DataRow[] selDtPS1 = dtAll.Select(wherePS1, "UNSCHEDULED_STOP_REASON_1");
+                DataTable dtSelectPS1 = dtAll.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDtPS1)
+                {
+                    DataRow newrow = dtSelectPS1.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelectPS1.Rows.Add(newrow);
+
+                }
+                clsPlanStopExclusion1.Items.Clear();
+                var exclusPS1 = dtSelectPS1.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_1"].ToString());
+                foreach (var exclu in exclusPS1)
+                {
+                    //clsPlanStopExclusion1.Items.Add(exclu.Key, false);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = exclu.Key;
+                    chk.IsChecked = false;
+                    clsPlanStopExclusion1.Items.Add(chk);
+                }
+
+                // 計画停止除外フラグ
+                cmbExcFlag1.Items.Clear();
+                var flags = dtAll.AsEnumerable().GroupBy(x => x["EXCLUDE_UNSCHEDULED_STOP"].ToString());
+                foreach (var flg in flags)
+                {
+                    if (string.IsNullOrEmpty(flg.Key)) continue;
+                    cmbExcFlag1.Items.Add(flg.Key);
+                }
+                if (cmbExcFlag1.Items.Count > 0) cmbExcFlag1.SelectedIndex = 0;
+
+
+                // 計画停止2除外リスト
+                // 絞り込み実行
+                string wherePS2 = "(UNSCHEDULED_STOP_REASON_2 <> '' OR UNSCHEDULED_STOP_REASON_2 IS NOT NULL)" +
+                                    " AND (EXCLUDE_UNSCHEDULED_STOP = '" + Common.NonTarget + "' OR EXCLUDE_UNSCHEDULED_STOP = '*')";
+                DataRow[] selDtPS2 = dtAll.Select(wherePS2, "UNSCHEDULED_STOP_REASON_2");
+                DataTable dtSelectPS2 = dtAll.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDtPS2)
+                {
+                    DataRow newrow = dtSelectPS2.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelectPS2.Rows.Add(newrow);
+
+                }
+                clsPlanStopExclusion2.Items.Clear();
+                var exclusPS2 = dtSelectPS2.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_2"].ToString());
+                foreach (var exclu in exclusPS2)
+                {
+                    //clsPlanStopExclusion2.Items.Add(exclu.Key, false);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = exclu.Key;
+                    chk.IsChecked = false;
+                    clsPlanStopExclusion2.Items.Add(chk);
+                }
+
+                // メイン停止理由
+                // 絞り込み実行
+                Dictionary<string, int> plans = new Dictionary<string, int>();
+                string whereMS = "(" + whereMAIN_STOP_REASON + " <> '' OR " + whereMAIN_STOP_REASON + " IS NOT NULL)";
+                DataRow[] selDtMS = dtAll.Select(whereMS, whereMAIN_STOP_REASON);
+                foreach (DataRow row in selDtMS)
+                {
+                    string UNSCHEDULED_STOP_REASON_1 = row[whereMAIN_STOP_REASON].ToString();
+                    if (!string.IsNullOrEmpty(UNSCHEDULED_STOP_REASON_1) && !plans.ContainsKey(UNSCHEDULED_STOP_REASON_1))
+                    {
+                        plans[UNSCHEDULED_STOP_REASON_1] = 0;
+                    }
+                }
+                clstPlanStop.Items.Clear();
+                foreach (var plan in plans)
+                {
+                    //clstPlanStop.Items.Add(plan.Key, true);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = plan.Key;
+                    chk.IsChecked = true;
+                    clstPlanStop.Items.Add(chk);
+                }
+
+                // コンボボックスデータ設定
+                // 除外リスト
+                cmbJogai.Items.Clear();
+                cmbJogai.Items.Add("");
+                foreach (DataColumn col in vm.DtMain.Columns)
+                {
+                    cmbJogai.Items.Add(col.ColumnName);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                chkAllMonth.IsChecked = true;
+                chkAllMainReason.IsChecked = true;
+                chkAllLineStop1.IsChecked = false;
+                chkAllLineStop2.IsChecked = false;
+                chkAllPlanStop1.IsChecked = false;
+                chkAllPlanStop2.IsChecked = false;
+
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // WPF版：Chartコントロールの取得
+                var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+                var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+                Thickness marginGraphData = btnGraphData.Margin;
+                Thickness marginExclData = btnGraphData.Margin;
+
+                // グラフ表示
+                switch (vm.KindGraph())
+                {
+                    case 1:
+                        // 稼働時間
+                        // 対象の検索条件を有効にする
+                        btnDetails.Visibility = Visibility.Hidden;          // 内訳ボタン
+                        btnReason.Visibility = Visibility.Hidden;           // 異常停止理由別ボタン   
+                        btnReason2.Visibility = Visibility.Hidden;          // 異常停止理由別２ボタン   
+                        gBoxExclusion.Visibility = Visibility.Visible;      // 控除グループボックス
+                        chkDeduction.Visibility = Visibility.Visible;       // 控除グループボックス
+                        btnExclData.Visibility = Visibility.Visible;        // 控除データボタン
+                        chkAllMonth.Visibility = Visibility.Visible;        // 対象月リスト
+                        chkAllMainReason.Visibility = Visibility.Visible;   // メイン停止理由リスト
+
+                        // ライン停止1除外リスト
+                        chkAllLineStop1.Visibility = Visibility.Visible;
+                        //lblLineStopExc1.Visible = true;
+                        clstLineStopExclusion1.Visibility = Visibility.Visible;
+
+                        // ライン停止2除外リスト
+                        chkAllLineStop2.Visibility = Visibility.Visible;
+                        //lblLineStopExc2.Visible = true;
+                        clstLineStopExclusion2.Visibility = Visibility.Visible;
+                        gboxLineStopExc.Visibility = Visibility.Visible;
+
+                        // 計画停止1除外リスト
+                        chkAllPlanStop1.Visibility = Visibility.Visible;
+                        //lblPlanStopExc1.Visible = true;
+                        cmbExcFlag1.Visibility = Visibility.Visible;
+                        lblPlanStopExcFlag1.Visibility = Visibility.Visible;
+                        clsPlanStopExclusion1.Visibility = Visibility.Visible;
+
+                        // 計画停止2除外リスト
+                        chkAllPlanStop2.Visibility = Visibility.Visible;
+                        //lblPlanStopExc2.Visible = true;
+                        clsPlanStopExclusion2.Visibility = Visibility.Visible;
+                        gboxPlanStopExc.Visibility = Visibility.Visible;
+
+                        // グラフの幅を設定
+                        //chtGraph1.Width = 1072;
+                        chtGraph1.Width = 1169;
+                        //btnGraphData.Left = 829;
+                        marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10 - btnExclData.Width - 10;
+                        btnGraphData.Margin = marginGraphData;
+                        //btnExclData.Left = 964;
+                        marginExclData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                        btnExclData.Margin = marginExclData;
+
+                        break;
+                    case 2:
+                        // 計画停止時間
+                        // 対象の検索条件を有効にする
+                        btnDetails.Visibility = Visibility.Visible;         // 内訳ボタン
+                        btnReason.Visibility = Visibility.Hidden;           // 異常停止理由別ボタン
+                        btnReason2.Visibility = Visibility.Hidden;          // 異常停止理由別２ボタン
+                        gBoxExclusion.Visibility = Visibility.Collapsed;    // 控除グループボックス
+                        chkDeduction.Visibility = Visibility.Hidden;        // 控除チェックボックス
+                        btnExclData.Visibility = Visibility.Hidden;         // 控除データボタン
+                        chkAllMonth.Visibility = Visibility.Visible;        // 対象月リスト
+                        chkAllMainReason.Visibility = Visibility.Visible;   // メイン停止理由リスト
+
+                        // ライン停止1除外リスト
+                        chkAllLineStop1.Visibility = Visibility.Hidden;
+                        //lblLineStopExc1.Visible = false;
+                        clstLineStopExclusion1.Visibility = Visibility.Hidden;
+
+                        // ライン停止2除外リスト
+                        chkAllLineStop2.Visibility = Visibility.Hidden;
+                        //lblLineStopExc2.Visible = false;
+                        clstLineStopExclusion2.Visibility = Visibility.Hidden;
+                        gboxLineStopExc.Visibility = Visibility.Hidden;
+
+                        // 計画停止1除外リスト
+                        chkAllPlanStop1.Visibility = Visibility.Hidden;
+                        //lblPlanStopExc1.Visible = false;
+                        cmbExcFlag1.Visibility = Visibility.Hidden;
+                        lblPlanStopExcFlag1.Visibility = Visibility.Hidden;
+                        clsPlanStopExclusion1.Visibility = Visibility.Hidden;
+
+                        // 計画停止2除外リスト
+                        chkAllPlanStop2.Visibility = Visibility.Hidden;
+                        //lblPlanStopExc2.Visible = false;
+                        clsPlanStopExclusion2.Visibility = Visibility.Hidden;
+                        gboxPlanStopExc.Visibility = Visibility.Hidden;
+
+                        // グラフの幅を設定
+                        //chtGraph1.Width = 623;
+                        chtGraph1.Width = 689;
+                        //btnGraphData.Left = 429;
+                        marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                        btnGraphData.Margin = marginGraphData;
+                        //btnExclData.Left = 394;
+                        marginExclData.Left = 394;
+                        btnExclData.Margin = marginExclData;
+
+                        break;
+                    case 3:
+                        // ライン停止
+                        // 対象の検索条件を有効にする
+                        btnDetails.Visibility = Visibility.Hidden;          // 内訳ボタン
+                        btnReason.Visibility = Visibility.Visible;          // 異常停止理由別ボタン
+                        btnReason2.Visibility = Visibility.Visible;         // 異常停止理由別２ボタン
+                        gBoxExclusion.Visibility = Visibility.Visible;      // 控除グループボックス
+                        chkDeduction.Visibility = Visibility.Visible;       // 控除チェックボックス
+                        btnExclData.Visibility = Visibility.Visible;        // 控除データボタン
+                        chkAllMonth.Visibility = Visibility.Visible;        // 対象月リスト
+                        chkAllMainReason.Visibility = Visibility.Visible;   // メイン停止理由リスト
+
+                        // ライン停止1除外リスト
+                        chkAllLineStop1.Visibility = Visibility.Visible;
+                        //lblLineStopExc1.Visible = true;
+                        clstLineStopExclusion1.Visibility = Visibility.Visible;
+
+                        // ライン停止2除外リスト
+                        chkAllLineStop2.Visibility = Visibility.Visible;
+                        //lblLineStopExc2.Visible = true;
+                        clstLineStopExclusion2.Visibility = Visibility.Visible;
+                        gboxLineStopExc.Visibility = Visibility.Visible;
+
+                        // 計画停止1除外リスト
+                        chkAllPlanStop1.Visibility = Visibility.Hidden;
+                        //lblPlanStopExc1.Visible = false;
+                        cmbExcFlag1.Visibility = Visibility.Hidden;
+                        lblPlanStopExcFlag1.Visibility = Visibility.Hidden;
+                        clsPlanStopExclusion1.Visibility = Visibility.Hidden;
+
+                        // 計画停止2除外リスト
+                        chkAllPlanStop2.Visibility = Visibility.Hidden;
+                        //lblPlanStopExc2.Visible = false;
+                        clsPlanStopExclusion2.Visibility = Visibility.Hidden;
+                        gboxPlanStopExc.Visibility = Visibility.Hidden;
+
+                        // グラフの幅を設定
+                        //chtGraph1.Width = 623;
+                        chtGraph1.Width = 689;
+                        //btnGraphData.Left = 429;
+                        marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10 - btnExclData.Width - 10;
+                        btnGraphData.Margin = marginGraphData;
+                        //btnExclData.Left = 394;
+                        marginExclData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                        btnExclData.Margin = marginExclData;
+
+                        break;
+                    default:
+                        break;
+                }
+
+                // ウィンドウの高さを設定
+                if (gBoxExclusion.Visibility != Visibility.Visible)
+                {
+                    this.Height = this.Height - 170;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 表示　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDisp_Click(object sender, RoutedEventArgs e)
+        {
+            // WPF版：待機カーソルにする
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+            // グラフ表示
+            switch (vm.KindGraph())
+            {
+                case 1:
+                    // (1)稼働時間　表示
+                    dispGraph1();
+
+                    break;
+                case 2:
+                    // (2) 計画停止時間　表示
+                    dispGraph2();
+
+                    break;
+                case 3:
+                    // (3)ライン停止　表示
+                    dispGraph3();
+
+                    break;
+                default:
+                    break;
+            }
+
+            // WPF版：デフォルトカーソルにする
+            Mouse.OverrideCursor = null;
+        }
+
+        /// <summary>
+        /// (1)稼働時間　表示
+        /// </summary>
+        private void dispGraph1()
+        {
+            // グラフ表示
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // DataGridへの表示
+                vm.DtMain = vm.FrmTargetData.GetSelectedData();
+                gvMain.ItemsSource = vm.DtMain.DefaultView;
+
+                // 稼働時間グラフデータ設定
+                showKadou();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 稼働時間グラフデータ設定
+        /// </summary>
+        private void showKadou()
+        {
+            //string queryString = "SELECT * FROM [(1) 稼働時間 (全体像)]";
+            //string queryString = " SELECT TMP_DB_FIX.RECSBT_N, TMP_DB_FIX.稼働月 AS 月, Sum(TMP_DB_FIX.TIME_MINUTE_REAL) AS [合計/実績データ期間分N], Int(Sum([TIME_MINUTE_REAL])/60) AS 時間,"
+            //    + " Sum([TIME_MINUTE_REAL])-(Int(Sum([TIME_MINUTE_REAL])/60)*60) AS 分"
+            //    + " FROM TMP_DB_FIX"
+            //    + " GROUP BY TMP_DB_FIX.RECSBT_N, TMP_DB_FIX.稼働月";
+
+            DataTable dtBase = new DataTable();
+
+            // 読み込み
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // 対象リストを設定
+                dtBase = vm.FrmTargetData.GetSelectedData();
+
+                // 対象月リスト
+                List<string> monthList = new List<string>();
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    //monthList.Add("'" + clstMonth.CheckedItems[i] + "'");
+                    CheckBox chk = (CheckBox)clstMonth.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        monthList.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_month = monthList.Count > 0 ? " AND MONTH in (" + string.Join(",", monthList) + ")" : " AND (MONTH IS NULL OR MONTH = '')";
+
+                // メイン停止理由リスト
+                List<string> mainPSList = new List<string>();
+                if (clstPlanStop != null)
+                {
+                    for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                    {
+                        //mainPSList.Add("'" + clstPlanStop.CheckedItems[i].ToString() + "'");
+                        CheckBox chk = (CheckBox)clstPlanStop.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            mainPSList.Add("'" + chk.Content.ToString() + "'");
+                        }
+                    }
+
+                }
+                string check_mainPS = mainPSList.Count > 0 ? " AND SCHEDULED_STOP_WORK_1 in (" + string.Join(",", mainPSList) + ")" : " AND (SCHEDULED_STOP_WORK_1 IS NULL OR SCHEDULED_STOP_WORK_1 = '' )";
+
+                // 除外リスト
+                List<string> jogaiList = new List<string>();
+                if (!string.IsNullOrEmpty(cmbJogai.Text))
+                {
+                    for (int i = 0; i < clstJogai.Items.Count; i++)
+                    {
+                        CheckBox chk = (CheckBox)clstJogai.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            if (string.IsNullOrEmpty(chk.Content.ToString()))
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '' OR " + cmbJogai.Text + " IS NOT NULL)");
+                            }
+                            else
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '" + chk.Content.ToString() + "')");
+                            }
+                        }
+                    }
+                }
+                string jogai = jogaiList.Count > 0 ? " AND " + string.Join(" AND ", jogaiList) : "";
+
+                //string sqlSelect = " ( STATUS_NAME = '稼働' " + check_month + ") "
+                //    + "OR ( STATUS_NAME = '計画停止' " + check_month + check_mainPS + " )"
+                //    + "OR ( STATUS_NAME = 'ライン停止' " + check_month + " )";
+                string sqlSelect = ""
+                    + " ( "
+                    + "    ( STATUS_NAME = '稼働' " + check_month + ") "
+                    + " OR ( STATUS_NAME = '計画停止' " + check_month + check_mainPS + " )"
+                    + " OR ( STATUS_NAME = 'ライン停止' " + check_month + " )"
+                    + " ) " + jogai;
+
+                // 絞り込み実行
+                DataRow[] selDt = dtBase.Select(sqlSelect, "MONTH, SCHEDULED_STOP_WORK_1, UNSCHEDULED_STOP_REASON_1");
+                DataTable dtSelect = dtBase.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDt)
+                {
+                    DataRow newrow = dtSelect.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelect.Rows.Add(newrow);
+                }
+
+                // 検索結果をグループ化する
+                var months = dtSelect.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                vm.DtGraph1 = new DataTable();
+                vm.DtGraph1.Columns.Add(new DataColumn("月"));
+                vm.DtGraph1.Columns.Add(new DataColumn("稼働日数"));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data1_1", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data1_2", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data2_1", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data2_2", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data3_1", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("Data3_2", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("合計", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("JURYO_TOTAL", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("JURYO_DAY", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("JURYO_MINUTE", Type.GetType("System.String")));
+                vm.DtGraph1.Columns["Data1_1"].Caption = "製管時間";
+                vm.DtGraph1.Columns["Data1_2"].Caption = "時間構成比";
+                vm.DtGraph1.Columns["Data2_1"].Caption = "計画停止";
+                vm.DtGraph1.Columns["Data2_2"].Caption = "時間構成比";
+                vm.DtGraph1.Columns["Data3_1"].Caption = "ライン停止";
+                vm.DtGraph1.Columns["Data3_2"].Caption = "時間構成比";
+                vm.DtGraph1.Columns["JURYO_TOTAL"].Caption = "製管重量\n合計(kg)";
+                vm.DtGraph1.Columns["JURYO_DAY"].Caption = "\n/日(kg)";
+                vm.DtGraph1.Columns["JURYO_MINUTE"].Caption = "\n/分(kg)";
+                vm.DtGraph1.Columns["月"].ReadOnly = true;
+                vm.DtGraph1.Columns["稼働日数"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data1_1"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data1_2"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data2_1"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data2_2"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data3_1"].ReadOnly = true;
+                vm.DtGraph1.Columns["Data3_2"].ReadOnly = true;
+                vm.DtGraph1.Columns["合計"].ReadOnly = true;
+                vm.DtGraph1.Columns["JURYO_TOTAL"].ReadOnly = true;
+                vm.DtGraph1.Columns["JURYO_DAY"].ReadOnly = true;
+                vm.DtGraph1.Columns["JURYO_MINUTE"].ReadOnly = true;
+
+                vm.DtGraph2 = new DataTable();
+                vm.DtGraph2.Columns.Add(new DataColumn("稼働停止区分名"));
+                foreach (var month in months)
+                {
+                    vm.DtGraph2.Columns.Add(new DataColumn(month.Key, Type.GetType("System.String")));
+                    vm.DtGraph2.Columns[month.Key].Caption = MakeMonthString(month.Key);
+                    vm.DtGraph2.Columns[month.Key].ReadOnly = true;
+                }
+
+                DataTable dtGraph3 = new DataTable();
+                dtGraph3.Columns.Add(new DataColumn("月"));
+                dtGraph3.Columns.Add(new DataColumn("Data1_1", Type.GetType("System.Decimal")));
+                dtGraph3.Columns.Add(new DataColumn("Data2_1", Type.GetType("System.Decimal")));
+                dtGraph3.Columns.Add(new DataColumn("Data3_1", Type.GetType("System.Decimal")));
+                dtGraph3.Columns.Add(new DataColumn("Data1_2", Type.GetType("System.String")));
+                dtGraph3.Columns.Add(new DataColumn("Data2_2", Type.GetType("System.String")));
+                dtGraph3.Columns.Add(new DataColumn("Data3_2", Type.GetType("System.String")));
+                dtGraph3.Columns["月"].ReadOnly = true;
+                dtGraph3.Columns["Data1_1"].ReadOnly = true;
+                dtGraph3.Columns["Data2_1"].ReadOnly = true;
+                dtGraph3.Columns["Data3_1"].ReadOnly = true;
+                dtGraph3.Columns["Data1_2"].ReadOnly = true;
+                dtGraph3.Columns["Data2_2"].ReadOnly = true;
+                dtGraph3.Columns["Data3_2"].ReadOnly = true;
+
+                // 控除データテーブル生成
+                vm.DtGraphDe = new DataTable();
+                vm.DtGraphDe.Columns.Add(new DataColumn("稼働停止区分名"));
+                foreach (var month in months)
+                {
+                    vm.DtGraphDe.Columns.Add(new DataColumn(month.Key, Type.GetType("System.String")));
+                    vm.DtGraphDe.Columns[month.Key].Caption = MakeMonthString(month.Key);
+                    vm.DtGraphDe.Columns[month.Key].ReadOnly = true;
+                }
+                #endregion
+
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                recsbt_list.Add("稼働");
+                recsbt_list.Add("計画停止");
+                recsbt_list.Add("ライン停止");
+
+                // 控除のデータを求める
+                decimal[] dedplan = new decimal[month_list.Count];  // 控除：計画停止データ
+                decimal[] dedline = new decimal[month_list.Count];  // 控除：ライン停止データ
+
+                // 控除：計画停止
+                if (chkDeduction.IsChecked == true && clsPlanStopExclusion1.Items.Count > 0)
+                {
+                    String sqlSelBase = vm.Dbaccess.MakeSelectString(clstMonth, null, null, null);
+
+                    sqlSelBase = " 0=0 " + check_month;
+
+                    // 計画停止2除外リスト
+                    List<string> planStop2List = new List<string>();
+                    for (int i = 0; i < clsPlanStopExclusion2.Items.Count; i++)
+                    {
+                        //planStop2List.Add("'" + clsPlanStopExclusion2.CheckedItems[i].ToString() + "'");
+                        CheckBox chk = (CheckBox)clsPlanStopExclusion2.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            planStop2List.Add("'" + chk.Content.ToString() + "'");
+                        }
+                    }
+                    string planStop2 = planStop2List.Count > 0
+                        ? "UNSCHEDULED_STOP_REASON_2 in (" + string.Join(",", planStop2List) + ")"
+                        : "( UNSCHEDULED_STOP_REASON_2 IS NULL OR UNSCHEDULED_STOP_REASON_2='' )";
+
+                    // 計画停止1除外リスト
+                    List<string> planStop1List = new List<string>();
+                    for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                    {
+                        //planStop1List.Add(" ( UNSCHEDULED_STOP_REASON_1 = '" + clsPlanStopExclusion1.CheckedItems[i].ToString() + "' AND " + planStop2 + " ) ");
+                        CheckBox chk = (CheckBox)clsPlanStopExclusion1.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            planStop1List.Add(" ( UNSCHEDULED_STOP_REASON_1 = '" + chk.Content.ToString() + "' AND " + planStop2 + " ) ");
+                        }
+                    }
+                    string planStop1 = planStop1List.Count > 0
+                        ? "(" + string.Join(" OR ", planStop1List) + ")"
+                        : "(UNSCHEDULED_STOP_REASON_1 IS NULL OR UNSCHEDULED_STOP_REASON_1 = '' )";
+
+                    String sqlSelDeductionPlan = sqlSelBase
+                        + " AND STATUS_NAME ='ライン停止' AND EXCLUDE_UNSCHEDULED_STOP = '" + cmbExcFlag1.Text + "' AND " + planStop1;
+
+                    // 控除データを取得する
+                    dedplan = GetDeductionData(dtBase, sqlSelDeductionPlan, month_list);
+
+                }
+                else
+                {
+                    int mcount = 0;
+                    foreach (var month in months)
+                    {
+                        dedplan[mcount] = 0;
+                        mcount++;
+                    }
+                }
+
+                // 控除：ライン停止
+                if (chkDeduction.IsChecked == true && clstLineStopExclusion1.Items.Count > 0)
+                {
+                    String sqlSelBase = vm.Dbaccess.MakeSelectString(clstMonth, null, null, null);
+
+                    sqlSelBase = " 0=0 " + check_month;
+
+                    // ライン停止2除外リスト
+                    List<string> lineStop2List = new List<string>();
+                    for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                    {
+                        //lineStop2List.Add("'" + clstLineStopExclusion2.CheckedItems[i].ToString() + "'");
+                        CheckBox chk = (CheckBox)clstLineStopExclusion2.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            lineStop2List.Add("'" + chk.Content.ToString() + "'");
+                        }
+                    }
+                    string lineStop2 = lineStop2List.Count > 0
+                        ? "UNSCHEDULED_STOP_REASON_2 in (" + string.Join(",", lineStop2List) + ")"
+                        : "( UNSCHEDULED_STOP_REASON_2 IS NULL OR UNSCHEDULED_STOP_REASON_2='' )";
+
+                    // ライン停止1除外リスト
+                    List<string> lineStop1List = new List<string>();
+                    for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                    {
+                        //lineStop1List.Add(" ( UNSCHEDULED_STOP_REASON_1 = '" + clstLineStopExclusion1.CheckedItems[i].ToString() + "' AND " + lineStop2 + " ) ");
+                        CheckBox chk = (CheckBox)clstLineStopExclusion1.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            lineStop1List.Add(" ( UNSCHEDULED_STOP_REASON_1 = '" + chk.Content.ToString() + "' AND " + lineStop2 + " ) ");
+                        }
+                    }
+                    string lineStop1 = lineStop1List.Count > 0
+                        ? "(" + string.Join(" OR ", lineStop1List) + ")"
+                        : " (UNSCHEDULED_STOP_REASON_1 IS NULL OR UNSCHEDULED_STOP_REASON_1 = '' )";
+
+                    String sqlSelDeductionLine = sqlSelBase
+                        + " AND STATUS_NAME ='ライン停止' AND EXCLUDE_UNSCHEDULED_STOP = '" + Common.NonTarget + "' AND " + lineStop1;
+
+                    // 控除データを取得する
+                    dedline = GetDeductionData(dtBase, sqlSelDeductionLine, month_list);
+                }
+                else
+                {
+                    int mcount = 0;
+                    foreach (var month in months)
+                    {
+                        dedline[mcount] = 0;
+                        mcount++;
+                    }
+                }
+
+                // 月でまとめる
+                int mcnt = 0;
+                foreach (var month in months)
+                {
+                    DataRow row1 = vm.DtGraph1.NewRow();
+                    DataRow row2 = dtGraph3.NewRow();
+
+                    row1["月"] = month.Key;
+
+                    row2["月"] = month.Key;
+
+                    // グラフデータを集計する
+                    var list = dtSelect.AsEnumerable().Where(x => x["MONTH"].Equals(month.Key)).ToList();
+                    decimal total = 0;
+                    decimal total_1 = 0;
+                    decimal total_2 = 0;
+                    decimal total_3 = 0;
+                    decimal juryo_total = 0;
+                    foreach (var row in list)
+                    {
+                        string STANDARD_TIME_MINUTE = row["STANDARD_TIME_MINUTE"].ToString();
+                        STANDARD_TIME_MINUTE = string.IsNullOrEmpty(STANDARD_TIME_MINUTE) ? "0" : STANDARD_TIME_MINUTE;
+                        // 合計/実績データ期間分N
+                        int data = 0;
+                        try { int.TryParse(STANDARD_TIME_MINUTE, out data); } catch { data = 0; }
+                        decimal sumdata = data;
+                        decimal timedata = sumdata / 60;                    // 時間
+                        decimal mindata = sumdata - (timedata * 60);        // 分
+
+                        mindata = data;
+
+                        if (row["STATUS_NAME"].Equals("稼働"))
+                        {
+                            total_1 += sumdata;
+                            total += sumdata;
+                        }
+                        else if (row["STATUS_NAME"].Equals("計画停止"))
+                        {
+                            total_2 += sumdata;
+                            total += sumdata;
+                        }
+                        else if (row["STATUS_NAME"].Equals("ライン停止"))
+                        {
+                            total_3 += sumdata;
+                            total += sumdata;
+                        }
+
+                        string JURYO = row["OTHER_DATA_2"].ToString();
+                        JURYO = string.IsNullOrEmpty(JURYO) ? "0" : JURYO;
+                        int i_juryo = 0;
+                        try { int.TryParse(JURYO, out i_juryo); } catch { i_juryo = 0; }
+                        juryo_total += i_juryo;
+
+                    }
+                    // 控除のデータを設定する
+                    // 全体の計画停止データに「控除：計画停止」を加算
+                    total_2 += dedplan[mcnt];
+                    total += dedplan[mcnt];
+
+                    // 全体のライン停止データから「控除：計画停止」と「控除：ライン停止」を減算
+                    total_3 = total_3 - dedplan[mcnt] - dedline[mcnt];
+                    total = total - dedplan[mcnt] - dedline[mcnt];
+
+
+                    // 時間
+                    int hh_1 = (int)(total_1 == 0 ? 0 : total_1 / 60);
+                    int hh_2 = (int)(total_2 == 0 ? 0 : total_2 / 60);
+                    int hh_3 = (int)(total_3 == 0 ? 0 : total_3 / 60);
+                    // 分
+                    decimal mm_1 = (total_1 == 0 ? 0 : total_1 - (hh_1 * 60));
+                    decimal mm_2 = (total_2 == 0 ? 0 : total_2 - (hh_2 * 60));
+                    decimal mm_3 = (total_3 == 0 ? 0 : total_3 - (hh_3 * 60));
+
+                    row1["Data1_1"] = string.Format("{0:#0}時間{1:#0}分", hh_1, mm_1);
+                    row1["Data2_1"] = string.Format("{0:#0}時間{1:#0}分", hh_2, mm_2);
+                    row1["Data3_1"] = string.Format("{0:#0}時間{1:#0}分", hh_3, mm_3);
+
+                    // 計画停止時間構成比
+                    row1["Data1_2"] = string.Format("{0:P}", (total_1 == 0 ? 0 : total_1 / total));
+                    row1["Data2_2"] = string.Format("{0:P}", (total_2 == 0 ? 0 : total_2 / total));
+                    row1["Data3_2"] = string.Format("{0:P}", (total_3 == 0 ? 0 : total_3 / total));
+
+                    // 合計
+                    int hh_t = (int)(total == 0 ? 0 : total / 60);
+                    decimal mm_t = (total == 0 ? 0 : total - (hh_t * 60));
+                    row1["合計"] = string.Format("{0:#0}時間{1:#0}分", hh_t, mm_t);
+
+                    // 稼働日数を求める
+                    var daylist = list.AsEnumerable().GroupBy(x => x["DAY"].ToString()).ToList();
+                    row1["稼働日数"] = string.Format("{0}", daylist.Count);
+
+                    // 製管重量
+                    decimal juryo_day = juryo_total / daylist.Count;
+                    //decimal juryo_minute = juryo_total / (total_1 == 0 ? 0 : total_1 / 60) / 60;
+                    decimal juryo_minute = total_1 == 0 ? 0 : juryo_total / (total_1 / 60) / 60;
+                    row1["JURYO_TOTAL"] = string.Format("{0:f0}", juryo_total);
+                    row1["JURYO_DAY"] = string.Format("{0:f0}", juryo_day);
+                    row1["JURYO_MINUTE"] = string.Format("{0:f1}", juryo_minute);
+
+                    // グラフ用データ
+                    row2["Data1_1"] = total_1;
+                    row2["Data2_1"] = total_2;
+                    row2["Data3_1"] = total_3;
+                    row2["Data1_2"] = string.Format("{0:P}", (total_1 == 0 ? 0 : total_1 / total));
+                    row2["Data2_2"] = string.Format("{0:P}", (total_2 == 0 ? 0 : total_2 / total));
+                    row2["Data3_2"] = string.Format("{0:P}", (total_3 == 0 ? 0 : total_3 / total));
+
+                    vm.DtGraph1.Rows.Add(row1);
+                    dtGraph3.Rows.Add(row2);
+
+                    mcnt++;
+                }
+
+                // DataGridへの表示
+                gvGraph1.ItemsSource = vm.DtGraph1.DefaultView;
+                // 列ヘッダを設定
+                for (int i = 0; i < gvGraph1.Columns.Count; i++)
+                {
+                    gvGraph1.Columns[i].Header = vm.DtGraph1.Columns[i].Caption;
+                }
+
+                // 稼働時間グラフ表示
+                showKadouGraph(dtGraph3, recsbt_list, month_list);
+
+                // グラフデータ生成
+                DataRow row2_kadou = vm.DtGraph2.NewRow();
+                row2_kadou["稼働停止区分名"] = "稼働";
+                foreach (DataRow row in dtGraph3.Rows)
+                {
+                    string month = row["月"].ToString();
+                    row2_kadou[month] = row["Data1_1"];
+                }
+                vm.DtGraph2.Rows.Add(row2_kadou);
+
+                DataRow row2_ps = vm.DtGraph2.NewRow();
+                row2_ps["稼働停止区分名"] = "計画停止";
+                foreach (DataRow row in dtGraph3.Rows)
+                {
+                    string month = row["月"].ToString();
+                    row2_ps[month] = row["Data2_1"];
+                }
+                vm.DtGraph2.Rows.Add(row2_ps);
+
+                DataRow row2_ls = vm.DtGraph2.NewRow();
+                row2_ls["稼働停止区分名"] = "ライン停止";
+                foreach (DataRow row in dtGraph3.Rows)
+                {
+                    string month = row["月"].ToString();
+                    row2_ls[month] = row["Data3_1"];
+                }
+                vm.DtGraph2.Rows.Add(row2_ls);
+
+                DataRow row2_juryo = vm.DtGraph2.NewRow();
+                row2_juryo["稼働停止区分名"] = "製管重量／分";
+                foreach (DataRow row in vm.DtGraph1.Rows)
+                {
+                    string month = row["月"].ToString();
+                    row2_juryo[month] = row["JURYO_MINUTE"];
+                }
+                vm.DtGraph2.Rows.Add(row2_juryo);
+
+                DataRow row2_time = vm.DtGraph2.NewRow();
+                row2_time["稼働停止区分名"] = "時間構成比";
+                foreach (DataRow row in dtGraph3.Rows)
+                {
+                    string month = row["月"].ToString();
+                    row2_time[month] = row["Data1_2"];
+                }
+                vm.DtGraph2.Rows.Add(row2_time);
+
+                DataRow row2_total = vm.DtGraph2.NewRow();
+                row2_total["稼働停止区分名"] = "総計";
+                foreach (DataRow row in dtGraph3.Rows)
+                {
+                    string month = row["月"].ToString();
+
+                    int kadou_count = 0;
+                    try { int.TryParse(row["Data1_1"].ToString(), out kadou_count); }
+                    catch { kadou_count = 0; }
+
+                    int ps_count = 0;
+                    try { int.TryParse(row["Data2_1"].ToString(), out ps_count); }
+                    catch { ps_count = 0; }
+
+                    int ls_count = 0;
+                    try { int.TryParse(row["Data3_1"].ToString(), out ls_count); }
+                    catch { ls_count = 0; }
+
+                    row2_total[month] = kadou_count + ps_count + ls_count;
+                }
+                vm.DtGraph2.Rows.Add(row2_total);
+
+                // 控除データ生成
+                DataRow row_psexc = vm.DtGraphDe.NewRow();
+                row_psexc["稼働停止区分名"] = "計画停止";
+                int psexc_cnt = 0;
+                foreach (var month in months)
+                {
+                    row_psexc[month.Key] = dedplan[psexc_cnt];
+                    psexc_cnt++;
+                }
+                vm.DtGraphDe.Rows.Add(row_psexc);
+
+                DataRow row_lsexc = vm.DtGraphDe.NewRow();
+                row_lsexc["稼働停止区分名"] = "ライン停止";
+                int lsexc_cnt = 0;
+                foreach (var month in months)
+                {
+                    row_lsexc[month.Key] = dedline[lsexc_cnt];
+                    lsexc_cnt++;
+                }
+                vm.DtGraphDe.Rows.Add(row_lsexc);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 控除データを取得する
+        /// </summary>
+        /// <param name="dtBase">DB</param>
+        /// <param name="sqlSelect">SQL</param>
+        /// <param name="months">稼働月リスト</param>
+        /// <returns></returns>
+        private decimal[] GetDeductionData(DataTable dtBase, String sqlSelect, List<String> months)
+        {
+            // 控除のデータを求める
+            decimal[] deddata = new decimal[months.Count];  // 控除データ
+
+            // 絞り込み実行
+            DataRow[] selDtDe = dtBase.Select(sqlSelect, "MONTH");
+            DataTable dtSelect = dtBase.Clone();    // 構成のみコピー
+            foreach (DataRow row in selDtDe)
+            {
+                DataRow newrow = dtSelect.NewRow();
+
+                for (int i = 0; i < row.ItemArray.Length; i++)
+                {
+                    newrow[i] = row[i];
+                }
+                dtSelect.Rows.Add(newrow);
+            }
+            // 月でまとめる
+            int mcnt = 0;
+            foreach (var month in months)
+            {
+                var list = dtSelect.AsEnumerable().Where(x => x["MONTH"].Equals(month)).ToList();
+                foreach (var row in list)
+                {
+                    string STANDARD_TIME_MINUTE = row["STANDARD_TIME_MINUTE"].ToString();
+                    STANDARD_TIME_MINUTE = string.IsNullOrEmpty(STANDARD_TIME_MINUTE) ? "0" : STANDARD_TIME_MINUTE;
+
+                    // 合計/実績データ期間分N
+                    int data = 0;
+                    try
+                    {
+                        int.TryParse(STANDARD_TIME_MINUTE, out data);
+                    }
+                    catch
+                    {
+                        data = 0;
+                    }
+                    deddata[mcnt] += data;
+                }
+                mcnt++;
+            }
+            return deddata;
+        }
+
+        /// <summary>
+        /// 稼働時間グラフ表示
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="recsbts"></param>
+        /// <param name="months"></param>
+        private void showKadouGraph(DataTable dt, List<String> recsbts, List<String> months)
+        {
+            try
+            {
+                // WPF版：Chartコントロールの取得
+                var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+                var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+                string[] legends = recsbts.ToArray();   // 凡例
+
+                chtGraph1.Series.Clear();               // グラフ初期化
+                chtGraph1.Titles.Clear();               // タイトル初期化
+
+                // 稼働時間棒グラフ（左軸）
+                foreach (var item in legends)
+                {
+                    chtGraph1.Series.Add(item);         // グラフ追加
+                    // グラフの種類を指定（Columnは積み上げ縦棒グラフ）
+                    chtGraph1.Series[item].ChartType = SeriesChartType.StackedColumn;
+                    chtGraph1.Series[item].LegendText = item;   // 凡例に表示するテキストを指定
+                }
+                // Y軸タイトルを設定
+                chtGraph1.ChartAreas[0].AxisY.Title = "時間 分";
+                chtGraph1.ChartAreas[0].AxisY.TextOrientation = TextOrientation.Stacked;
+
+                // 時間構成比折れ線グラフ（右軸）
+                string item_line = "時間構成比";
+                chtGraph1.Series.Add(item_line);
+                chtGraph1.Series[item_line].YAxisType = AxisType.Secondary;
+                chtGraph1.Series[item_line].ChartType = SeriesChartType.Line;
+                // 右のY軸ラベルを%表示にする
+                chtGraph1.ChartAreas[0].AxisY2.LabelStyle.Format = "{0:P}";
+                chtGraph1.ChartAreas[0].AxisY2.MajorGrid.Enabled = false;   // 補助線を非表示
+                chtGraph1.Series[item_line].MarkerStyle = MarkerStyle.Circle;
+                chtGraph1.Series[item_line].LegendText = item_line;
+                // Y軸タイトルを設定
+                chtGraph1.ChartAreas[0].AxisY2.Title = "稼働時間の構成比 ％";
+                chtGraph1.ChartAreas[0].AxisY2.TextOrientation = TextOrientation.Stacked;
+
+                string[] xValues = months.ToArray();    // X軸のデータ
+                decimal[,] yValues = new decimal[recsbts.Count, months.Count];  // Y軸のデータ
+                double[,] yValues2 = new double[1, months.Count];               // Y軸のデータ
+                int colcount = 0;
+                double max = 0;
+                foreach (DataRow row in dt.Rows)
+                {
+                    try
+                    {
+                        yValues[0, colcount] = (decimal)row["Data1_1"];
+                    }
+                    catch
+                    {
+                        yValues[0, colcount] = 0;
+                    }
+                    try
+                    {
+                        yValues[1, colcount] = (decimal)row["Data2_1"];
+                    }
+                    catch
+                    {
+                        yValues[1, colcount] = 0;
+                    }
+                    try
+                    {
+                        yValues[2, colcount] = (decimal)row["Data3_1"];
+                    }
+                    catch
+                    {
+                        yValues[2, colcount] = 0;
+                    }
+                    double total = (double)(yValues[0, colcount] + yValues[1, colcount] + yValues[2, colcount]);
+                    if (max < total)
+                    {
+                        max = total;
+                    }
+                    try
+                    {
+                        string sdata = (string)row["Data1_2"];
+                        double pdata = 0;
+                        try
+                        {
+                            double.TryParse(sdata.Substring(0, sdata.Length - 1), out pdata);
+                        }
+                        catch
+                        {
+                            pdata = 0;
+                        }
+                        yValues2[0, colcount] = pdata / 100;
+                    }
+                    catch
+                    {
+                        yValues2[0, colcount] = 0;
+                    }
+
+                    colcount++;
+                }
+
+                for (int i = 0; i < xValues.Length; i++)
+                {
+                    for (int j = 0; j < yValues.GetLength(0); j++)
+                    {
+                        // グラフに追加するデータクラスを生成
+                        DataPoint dp = new DataPoint();
+                        // XとYの値を設定
+                        dp.SetValueXY(MakeMonthString(xValues[i]), yValues[j, i]);
+                        dp.IsValueShownAsLabel = true;      // グラフに値を表示するように指定
+                        // グラフにデータ追加
+                        chtGraph1.Series[legends[j]].Points.Add(dp);
+                    }
+                    for (int j = 0; j < yValues2.GetLength(0); j++)
+                    {
+                        // グラフに追加するデータクラスを生成
+                        DataPoint dp = new DataPoint();
+                        // XとYの値を設定
+                        dp.SetValueXY(MakeMonthString(xValues[i]), yValues2[j, i]);
+                        dp.IsValueShownAsLabel = true;      // グラフに値を表示するように指定
+                        // ラベルを％表示にする
+                        dp.Label = string.Format("{0:P}", yValues2[j, i]);
+                        // グラフにデータ追加
+                        chtGraph1.Series[item_line].Points.Add(dp);
+                    }
+                }
+                // 左のY軸最大値を1.25倍にする
+                //double maxnum = chtGraph1.ChartAreas[0].AxisY.Maximum * 1.25;
+                chtGraph1.ChartAreas[0].AxisY.Maximum = 25000 > max ? 25000 : max * 1.25;
+                chtGraph1.ChartAreas[0].AxisX.Minimum = 0;
+
+                // グラフのタイトルを設定
+                chtGraph1.Titles.Add("(1) 稼働時間 (全体像)");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// (2)計画停止時間　表示
+        /// </summary>
+        private void dispGraph2()
+        {
+            // グラフ表示
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // DataGridへの表示
+                vm.DtMain = vm.FrmTargetData.GetSelectedData();
+                gvMain.ItemsSource = vm.DtMain.DefaultView;
+
+                // 計画停止時間グラフデータ設定
+                showPlanStop();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 計画停止時間グラフデータ設定
+        /// </summary>
+        private void showPlanStop()
+        {
+            //string queryString = "SELECT * FROM [(2) 計画停止時間 (全体像)]";
+            //string queryString = "SELECT Left([KADOUYMD],6) AS 稼働月, DB_FIX.MAIN_PLAN_STOP_N AS メイン計画停止理由名, Avg(DB_FIX.TIME_MINUTE_REAL) AS 平均所要時間（分）,"
+            //    + "Count(DB_FIX.TIME_MINUTE_REAL) AS 件数, Sum(DB_FIX.TIME_MINUTE_REAL) AS 合計時間"
+            //    + "FROM DB_FIX"
+            //    + "WHERE(((DB_FIX.RECSBT) = "0"))"
+            //    + "GROUP BY Left([KADOUYMD],6), DB_FIX.MAIN_PLAN_STOP_N, DB_FIX.MAIN_PLAN_STOP_ID"
+            //    + "HAVING(((DB_FIX.MAIN_PLAN_STOP_ID)Is Not Null))"
+            //    + "ORDER BY Left([KADOUYMD],6), DB_FIX.MAIN_PLAN_STOP_N";
+
+            DataTable dtBase = new DataTable();
+
+            // 読み込み
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // 対象リストを設定
+                dtBase = vm.FrmTargetData.GetSelectedData();
+
+                // 対象月リスト
+                List<string> monthList = new List<string>();
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    //monthList.Add("'" + clstMonth.CheckedItems[i] + "'");
+                    CheckBox chk = (CheckBox)clstMonth.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        monthList.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_month = monthList.Count > 0 ? " AND MONTH in (" + string.Join(",", monthList) + ")" : " AND (MONTH IS NULL OR MONTH = '')";
+
+                // メイン停止理由リスト
+                List<string> mainPSList = new List<string>();
+                if (clstPlanStop != null)
+                {
+                    for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                    {
+                        //mainPSList.Add("'" + clstPlanStop.CheckedItems[i].ToString() + "'");
+                        CheckBox chk = (CheckBox)clstPlanStop.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            mainPSList.Add("'" + chk.Content.ToString() + "'");
+                        }
+                    }
+
+                }
+                string check_mainPS = mainPSList.Count > 0 ? " AND OTHER_DATA_1 in (" + string.Join(",", mainPSList) + ")" : " AND (OTHER_DATA_1 IS NULL OR OTHER_DATA_1 = '' )";
+
+                // 除外リスト
+                List<string> jogaiList = new List<string>();
+                if (!string.IsNullOrEmpty(cmbJogai.Text))
+                {
+                    for (int i = 0; i < clstJogai.Items.Count; i++)
+                    {
+                        CheckBox chk = (CheckBox)clstJogai.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            if (string.IsNullOrEmpty(chk.Content.ToString()))
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '' OR " + cmbJogai.Text + " IS NOT NULL)");
+                            }
+                            else
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '" + chk.Content.ToString() + "')");
+                            }
+                        }
+                    }
+                }
+                string jogai = jogaiList.Count > 0 ? " AND " + string.Join(" AND ", jogaiList) : "";
+
+                //string sqlSelect = " STATUS_NAME = '計画停止' " + check_month + check_mainPS;
+                string sqlSelect = " STATUS_NAME = '計画停止' " + check_month + check_mainPS + jogai;
+
+                // 絞り込み実行
+                DataRow[] selDt = dtBase.Select(sqlSelect, "MONTH, OTHER_DATA_1");
+                DataTable dtSelect = dtBase.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDt)
+                {
+                    DataRow newrow = dtSelect.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelect.Rows.Add(newrow);
+                }
+
+                // 検索結果をグループ化する
+                var keys = dtSelect.AsEnumerable().GroupBy(x => x["OTHER_DATA_1"].ToString());
+                var months = dtSelect.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                vm.DtGraph1 = new DataTable();
+                vm.DtGraph1.Columns.Add(new DataColumn("稼働月"));
+                vm.DtGraph1.Columns.Add(new DataColumn("メイン計画停止理由名", Type.GetType("System.String")));
+                vm.DtGraph1.Columns.Add(new DataColumn("平均所要時間（分）", Type.GetType("System.Decimal")));
+                vm.DtGraph1.Columns.Add(new DataColumn("件数", Type.GetType("System.Decimal")));
+                vm.DtGraph1.Columns.Add(new DataColumn("合計時間", Type.GetType("System.String")));
+                vm.DtGraph1.Columns["稼働月"].ReadOnly = true;
+                vm.DtGraph1.Columns["メイン計画停止理由名"].ReadOnly = true;
+                vm.DtGraph1.Columns["平均所要時間（分）"].ReadOnly = true;
+                vm.DtGraph1.Columns["件数"].ReadOnly = true;
+                vm.DtGraph1.Columns["合計時間"].ReadOnly = true;
+
+                vm.DtGraph2 = new DataTable();
+                vm.DtGraph2.Columns.Add(new DataColumn("メイン計画停止理由名", Type.GetType("System.String")));
+                vm.DtGraph2.Columns.Add(new DataColumn("合計時間", Type.GetType("System.Decimal")));
+                vm.DtGraph2.Columns.Add(new DataColumn("%", Type.GetType("System.String")));
+                #endregion
+
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                foreach (var recsbt_n in keys)
+                {
+                    recsbt_list.Add(recsbt_n.Key);
+                }
+
+                // 平均所要時間（分） を求める
+                double[,] time_minute_real_sum = new double[recsbt_list.Count, month_list.Count];
+                double[,] time_minute_real_cnt = new double[recsbt_list.Count, month_list.Count];
+                double[,] time_minute_real_avg = new double[recsbt_list.Count, month_list.Count];
+                double time_minute_real_avg_max = 0;       // 表内Bar用最大値
+                // メイン計画停止理由名でまとめる
+                int rcnt = 0;
+                int mcnt = 0;
+                foreach (var recsbt_n in keys)
+                {
+                    // 月でまとめる
+                    mcnt = 0;
+                    foreach (var month in months)
+                    {
+                        var list = dtSelect.AsEnumerable().Where(x => x["OTHER_DATA_1"].Equals(recsbt_n.Key)
+                            && x["MONTH"].Equals(month.Key)).ToList();
+
+                        // 集計する為、String→Decimalにしたテーブルにコピーする
+                        DataTable dtsum = dtSelect.Clone(); // 構成のみコピー
+                        dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                        double count = 0;
+                        foreach (var row in list)
+                        {
+                            DataRow newrow = dtsum.NewRow();
+
+                            for (int i = 0; i < row.ItemArray.Length; i++)
+                            {
+                                newrow[i] = row[i];
+                            }
+                            dtsum.Rows.Add(newrow);
+                            if (!string.IsNullOrEmpty(newrow["STANDARD_TIME_MINUTE"].ToString()))
+                            {
+                                count++;
+                            }
+                        }
+
+                        object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                        double data = 0;
+                        try
+                        {
+                            double.TryParse(total.ToString(), out data);
+                        }
+                        catch
+                        {
+                            data = 0;
+                        }
+                        time_minute_real_sum[rcnt, mcnt] = data;
+                        time_minute_real_cnt[rcnt, mcnt] = count;
+                        time_minute_real_avg[rcnt, mcnt] = (count == 0 ? 0 : data / count);
+
+                        // 表内Bar用最大値を更新
+                        if (time_minute_real_avg_max < time_minute_real_avg[rcnt, mcnt])
+                        {
+                            time_minute_real_avg_max = time_minute_real_avg[rcnt, mcnt];
+                        }
+
+                        mcnt++;
+                    }
+                    rcnt++;
+                }
+
+                // 月でまとめる
+                mcnt = 0;
+                double[] time_minute_real_total = new double[recsbt_list.Count];
+                for (int i = 0; i < recsbt_list.Count; i++)
+                {
+                    time_minute_real_total[i] = 0;
+                }
+                foreach (var month in months)
+                {
+                    // メイン計画停止理由名でまとめる
+                    rcnt = 0;
+                    foreach (var recsbt_n in keys)
+                    {
+                        DataRow row1 = vm.DtGraph1.NewRow();
+
+                        time_minute_real_total[rcnt] += time_minute_real_sum[rcnt, mcnt];
+
+                        row1["稼働月"] = month.Key;
+                        row1["メイン計画停止理由名"] = recsbt_n.Key;
+                        row1["平均所要時間（分）"] = Math.Round(time_minute_real_avg[rcnt, mcnt], MidpointRounding.AwayFromZero);
+                        row1["件数"] = time_minute_real_cnt[rcnt, mcnt];
+                        row1["合計時間"] = string.Format("{0:#,#0}", time_minute_real_sum[rcnt, mcnt]);
+
+                        vm.DtGraph1.Rows.Add(row1);
+                        rcnt++;
+                    }
+                    mcnt++;
+                }
+
+                // メイン計画停止理由名でまとめる
+                rcnt = 0;
+                DataTable dtGraph2Buf = vm.DtGraph2.Clone();
+                foreach (var recsbt_n in keys)
+                {
+                    DataRow row2 = dtGraph2Buf.NewRow();
+
+                    row2["メイン計画停止理由名"] = recsbt_n.Key;
+                    row2["合計時間"] = time_minute_real_total[rcnt];
+                    row2["%"] = string.Format("{0:0.0}", time_minute_real_total[rcnt] / time_minute_real_total.Sum() * 100) + "%";
+
+                    dtGraph2Buf.Rows.Add(row2);
+
+                    rcnt++;
+                }
+
+                // 合計時間の降順で円グラフの要素を並べ替え
+                List<DataRow> dtGraph2OrderBy = dtGraph2Buf.AsEnumerable().OrderByDescending(x => x["合計時間"]).ToList();
+
+                foreach (DataRow row in dtGraph2OrderBy)
+                {
+                    DataRow row2 = vm.DtGraph2.NewRow();
+                    row2.ItemArray = row.ItemArray;
+                    vm.DtGraph2.Rows.Add(row2);
+                }
+
+                DataRow total_row = vm.DtGraph2.NewRow();
+
+                total_row["メイン計画停止理由名"] = "総計";
+                total_row["合計時間"] = time_minute_real_total.Sum();
+                total_row["%"] = "100.0%";
+
+                vm.DtGraph2.Rows.Add(total_row);
+
+                // 選択データを保存
+                vm.DtPlanSelect = new DataTable();
+                vm.DtPlanSelect = dtSelect.Copy();     // 構成とデータをコピー
+
+                // DataGridへの表示
+                gvGraph1.Columns.Clear();
+                gvGraph1.ItemsSource = vm.DtGraph1.DefaultView;
+
+                // 列ヘッダを設定
+                for (int i = 0; i < gvGraph1.Columns.Count; i++)
+                {
+                    gvGraph1.Columns[i].Header = vm.DtGraph1.Columns[i].Caption;
+                }
+
+                // ProgressColumn列を追加する
+                /*
+                DataGridViewProgressColumn pbColumn = new DataGridViewProgressColumn();
+                pbColumn.Name = "Bar";
+                pbColumn.HeaderText = "平均所要時間（分）";
+                pbColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+                */
+                DataGridTemplateColumn pbColumn = new DataGridTemplateColumn();
+                pbColumn.Header = "平均所要時間（分）";
+                FrameworkElementFactory cProgressBar = new FrameworkElementFactory(typeof(ProgressBar));
+                cProgressBar.SetBinding(ProgressBar.ValueProperty, new Binding("Bar"));
+                cProgressBar.SetBinding(ProgressBar.ForegroundProperty, new Binding("FrColor"));
+                pbColumn.CellTemplate = new DataTemplate { VisualTree = cProgressBar };
+                pbColumn.Width = DataGridLength.Auto;
+
+                gvGraph1.Columns.Insert(3, pbColumn);
+
+                // WPF版：DataGrid データ設定
+                if (vm.DtGraph1.Rows.Count > 0)
+                {
+                    DataTable dtGraph1Data = vm.DtGraph1.Copy();
+                    dtGraph1Data.Columns.Add(new DataColumn("Bar", Type.GetType("System.Decimal")));
+                    dtGraph1Data.Columns.Add(new DataColumn("FrColor", Type.GetType("System.String")));
+                    Graph1List = dtGraph1Data.AsEnumerable().ToList<DataRow>();
+                }
+                else
+                {
+                    Graph1List = null;
+                }
+
+                // 最大値を100として割合のデータを設定
+                //foreach (DataGridViewRow row in gvGraph1.Rows)
+                foreach (DataRow row in Graph1List)
+                {
+                    int data = 0;
+                    try
+                    {
+                        //int.TryParse(row.Cells["平均所要時間（分）"].Value.ToString(), out data);
+                        int.TryParse(row["平均所要時間（分）"].ToString(), out data);
+                    }
+                    catch
+                    {
+                        data = 0;
+                    }
+                    string sdata = string.Format("{0:P}", (time_minute_real_avg_max == 0 ? 0 : data / time_minute_real_avg_max));
+                    double pdata = 0;
+                    double.TryParse(sdata.Substring(0, sdata.Length - 1), out pdata);
+                    //row.Cells["Bar"].Value = (int)Math.Round(pdata);
+                    row["Bar"] = (int)Math.Round(pdata);
+
+                    // 円グラフの要素に合わせて色を変える
+                    for (int i = 0; i < dtGraph2OrderBy.Count; i++)
+                    {
+                        //if (row.Cells["メイン計画停止理由名"].Value.ToString().Equals(dtGraph2OrderBy[i]["メイン計画停止理由名"].ToString()))
+                        if (row["メイン計画停止理由名"].ToString().Equals(dtGraph2OrderBy[i]["メイン計画停止理由名"].ToString()))
+                        {
+                            int pos = i % MyChartColors.Count();
+                            //row.Cells["Bar"].Style.ForeColor = MyChartColors[pos];
+                            row["FrColor"] = MyChartColors[pos].ToString();
+                        }
+                    }
+                }
+                // WPF版：DataGrid データ設定
+                if (Graph1List.Count > 0)
+                {
+                    DataTable dtDisp = Graph1List.CopyToDataTable();
+
+                    gvGraph1.ItemsSource = dtDisp.DefaultView;
+                    // ProgressBarの表示位置を変更
+                    gvGraph1.Columns[0].DisplayIndex = 3;
+                    // Bar用の列を非表示にする
+                    gvGraph1.Columns[6].Visibility = Visibility.Hidden;
+                    gvGraph1.Columns[7].Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    Graph1List = null;
+                }
+
+                // 計画停止時間グラフ表示
+                showPlanStopGraph(dtGraph2OrderBy, month_list);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 計画停止時間グラフ表示
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="months"></param>
+        private void showPlanStopGraph(List<DataRow> dt, List<String> months)
+        {
+            try
+            {
+                // WPF版：Chartコントロールの取得
+                var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+                var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+                List<string> legends = new List<string>();   // 凡例
+                foreach (DataRow row in dt)
+                {
+                    legends.Add(row["メイン計画停止理由名"].ToString());
+                }
+
+                chtGraph1.Series.Clear();               // グラフ初期化
+                chtGraph1.Titles.Clear();               // タイトル初期化
+
+                foreach (var item in legends)
+                {
+                    chtGraph1.Series.Add(item);         // グラフ追加
+                                                        // グラフの種類を指定（円グラフ）
+                    chtGraph1.Series[item].ChartType = SeriesChartType.Pie;
+                    chtGraph1.Series[item].LegendText = item;  // 凡例に表示するテキストを指定
+                    chtGraph1.Series[item].CustomProperties = @"PieStartAngle=270";    // スタートする角度を270度（天頂）にする
+                    chtGraph1.Series[item].Label = "#PERCENT{#0.0%}";                  // パーセント表示にする
+                    break;
+                }
+                // カラーパレットを指定する
+                chtGraph1.Palette = ChartColorPalette.None;
+                //chtGraph1.PaletteCustomColors = MyChartColors;
+                //****System.Drawing.Colorを解決しないといけない
+
+                string[] xValues = legends.ToArray();    // X軸のデータ
+                decimal[,] yValues = new decimal[legends.Count, 1];    // Y軸のデータ
+                int rowcount = 0;
+                foreach (DataRow row in dt)
+                {
+                    yValues[rowcount, 0] = (decimal)row["合計時間"];
+
+                    rowcount++;
+                }
+
+                for (int i = 0; i < xValues.Length; i++)
+                {
+                    for (int j = 0; j < 1; j++)
+                    {
+                        // グラフに追加するデータクラスを生成
+                        DataPoint dp = new DataPoint();
+                        // XとYの値を設定
+                        dp.SetValueXY(i, yValues[i, 0]);
+                        dp.IsValueShownAsLabel = true;  // グラフに値を表示するように指定
+                        dp.LegendText = legends[i];     // 凡例に表示するテキストを指定
+                        // グラフにデータ追加
+                        chtGraph1.Series[legends[0]].Points.Add(dp);
+                    }
+                }
+                // グラフのタイトルを設定
+                chtGraph1.Titles.Add("(2) 計画停止時間 (全体像)");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// (3)ライン停止　表示
+        /// </summary>
+        private void dispGraph3()
+        {
+            // グラフ表示
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // DataGridへの表示
+                vm.DtMain = vm.FrmTargetData.GetSelectedData();
+                gvMain.ItemsSource = vm.DtMain.DefaultView;
+
+                // ライン停止グラフデータ設定
+                showLineStop();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// ライン停止グラフデータ設定
+        /// </summary>
+        private void showLineStop()
+        {
+            //string queryString = "SELECT * FROM [(3) ライン停止 (全体像)]";
+            //string queryString = "SSELECT TMP_ライン停止理由_年月.KADOUYM AS 稼働月, TMP_ライン停止理由_年月.EMG_STOP_N_1 AS 異常停止停止理由名_1, Sum(TMP_DB_FIX.TIME_MINUTE_REAL) AS[時間(分)]"
+            //    + "FROM TMP_ライン停止理由_年月 LEFT JOIN TMP_DB_FIX ON (TMP_ライン停止理由_年月.KADOUYM = TMP_DB_FIX.稼働月) AND(TMP_ライン停止理由_年月.EMG_STOP_N_1 = TMP_DB_FIX.EMG_STOP_N_1)"
+            //    + " AND(TMP_ライン停止理由_年月.RECSBT_N = TMP_DB_FIX.RECSBT_N)"
+            //    + "GROUP BY TMP_ライン停止理由_年月.KADOUYM, TMP_ライン停止理由_年月.EMG_STOP_N_1"
+            //    + "HAVING(((TMP_ライン停止理由_年月.EMG_STOP_N_1)Is Not Null))"
+            //    + "ORDER BY TMP_ライン停止理由_年月.KADOUYM, TMP_ライン停止理由_年月.EMG_STOP_N_1";
+
+            DataTable dtBase = new DataTable();
+
+            // 読み込み
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // 対象リストを設定
+                dtBase = vm.FrmTargetData.GetSelectedData();
+
+                // 対象月リスト
+                List<string> monthList = new List<string>();
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    //monthList.Add("'" + clstMonth.CheckedItems[i] + "'");
+                    CheckBox chk = (CheckBox)clstMonth.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        monthList.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_month = monthList.Count > 0 ? " AND MONTH in (" + string.Join(",", monthList) + ")" : " AND (MONTH IS NULL OR MONTH = '')";
+
+                // メイン停止理由リスト
+                List<string> mainPSList = new List<string>();
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    //mainPSList.Add("'" + clstPlanStop.CheckedItems[i].ToString() + "'");
+                    CheckBox chk = (CheckBox)clstPlanStop.Items[i];
+                    if (chk.IsChecked == true)
+                    {
+                        mainPSList.Add("'" + chk.Content.ToString() + "'");
+                    }
+                }
+                string check_mainPS = mainPSList.Count > 0 ? " AND UNSCHEDULED_STOP_REASON_1 in (" + string.Join(",", mainPSList) + ")" : " AND (UNSCHEDULED_STOP_REASON_1 IS NULL OR UNSCHEDULED_STOP_REASON_1 = '' )";
+
+                // 除外リスト
+                List<string> jogaiList = new List<string>();
+                if (!string.IsNullOrEmpty(cmbJogai.Text))
+                {
+                    for (int i = 0; i < clstJogai.Items.Count; i++)
+                    {
+                        CheckBox chk = (CheckBox)clstJogai.Items[i];
+                        if (chk.IsChecked == true)
+                        {
+                            if (string.IsNullOrEmpty(chk.Content.ToString()))
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '' OR " + cmbJogai.Text + " IS NOT NULL)");
+                            }
+                            else
+                            {
+                                jogaiList.Add("(" + cmbJogai.Text + " <> '" + chk.Content.ToString() + "')");
+                            }
+                        }
+                    }
+                }
+                string jogai = jogaiList.Count > 0 ? " AND " + string.Join(" AND ", jogaiList) : "";
+
+                //string sqlSelect = " STATUS_NAME = 'ライン停止'" + check_month + check_mainPS;
+                string sqlSelect = " STATUS_NAME = 'ライン停止'" + check_month + check_mainPS + jogai;
+
+                // 控除の場合
+                if (chkDeduction.IsChecked == true)
+                {
+                    sqlSelect += " AND (EXCLUDE_UNSCHEDULED_STOP = '" + Common.Target + "' OR EXCLUDE_UNSCHEDULED_STOP = '' OR EXCLUDE_UNSCHEDULED_STOP IS NULL)";
+                    //sqlSelect += " AND UNSCHEDULED_STOP_REASON_1 IS NOT NULL";
+                    //sqlSelect += " AND UNSCHEDULED_STOP_REASON_1 <> ''";
+
+                    // 控除：ライン停止
+                    if (clstLineStopExclusion1.Items.Count > 0)
+                    {
+
+                        // ライン停止2除外リスト
+                        List<string> lineStop2List = new List<string>();
+                        for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                        {
+                            CheckBox chk = (CheckBox)clstLineStopExclusion2.Items[i];
+                            if (chk.IsChecked == true)
+                            {
+                                lineStop2List.Add("'" + clstLineStopExclusion2.Items[i].ToString() + "'");
+                            }
+                        }
+                        string lineStop2 = lineStop2List.Count > 0
+                            ? "UNSCHEDULED_STOP_REASON_2 in (" + string.Join(",", lineStop2List) + ")"
+                            : "( UNSCHEDULED_STOP_REASON_2 IS NULL OR UNSCHEDULED_STOP_REASON_2='' )";
+
+                        // ライン停止1除外リスト
+                        List<string> lineStop1List = new List<string>();
+                        for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                        {
+                            CheckBox chk = (CheckBox)clstLineStopExclusion1.Items[i];
+                            if (chk.IsChecked == true)
+                            {
+                                lineStop1List.Add(" ( UNSCHEDULED_STOP_REASON_1 = '" + clstLineStopExclusion1.Items[i].ToString() + "' AND " + lineStop2 + " ) ");
+                            }
+                        }
+
+                        sqlSelect += lineStop1List.Count > 0
+                            ? " AND (" + string.Join(" OR ", lineStop1List) + ")"
+                            : " AND (UNSCHEDULED_STOP_REASON_1 IS NULL OR UNSCHEDULED_STOP_REASON_1 = '' )";
+
+                    }
+
+                }
+
+                // 絞り込み実行
+                DataRow[] selDt = dtBase.Select(sqlSelect, "MONTH, UNSCHEDULED_STOP_REASON_1");
+                DataTable dtSelect = dtBase.Clone();    // 構成のみコピー
+                foreach (DataRow row in selDt)
+                {
+                    DataRow newrow = dtSelect.NewRow();
+
+                    for (int i = 0; i < row.ItemArray.Length; i++)
+                    {
+                        newrow[i] = row[i];
+                    }
+                    dtSelect.Rows.Add(newrow);
+                }
+
+                var keys = dtSelect.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_1"].ToString());
+                var months = dtSelect.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+
+                #region "データテーブル生成"
+                // DataGrid用データテーブル生成
+                vm.DtGraph1 = new DataTable();
+                vm.DtGraph1.Columns.Add(new DataColumn("異常停止理由名_1", Type.GetType("System.String")));
+                vm.DtGraph1.Columns["異常停止理由名_1"].ReadOnly = true;
+
+                foreach (var month in months)
+                {
+                    vm.DtGraph1.Columns.Add(new DataColumn(month.Key, Type.GetType("System.String")));
+                    vm.DtGraph1.Columns[month.Key].Caption = MakeMonthString(month.Key);
+                    vm.DtGraph1.Columns[month.Key].ReadOnly = true;
+                }
+
+                // 控除データテーブル生成
+                vm.DtGraphDe = new DataTable();
+                vm.DtGraphDe.Columns.Add(new DataColumn("月"));
+                vm.DtGraphDe.Columns.Add(new DataColumn("控除：ライン停止", Type.GetType("System.String")));
+                #endregion
+
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                foreach (var recsbt_n in keys)
+                {
+                    recsbt_list.Add(recsbt_n.Key);
+                }
+
+                // 時間（分） を求める
+                decimal[,] time_minute_real_sum = new decimal[recsbt_list.Count + 1, month_list.Count];
+                // 異常停止理由名_1でまとめる
+                int rcnt = 0;
+                int mcnt = 0;
+                foreach (var recsbt_n in keys)
+                {
+                    // 月でまとめる
+                    mcnt = 0;
+                    foreach (var month in months)
+                    {
+                        var list = dtSelect.AsEnumerable().Where(
+                            x => x["UNSCHEDULED_STOP_REASON_1"].Equals(recsbt_n.Key) && x["MONTH"].Equals(month.Key)).ToList();
+                        // 集計する為、String→Decimalにしたテーブルにコピーする
+                        DataTable dtsum = dtSelect.Clone(); // 構成のみコピー
+                        dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                        foreach (var row in list)
+                        {
+                            DataRow newrow = dtsum.NewRow();
+
+                            for (int i = 0; i < row.ItemArray.Length; i++)
+                            {
+                                newrow[i] = row[i];
+                            }
+                            dtsum.Rows.Add(newrow);
+                        }
+
+                        object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                        int data = 0;
+                        try
+                        {
+                            int.TryParse(total.ToString(), out data);
+                        }
+                        catch
+                        {
+                            data = 0;
+                        }
+                        time_minute_real_sum[rcnt, mcnt] = data;
+
+                        mcnt++;
+                    }
+                    rcnt++;
+                }
+
+                // 月でまとめる
+                mcnt = 0;
+                decimal[] time_minute_real_total = new decimal[month_list.Count];
+                for (int i = 0; i < month_list.Count; i++)
+                {
+                    time_minute_real_sum[recsbt_list.Count, i] = 0;
+                }
+                foreach (var month in months)
+                {
+                    // 異常停止理由名_1でまとめる
+                    rcnt = 0;
+                    foreach (var recsbt_n in keys)
+                    {
+                        time_minute_real_sum[recsbt_list.Count, mcnt] += time_minute_real_sum[rcnt, mcnt];
+
+                        rcnt++;
+                    }
+                    mcnt++;
+                }
+
+                // DataGridに設定
+                rcnt = 0;
+                foreach (var recsbt_n in keys)
+                {
+                    DataRow row1 = vm.DtGraph1.NewRow();
+
+                    row1["異常停止理由名_1"] = recsbt_n.Key;
+                    for (int iy = 0; iy < month_list.Count; iy++)
+                    {
+                        row1[iy + 1] = string.Format("{0:#,#0}", time_minute_real_sum[rcnt, iy]);
+                    }
+                    vm.DtGraph1.Rows.Add(row1);
+                    rcnt++;
+                }
+                // 総計行を追加
+                DataRow row1total = vm.DtGraph1.NewRow();
+                row1total["異常停止理由名_1"] = "総計";
+                for (int iy = 0; iy < month_list.Count; iy++)
+                {
+                    row1total[iy + 1] = string.Format("{0:#,#0}", time_minute_real_sum[recsbt_list.Count, iy]);
+                }
+                vm.DtGraph1.Rows.Add(row1total);
+
+                // 選択データを保存
+                vm.DtLineSelect = dtSelect.Copy();     // 構成とデータをコピー
+
+                // DataGridへの表示
+                gvGraph1.ItemsSource = vm.DtGraph1.DefaultView;
+                // 列ヘッダを設定
+                for (int i = 0; i < gvGraph1.Columns.Count; i++)
+                {
+                    gvGraph1.Columns[i].Header = vm.DtGraph1.Columns[i].Caption;
+                }
+                // 総計行の背景色を設定:System.Drawing.Color.DarkTurquoise;
+                //gvGraph1.Rows[gvGraph1.Rows.Count - 1].DefaultCellStyle.BackColor = gvGraph1.ColumnHeadersDefaultCellStyle.BackColor;
+                // WPF版：LoadingRow
+
+                // グラフ用データテーブル生成
+                vm.DtGraph2 = new DataTable();
+                vm.DtGraph2.Columns.Add(new DataColumn("稼働月"));
+                vm.DtGraph2.Columns.Add(new DataColumn("異常停止理由名_1", Type.GetType("System.String")));
+                vm.DtGraph2.Columns.Add(new DataColumn("時間(分)", Type.GetType("System.Decimal")));
+
+                // 月でまとめる
+                mcnt = 0;
+                foreach (var month in months)
+                {
+                    // 異常停止理由名_1でまとめる
+                    rcnt = 0;
+                    foreach (var recsbt_n in keys)
+                    {
+                        DataRow row2 = vm.DtGraph2.NewRow();
+
+                        row2["稼働月"] = month.Key;
+                        row2["異常停止理由名_1"] = recsbt_n.Key;
+                        row2["時間(分)"] = time_minute_real_sum[rcnt, mcnt];
+
+                        vm.DtGraph2.Rows.Add(row2);
+
+                        rcnt++;
+                    }
+                    mcnt++;
+                }
+                // 控除のデータを設定する
+                if (chkDeduction.IsChecked == true)
+                {
+                    vm.DtGraphDe = vm.DtGraph2.Copy();
+                }
+
+                // ライン停止グラフ表示
+                showLineStopGraph(vm.DtGraph2, recsbt_list, month_list);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// ライン停止グラフ表示
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="recsbts"></param>
+        /// <param name="months"></param>
+        private void showLineStopGraph(DataTable dt, List<String> recsbts, List<String> months)
+        {
+            try
+            {
+                // WPF版：Chartコントロールの取得
+                var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+                var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+                string[] legends = recsbts.ToArray();   // 凡例
+
+                chtGraph1.Series.Clear();               // グラフ初期化
+                chtGraph1.Titles.Clear();               // タイトル初期化
+
+                // ライン停止時間積み上げ縦棒グラフ（左軸）
+                foreach (var item in legends)
+                {
+                    chtGraph1.Series.Add(item);         // グラフ追加
+                                                        // グラフの種類を指定（Columnは積み上げ縦棒グラフ）
+                    chtGraph1.Series[item].ChartType = SeriesChartType.StackedColumn;
+                    chtGraph1.Series[item].LegendText = item;  // 凡例に表示するテキストを指定
+                }
+                // Y軸タイトルを設定
+                chtGraph1.ChartAreas[0].AxisY.Title = "ライン停止時間 分／月";
+                chtGraph1.ChartAreas[0].AxisY.TextOrientation = TextOrientation.Stacked;
+
+                // 総計値を表示する為、マーカーが非表示のポイントグラフを描画する
+                // 総計値折れ線グラフ（右軸）
+                string item_line = "総計";
+                chtGraph1.Series.Add(item_line);
+                chtGraph1.Series[item_line].YAxisType = AxisType.Secondary;
+                chtGraph1.Series[item_line].ChartType = SeriesChartType.Point;
+                // 右の補助線を非表示にする
+                chtGraph1.ChartAreas[0].AxisY2.MajorGrid.Enabled = false;
+                chtGraph1.Series[item_line].MarkerSize = 0;     // マーカーのサイズを0にする
+                chtGraph1.Series[item_line].LegendText = item_line;
+
+                string[] xValues = months.ToArray();    // X軸のデータ
+                decimal[,] yValues = new decimal[recsbts.Count, months.Count];    // Y軸のデータ
+                foreach (DataRow row in dt.Rows)
+                {
+                    int xPos = 0;
+                    for (int ix = 0; ix < recsbts.Count; ix++)
+                    {
+                        if (recsbts[ix].Equals(row[1]))
+                        {
+                            xPos = ix;
+                            break;
+                        }
+                    }
+                    int yPos = 0;
+                    for (int iy = 0; iy < months.Count; iy++)
+                    {
+                        if (months[iy].Equals(row[0]))
+                        {
+                            yPos = iy;
+                            break;
+                        }
+                    }
+                    yValues[xPos, yPos] = 0;
+                    try
+                    {
+                        yValues[xPos, yPos] = (decimal)row["時間(分)"];
+                    }
+                    catch (Exception)
+                    {
+                        yValues[xPos, yPos] = 0;
+                    }
+                }
+
+                decimal[] total = new decimal[months.Count];    // 総計値
+                int otherpos = 0;
+                for (int i = 0; i < xValues.Length; i++)
+                {
+                    for (int j = 0; j < yValues.GetLength(0); j++)
+                    {
+                        // グラフに追加するデータクラスを生成
+                        DataPoint dp = new DataPoint();
+                        // XとYの値を設定
+                        dp.SetValueXY(MakeMonthString(xValues[i]), yValues[j, i]);
+                        dp.IsValueShownAsLabel = true;      // グラフに値を表示するように指定
+                        dp.Label = string.Format("{0:#,##}", yValues[j, i]);
+                        if (yValues[j, i] == 0)
+                        {
+                            // 値が0の場合は表示しない
+                            dp.IsValueShownAsLabel = false;
+                        }
+                        // グラフにデータ追加
+                        chtGraph1.Series[legends[j]].Points.Add(dp);
+
+                        if (legends[j].Equals("その他"))
+                        {
+                            otherpos = j;
+                        }
+                        //// 控除の場合
+                        //if (chkDeduction.Checked)
+                        //{
+                        //    if (!legends[j].Equals("その他"))
+                        //    {
+                        //        // 「その他」は対象外
+                        //        total[i] += yValues[j, i];
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    total[i] += yValues[j, i];
+                        //}
+                        total[i] += yValues[j, i];
+                    }
+                }
+                // 棒グラフの上部に総計値を表示
+                for (int i = 0; i < xValues.Length; i++)
+                {
+                    // 総計値データ追加
+                    DataPoint dptotal = new DataPoint();
+                    decimal data = total[i];
+                    //// 控除の場合
+                    //if (chkDeduction.Checked)
+                    //{
+                    //    // 表示位置が棒グラフの上部になるよう、「その他」を加算
+                    //    data += yValues[otherpos, i];
+                    //}
+                    dptotal.SetValueXY(MakeMonthString(xValues[i]), data);
+                    dptotal.IsValueShownAsLabel = true;
+                    dptotal.Label = string.Format("{0:#,#0}", total[i]);
+                    chtGraph1.Series[item_line].Points.Add(dptotal);
+                }
+
+                //グラフのタイトルを設定
+                chtGraph1.Titles.Add("(3) ライン停止 (全体像)");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 月データを表示用フォーマットに変換
+        /// </summary>
+        /// <param name="str">yyyymm</param>
+        /// <returns>yyyy/mm</returns>
+        private string MakeMonthString(string str)
+        {
+            string dispstr = "";
+            try
+            {
+                dispstr = str.Substring(0, 4) + "/" + str.Substring(4, 2);
+            }
+            catch
+            {
+                dispstr = str;
+            }
+            return dispstr;
+        }
+
+        /// <summary>
+        /// 対象　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnTarget_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                // 対象リスト画面を表示
+                vm.FrmTargetData.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 内訳　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDetails_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                if (vm.DtGraph1.Columns.Count == 0) return;
+
+                DataTable dtPlanSelect2 = vm.DtPlanSelect.Copy();
+
+                // 検索結果をグループ化する
+                var keys = dtPlanSelect2.AsEnumerable().GroupBy(x => x["OTHER_DATA_1"].ToString());
+                var months = dtPlanSelect2.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> month_list = new List<string>();
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                DataTable dtEmg1 = new DataTable();
+                dtEmg1.Columns.Add(new DataColumn("メイン計画停止理由名", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("追加計画停止理由名_1", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("追加計画停止理由名_2", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("追加計画停止理由名_3", Type.GetType("System.String")));
+                foreach (var month in months)
+                {
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "TIME", Type.GetType("System.String")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "COUNT", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "AVERAGE", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns[month.Key + "TIME"].Caption = MakeMonthString(month.Key) + "\n時間[分]";
+                    dtEmg1.Columns[month.Key + "COUNT"].Caption = "\n回数[回]";
+                    dtEmg1.Columns[month.Key + "AVERAGE"].Caption = "\n平均[分/回]";
+                }
+                #endregion
+
+                // 時間（分） を求める
+                // メイン計画停止理由名でまとめる
+                int rcnt1 = 0;
+                int mcnt = 0;
+                double[] time_total_sum = new double[month_list.Count];
+                double[] time_total_cnt = new double[month_list.Count];
+                double[] time_total_ave = new double[month_list.Count];
+
+                foreach (var recsbt_n in keys)
+                {
+                    // 計画停止理由名_2でグループ化する
+                    var list1 = dtPlanSelect2.AsEnumerable().Where(x => x["OTHER_DATA_1"].Equals(recsbt_n.Key)).OrderBy(x => x["SCHEDULED_STOP_WORK_2"]).ToList();
+                    var keys2 = list1.AsEnumerable().GroupBy(x => x["SCHEDULED_STOP_WORK_2"].ToString());
+
+                    int rcnt2 = 0;
+                    foreach (var emg2_n in keys2)
+                    {
+                        // 計画停止理由名_2でまとめる
+                        // 計画停止理由名_3でグループ化する
+                        var list2 = list1.AsEnumerable().Where(x => x["SCHEDULED_STOP_WORK_2"].Equals(emg2_n.Key)).OrderBy(x => x["SCHEDULED_STOP_WORK_3"]).ToList();
+                        var keys3 = list2.AsEnumerable().GroupBy(x => x["SCHEDULED_STOP_WORK_3"].ToString());
+
+                        int rcnt3 = 0;
+                        foreach (var emg3_n in keys3)
+                        {
+
+                            // 計画停止理由名_3でまとめる
+                            // 計画停止理由名_4でグループ化する
+                            var list3 = list2.AsEnumerable().Where(x => x["SCHEDULED_STOP_WORK_3"].Equals(emg3_n.Key)).OrderBy(x => x["SCHEDULED_STOP_WORK_4"]).ToList();
+                            var keys4 = list3.AsEnumerable().GroupBy(x => x["SCHEDULED_STOP_WORK_4"].ToString());
+
+                            List<String> emg4_list = new List<string>();
+                            foreach (var emg4_n in keys4)
+                            {
+                                emg4_list.Add(emg4_n.Key);
+                            }
+
+                            double[,] time_minute_real_sum = new double[emg4_list.Count + 1, month_list.Count];
+                            double[,] time_minute_real_cnt = new double[emg4_list.Count + 1, month_list.Count];
+
+                            int rcnt4 = 0;
+                            foreach (var emg4_n in keys4)
+                            {
+                                // 月でまとめる
+                                mcnt = 0;
+                                foreach (var month in months)
+                                {
+                                    var list4 = list3.AsEnumerable().Where(x => x["SCHEDULED_STOP_WORK_4"].Equals(emg4_n.Key)
+                                        && x["MONTH"].Equals(month.Key)).ToList();
+
+                                    // 集計する為、String→Decimalにしたテーブルにコピーする
+                                    DataTable dtsum = dtPlanSelect2.Clone(); // 構成のみコピー
+                                    dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                                    foreach (var row in list4)
+                                    {
+                                        DataRow newrow = dtsum.NewRow();
+
+                                        for (int i = 0; i < row.ItemArray.Length; i++)
+                                        {
+                                            newrow[i] = row[i];
+                                        }
+                                        dtsum.Rows.Add(newrow);
+                                    }
+
+                                    object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                                    double data = 0;
+                                    try
+                                    {
+                                        double.TryParse(total.ToString(), out data);
+                                    }
+                                    catch
+                                    {
+                                        data = 0;
+                                    }
+                                    time_minute_real_sum[rcnt4, mcnt] = data;
+                                    time_minute_real_cnt[rcnt4, mcnt] = list4.Count;
+
+                                    time_total_sum[mcnt] += data;
+                                    time_total_cnt[mcnt] += list4.Count;
+                                    time_total_ave[mcnt] += list4.Count > 0 ? data / list4.Count : 0;
+
+                                    mcnt++;
+                                }
+                                rcnt4++;
+                            }
+
+                            // DataGridに設定
+                            rcnt4 = 0;
+                            foreach (var emg4_n in keys4)
+                            {
+                                DataRow row1 = dtEmg1.NewRow();
+
+                                row1["メイン計画停止理由名"] = recsbt_n.Key;
+                                row1["追加計画停止理由名_1"] = emg2_n.Key;
+                                row1["追加計画停止理由名_2"] = emg3_n.Key;
+                                row1["追加計画停止理由名_3"] = emg4_n.Key;
+                                for (int iy = 0; iy < month_list.Count; iy++)
+                                {
+                                    row1[iy * 3 + 4] = string.Format("{0:#,#0}", time_minute_real_sum[rcnt4, iy]);
+                                    row1[iy * 3 + 5] = string.Format("{0:#,#0}", time_minute_real_cnt[rcnt4, iy]);
+                                    row1[iy * 3 + 6] = string.Format("{0:#,#0}", time_minute_real_cnt[rcnt4, iy] > 0 ? time_minute_real_sum[rcnt4, iy] / time_minute_real_cnt[rcnt4, iy] : 0);
+                                }
+                                dtEmg1.Rows.Add(row1);
+
+                                rcnt4++;
+                            }
+                            rcnt3++;
+                        }
+                        rcnt2++;
+                    }
+                    rcnt1++;
+                }
+
+                DataRow total_row = dtEmg1.NewRow();
+
+                total_row["メイン計画停止理由名"] = "総計";
+                total_row["追加計画停止理由名_1"] = "";
+                total_row["追加計画停止理由名_2"] = "";
+                total_row["追加計画停止理由名_3"] = "";
+                for (int iy = 0; iy < month_list.Count; iy++)
+                {
+                    total_row[iy * 3 + 4] = string.Format("{0:#,#0}", time_total_sum[iy]);
+                    total_row[iy * 3 + 5] = string.Format("{0:#,#0}", time_total_cnt[iy]);
+                    total_row[iy * 3 + 6] = string.Format("{0:#,#0}", time_total_ave[iy]);
+                }
+                dtEmg1.Rows.Add(total_row);
+
+                // 内訳データ画面を表示
+                DetailData frm1 = new DetailData(
+                    dtEmg1,
+                    1, "内訳"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+
+        }
+
+        /// <summary>
+        /// 異常停止理由別　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReason_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                if (vm.DtGraph1.Columns.Count == 0) return;
+
+                DataTable dtLineSelect2 = vm.DtLineSelect.Copy();
+
+                // 検索結果をグループ化する
+                var keys = dtLineSelect2.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_1"].ToString());
+                var months = dtLineSelect2.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                foreach (var recsbt_n in keys)
+                {
+                    recsbt_list.Add(recsbt_n.Key);
+                }
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                DataTable dtEmg1 = new DataTable();
+                dtEmg1.Columns.Add(new DataColumn("異常停止理由名_1", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("異常停止理由名_2", Type.GetType("System.String")));
+                foreach (var month in months)
+                {
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "TIME", Type.GetType("System.String")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "COUNT", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns[month.Key + "TIME"].Caption = MakeMonthString(month.Key) + "\n時間[分]";
+                    dtEmg1.Columns[month.Key + "COUNT"].Caption = "\n回数[回]";
+                }
+                dtEmg1.Columns.Add(new DataColumn("TOTAL_TIME", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("TOTAL_COUNT", Type.GetType("System.Decimal")));
+                dtEmg1.Columns["TOTAL_TIME"].Caption = "全体\n時間[分]";
+                dtEmg1.Columns["TOTAL_COUNT"].Caption = "全体\n回数[回]";
+                #endregion
+
+                // 時間（分） を求める
+                // 異常停止理由名_1でまとめる
+                int rcnt = 0;
+                int mcnt = 0;
+                double[] time_total_sum = new double[month_list.Count];
+                double[] time_total_cnt = new double[month_list.Count];
+
+                foreach (var recsbt_n in keys)
+                {
+                    // 異常停止理由名_2でグループ化する
+                    var list1 = dtLineSelect2.AsEnumerable().Where(x => x["UNSCHEDULED_STOP_REASON_1"].Equals(recsbt_n.Key)).OrderBy(x => x["UNSCHEDULED_STOP_REASON_2"]).ToList();
+                    var keys2 = list1.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_2"].ToString());
+
+                    List<String> emg2_list = new List<string>();
+                    foreach (var emg2_n in keys2)
+                    {
+                        emg2_list.Add(emg2_n.Key);
+                    }
+
+                    decimal[,] time_minute_real_sum = new decimal[emg2_list.Count, month_list.Count];
+                    decimal[,] time_minute_real_cnt = new decimal[emg2_list.Count, month_list.Count];
+
+                    int rcnt2 = 0;
+                    foreach (var emg2_n in keys2)
+                    {
+                        // 月でまとめる
+                        mcnt = 0;
+                        foreach (var month in months)
+                        {
+                            var list = list1.AsEnumerable().Where(x => x["UNSCHEDULED_STOP_REASON_2"].Equals(emg2_n.Key)
+                                && x["MONTH"].Equals(month.Key)).ToList();
+
+                            // 集計する為、String→Decimalにしたテーブルにコピーする
+                            DataTable dtsum = dtLineSelect2.Clone(); // 構成のみコピー
+                            dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                            foreach (var row in list)
+                            {
+                                DataRow newrow = dtsum.NewRow();
+
+                                for (int i = 0; i < row.ItemArray.Length; i++)
+                                {
+                                    newrow[i] = row[i];
+                                }
+                                dtsum.Rows.Add(newrow);
+                            }
+
+                            object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                            int data = 0;
+                            try
+                            {
+                                int.TryParse(total.ToString(), out data);
+                            }
+                            catch
+                            {
+                                data = 0;
+                            }
+                            time_minute_real_sum[rcnt2, mcnt] = data;
+                            time_minute_real_cnt[rcnt2, mcnt] = list.Count;
+
+                            time_total_sum[mcnt] += data;
+                            time_total_cnt[mcnt] += list.Count;
+
+                            mcnt++;
+                        }
+                        rcnt2++;
+                    }
+                    // DataGridに設定
+                    rcnt2 = 0;
+                    foreach (var emg2_n in keys2)
+                    {
+                        DataRow row1 = dtEmg1.NewRow();
+
+                        row1["異常停止理由名_1"] = recsbt_n.Key;
+                        row1["異常停止理由名_2"] = emg2_n.Key;
+                        decimal total_time = 0;
+                        decimal total_count = 0;
+                        for (int iy = 0; iy < month_list.Count; iy++)
+                        {
+                            row1[iy * 2 + 2] = string.Format("{0:#,#0}", time_minute_real_sum[rcnt2, iy]);
+                            row1[iy * 2 + 3] = time_minute_real_cnt[rcnt2, iy];
+                            total_time += time_minute_real_sum[rcnt2, iy];
+                            total_count += time_minute_real_cnt[rcnt2, iy];
+                        }
+                        row1["TOTAL_TIME"] = string.Format("{0:#,#0}", total_time);
+                        row1["TOTAL_COUNT"] = total_count;
+                        dtEmg1.Rows.Add(row1);
+
+                        rcnt2++;
+                    }
+                    rcnt++;
+                }
+
+                DataRow total_row = dtEmg1.NewRow();
+
+                total_row["異常停止理由名_1"] = "総計";
+                total_row["異常停止理由名_2"] = "";
+                double total_sum_time = 0;
+                double total_sum_count = 0;
+                for (int iy = 0; iy < month_list.Count; iy++)
+                {
+                    total_row[iy * 2 + 2] = string.Format("{0:#,#0}", time_total_sum[iy]);
+                    total_row[iy * 2 + 3] = time_total_cnt[iy];
+                    total_sum_time += time_total_sum[iy];
+                    total_sum_count += time_total_cnt[iy];
+                }
+                total_row["TOTAL_TIME"] = string.Format("{0:#,#0}", total_sum_time);
+                total_row["TOTAL_COUNT"] = total_sum_count;
+                dtEmg1.Rows.Add(total_row);
+
+                // 異常停止理由別データ画面を表示
+                DetailData frm1 = new DetailData(
+                    dtEmg1,
+                    2, "異常停止理由別"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 異常停止理由別２　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReason2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                if (vm.DtGraph1.Columns.Count == 0) return;
+
+                DataTable dtLineSelect2 = vm.DtLineSelect.Copy();
+
+                // 検索結果をグループ化する
+                var keys = dtLineSelect2.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_1"].ToString());
+                var months = dtLineSelect2.AsEnumerable().GroupBy(x => x["MONTH"].ToString());
+
+                List<String> recsbt_list = new List<string>();
+                List<String> month_list = new List<string>();
+                foreach (var month in months)
+                {
+                    month_list.Add(month.Key);
+                }
+                foreach (var recsbt_n in keys)
+                {
+                    recsbt_list.Add(recsbt_n.Key);
+                }
+
+                #region "データテーブル生成"
+                // データテーブル生成
+                DataTable dtEmg1 = new DataTable();
+                dtEmg1.Columns.Add(new DataColumn("異常停止理由名_1", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("異常停止理由名_2", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("異常停止理由名_3", Type.GetType("System.String")));
+                foreach (var month in months)
+                {
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "TIME", Type.GetType("System.String")));
+                    dtEmg1.Columns.Add(new DataColumn(month.Key + "COUNT", Type.GetType("System.Decimal")));
+                    dtEmg1.Columns[month.Key + "TIME"].Caption = MakeMonthString(month.Key) + "\n時間[分]";
+                    dtEmg1.Columns[month.Key + "COUNT"].Caption = "\n回数[回]";
+                }
+                dtEmg1.Columns.Add(new DataColumn("TOTAL_TIME", Type.GetType("System.String")));
+                dtEmg1.Columns.Add(new DataColumn("TOTAL_COUNT", Type.GetType("System.Decimal")));
+                dtEmg1.Columns["TOTAL_TIME"].Caption = "全体\n時間[分]";
+                dtEmg1.Columns["TOTAL_COUNT"].Caption = "全体\n回数[回]";
+                #endregion
+
+                // 時間（分） を求める
+                // 異常停止理由名_1でまとめる
+                int rcnt = 0;
+                int mcnt = 0;
+                double[] time_total_sum = new double[month_list.Count];
+                double[] time_total_cnt = new double[month_list.Count];
+
+                foreach (var recsbt_n in keys)
+                {
+                    // 異常停止理由名_2でグループ化する
+                    var list1 = dtLineSelect2.AsEnumerable().Where(x => x["UNSCHEDULED_STOP_REASON_1"].Equals(recsbt_n.Key)).OrderBy(x => x["UNSCHEDULED_STOP_REASON_2"]).ToList();
+                    var keys2 = list1.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_2"].ToString());
+
+                    List<String> emg2_list = new List<string>();
+                    foreach (var emg2_n in keys2)
+                    {
+                        emg2_list.Add(emg2_n.Key);
+                    }
+
+                    int rcnt2 = 0;
+                    foreach (var emg2_n in keys2)
+                    {
+                        // 異常停止理由名_2でまとめる
+                        // 異常停止理由名_3でグループ化する
+                        var list2 = list1.AsEnumerable().Where(x => x["UNSCHEDULED_STOP_REASON_2"].Equals(emg2_n.Key)).OrderBy(x => x["UNSCHEDULED_STOP_REASON_3"]).ToList();
+                        var keys3 = list2.AsEnumerable().GroupBy(x => x["UNSCHEDULED_STOP_REASON_3"].ToString());
+
+                        List<String> emg3_list = new List<string>();
+                        foreach (var emg3_n in keys3)
+                        {
+                            emg3_list.Add(emg3_n.Key);
+                        }
+
+                        decimal[,] time_minute_real_sum = new decimal[emg3_list.Count, month_list.Count];
+                        decimal[,] time_minute_real_cnt = new decimal[emg3_list.Count, month_list.Count];
+
+                        int rcnt3 = 0;
+                        foreach (var emg3_n in keys3)
+                        {
+                            // 月でまとめる
+                            mcnt = 0;
+                            foreach (var month in months)
+                            {
+                                var list = list2.AsEnumerable().Where(x => x["UNSCHEDULED_STOP_REASON_3"].Equals(emg3_n.Key)
+                                    && x["MONTH"].Equals(month.Key)).ToList();
+
+                                // 集計する為、String→Decimalにしたテーブルにコピーする
+                                DataTable dtsum = dtLineSelect2.Clone(); // 構成のみコピー
+                                dtsum.Columns["STANDARD_TIME_MINUTE"].DataType = System.Type.GetType("System.Decimal");
+                                foreach (var row in list)
+                                {
+                                    DataRow newrow = dtsum.NewRow();
+
+                                    for (int i = 0; i < row.ItemArray.Length; i++)
+                                    {
+                                        newrow[i] = row[i];
+                                    }
+                                    dtsum.Rows.Add(newrow);
+                                }
+
+                                object total = dtsum.Compute("Sum(STANDARD_TIME_MINUTE)", null);
+                                int data = 0;
+                                try
+                                {
+                                    int.TryParse(total.ToString(), out data);
+                                }
+                                catch
+                                {
+                                    data = 0;
+                                }
+                                time_minute_real_sum[rcnt3, mcnt] = data;
+                                time_minute_real_cnt[rcnt3, mcnt] = list.Count;
+
+                                time_total_sum[mcnt] += data;
+                                time_total_cnt[mcnt] += list.Count;
+
+                                mcnt++;
+                            }
+                            rcnt3++;
+                        }
+                        // DataGridに設定
+                        rcnt3 = 0;
+                        foreach (var emg3_n in keys3)
+                        {
+                            DataRow row1 = dtEmg1.NewRow();
+
+                            row1["異常停止理由名_1"] = recsbt_n.Key;
+                            row1["異常停止理由名_2"] = emg2_n.Key;
+                            row1["異常停止理由名_3"] = emg3_n.Key;
+                            decimal total_time = 0;
+                            decimal total_count = 0;
+                            for (int iy = 0; iy < month_list.Count; iy++)
+                            {
+                                row1[iy * 2 + 3] = string.Format("{0:#,#0}", time_minute_real_sum[rcnt3, iy]);
+                                row1[iy * 2 + 4] = time_minute_real_cnt[rcnt3, iy];
+                                total_time += time_minute_real_sum[rcnt3, iy];
+                                total_count += time_minute_real_cnt[rcnt3, iy];
+                            }
+                            row1["TOTAL_TIME"] = string.Format("{0:#,#0}", total_time);
+                            row1["TOTAL_COUNT"] = total_count;
+                            dtEmg1.Rows.Add(row1);
+
+                            rcnt3++;
+                        }
+                        rcnt2++;
+                    }
+                    rcnt++;
+                }
+
+                DataRow total_row = dtEmg1.NewRow();
+
+                total_row["異常停止理由名_1"] = "総計";
+                total_row["異常停止理由名_2"] = "";
+                total_row["異常停止理由名_3"] = "";
+                double total_sum_time = 0;
+                double total_sum_count = 0;
+                for (int iy = 0; iy < month_list.Count; iy++)
+                {
+                    total_row[iy * 2 + 3] = string.Format("{0:#,#0}", time_total_sum[iy]);
+                    total_row[iy * 2 + 4] = time_total_cnt[iy];
+                    total_sum_time += time_total_sum[iy];
+                    total_sum_count += time_total_cnt[iy];
+
+                }
+                total_row["TOTAL_TIME"] = string.Format("{0:#,#0}", total_sum_time);
+                total_row["TOTAL_COUNT"] = total_sum_count;
+                dtEmg1.Rows.Add(total_row);
+
+                // 異常停止理由別２データ画面を表示
+                DetailData frm1 = new DetailData(
+                    dtEmg1,
+                    3, "異常停止理由別２"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// グラフデータ　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnGraphData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                if (vm.DtGraph2.Columns.Count == 0) return;
+
+                // グラフデータ画面を表示
+                GraphData frm1 = new GraphData(
+                    vm.DtGraph2,
+                    1, "グラフデータ"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 控除データ　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnExclData_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                if (vm.DtGraphDe.Columns.Count == 0) return;
+
+                // グラフデータ画面を表示
+                GraphData frm1 = new GraphData(
+                    vm.DtGraphDe,
+                    2, "控除データ"
+                );
+
+                frm1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 画面のリサイズ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MetroWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+            // グラフの幅を設定
+            Thickness marginGraphData = btnGraphData.Margin;
+            Thickness marginExclData = btnGraphData.Margin;
+            switch (vm.KindGraph())
+            {
+                case 1:
+                    //grdGraph1.Width = (int)gvGraph1.Width;
+                    grdGraph1.Width = (int)this.ActualWidth - 20;
+                    marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10 - btnExclData.Width - 10;
+                    btnGraphData.Margin = marginGraphData;
+                    marginExclData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                    btnExclData.Margin = marginExclData;
+
+                    break;
+                case 2:
+                    //grdGraph1.Width = (int)gvGraph1.Width / 2;
+                    grdGraph1.Width = (int)this.ActualWidth / 2 - 10;
+                    //btnGraphData.Left = chtGraph1.Left + chtGraph1.Width - btnGraphData.Width - 10;
+                    marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                    btnGraphData.Margin = marginGraphData;
+
+                    break;
+                case 3:
+                    //grdGraph1.Width = (int)gvGraph1.Width / 2;
+                    grdGraph1.Width = (int)this.ActualWidth / 2 - 10;
+                    //btnGraphData.Left = chtGraph1.Left + chtGraph1.Width - btnGraphData.Width - 10;
+                    marginGraphData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10 - btnExclData.Width - 10;
+                    btnGraphData.Margin = marginGraphData;
+                    marginExclData.Left = grdGraph1.Margin.Left + grdGraph1.Width - btnGraphData.Width - 10;
+                    btnExclData.Margin = marginExclData;
+
+                    break;
+                default:
+                    break;
+            }
+
+            // WPF版：Chartコントロールの取得
+            var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+            var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+            chtGraph1.Width = (int)grdGraph1.Width;
+        }
+
+        /// <summary>
+        /// 対象月 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllMonth_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllMonth.IsChecked == true)
+            {
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    //clstMonth.SetItemChecked(i, true);
+                    SetItemChecked(ref clstMonth, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstMonth.Items.Count; i++)
+                {
+                    //clstMonth.SetItemChecked(i, false);
+                    SetItemChecked(ref clstMonth, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// メイン停止理由 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllMainReason_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllMainReason.IsChecked == true)
+            {
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    //clstPlanStop.SetItemChecked(i, true);
+                    SetItemChecked(ref clstPlanStop, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstPlanStop.Items.Count; i++)
+                {
+                    //clstPlanStop.SetItemChecked(i, false);
+                    SetItemChecked(ref clstPlanStop, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ライン停止1除外リスト 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllLineStop1_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllLineStop1.IsChecked == true)
+            {
+                for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                {
+                    //clstLineStopExclusion1.SetItemChecked(i, true);
+                    SetItemChecked(ref clstLineStopExclusion1, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                {
+                    //clstLineStopExclusion1.SetItemChecked(i, false);
+                    SetItemChecked(ref clstLineStopExclusion1, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ライン停止2除外リスト 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllLineStop2_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllLineStop2.IsChecked == true)
+            {
+                for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                {
+                    //clstLineStopExclusion2.SetItemChecked(i, true);
+                    SetItemChecked(ref clstLineStopExclusion2, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                {
+                    //clstLineStopExclusion2.SetItemChecked(i, false);
+                    SetItemChecked(ref clstLineStopExclusion2, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 計画停止1除外リスト 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllPlanStop1_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllPlanStop1.IsChecked == true)
+            {
+                for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                {
+                    //clsPlanStopExclusion1.SetItemChecked(i, true);
+                    SetItemChecked(ref clsPlanStopExclusion1, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                {
+                    //clsPlanStopExclusion1.SetItemChecked(i, false);
+                    SetItemChecked(ref clsPlanStopExclusion1, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 計画停止2除外リスト 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkAllPlanStop2_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkAllPlanStop2.IsChecked == true)
+            {
+                for (int i = 0; i < clsPlanStopExclusion2.Items.Count; i++)
+                {
+                    //clsPlanStopExclusion2.SetItemChecked(i, true);
+                    SetItemChecked(ref clsPlanStopExclusion2, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clsPlanStopExclusion2.Items.Count; i++)
+                {
+                    //clsPlanStopExclusion2.SetItemChecked(i, false);
+                    SetItemChecked(ref clsPlanStopExclusion2, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 控除チェックボックス ON
+        /// </summary>
+        /// 稼働時間のライン停止控除条件
+        ///   東京2号機   ：JYOGAI = '1' AND EMG_STOP_N_1 = 'E:その他' AND EMG_STOP_N_2 in ('2:会議','3:整理','4:天災','5:その他')
+        ///   東京11号機  ：JYOGAI = '1' AND EMG_STOP_N_1 = 'E:その他' AND EMG_STOP_N_2 in ('2:会議','3:運転','4:天災','5:その他')
+        ///   名古屋2号機 ：JYOGAI = '1' AND EMG_STOP_N_1 = 'その他'
+        ///   名古屋13号機：JYOGAI = '1' AND EMG_STOP_N_1 = 'その他'
+        /// 
+        /// 稼働時間の計画停止控除条件
+        ///   東京2号機   ：EMG_STOP_N_1='A:作業者' AND EMG_STOP_N_2='1:段取り替え'
+        ///   東京11号機  ：JYOGAI = '*'
+        ///   名古屋2号機 ：JYOGAI = '1' AND EMG_STOP_N_1 <> 'その他'
+        ///   名古屋13号機：JYOGAI = '1' AND EMG_STOP_N_1 <> 'その他'
+        private void checkOnDeduction(string FactoryGouki)
+        {
+            // 控除チェック
+            switch (FactoryGouki)
+            {
+
+                case "42_４号機": // 堺４号機
+                    break;
+                case "42_５号機": // 堺５号機             
+                    break;
+                case "48_２号機": // 東京２号機
+
+                    //cmbExcFlag1.SelectedIndex = cmbExcFlag1.FindString("1");
+                    cmbExcFlag1.SelectedIndex = cmbExcFlag1.Items.IndexOf("1");
+
+                    // ライン停止１
+                    for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion1.Items[i].ToString();
+                        //if (line_stop.Equals("E:その他")) { clstLineStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion1.SetItemChecked(i, false);
+                        if (line_stop.Equals("E:その他")) { SetItemChecked(ref clstLineStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion1, i, false);
+                    }
+                    // ライン停止２
+                    for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion2.Items[i].ToString();
+                        //if (line_stop.Equals("2:会議")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("3:整理")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("4:天災")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("5:その他")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion2.SetItemChecked(i, false);
+                        if (line_stop.Equals("2:会議")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("3:整理")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("4:天災")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("5:その他")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion2, i, false);
+                    }
+                    // 計画停止１
+                    for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clsPlanStopExclusion1.Items[i].ToString();
+                        //if (line_stop.Equals("A:作業者")) { clsPlanStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clsPlanStopExclusion1.SetItemChecked(i, false);
+                        if (line_stop.Equals("A:作業者")) { SetItemChecked(ref clsPlanStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clsPlanStopExclusion1, i, false);
+                    }
+                    // 計画停止２
+                    for (int i = 0; i < clsPlanStopExclusion2.Items.Count; i++)
+                    {
+                        string line_stop = clsPlanStopExclusion2.Items[i].ToString();
+                        //if (line_stop.Equals("1:段取り替え")) { clsPlanStopExclusion2.SetItemChecked(i, true); continue; }
+                        //clsPlanStopExclusion2.SetItemChecked(i, false);
+                        if (line_stop.Equals("1:段取り替え")) { SetItemChecked(ref clsPlanStopExclusion2, i, true); continue; }
+                        SetItemChecked(ref clsPlanStopExclusion2, i, false);
+                    }
+
+                    break;
+                case "48_１１号機": // 東京１１号機
+
+                    //cmbExcFlag1.SelectedIndex = cmbExcFlag1.FindString("*");
+                    cmbExcFlag1.SelectedIndex = cmbExcFlag1.Items.IndexOf("*");
+
+                    // ライン停止１
+                    for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion1.Items[i].ToString();
+                        //if (line_stop.Equals("E:その他")) { clstLineStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion1.SetItemChecked(i, false);
+                        if (line_stop.Equals("E:その他")) { SetItemChecked(ref clstLineStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion1, i, false);
+                    }
+                    // ライン停止２
+                    for (int i = 0; i < clstLineStopExclusion2.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion2.Items[i].ToString();
+                        //if (line_stop.Equals("2:会議")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("3:運転")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("4:天災")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //if (line_stop.Equals("5:その他")) { clstLineStopExclusion2.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion2.SetItemChecked(i, false);
+                        if (line_stop.Equals("2:会議")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("3:運転")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("4:天災")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        if (line_stop.Equals("5:その他")) { SetItemChecked(ref clstLineStopExclusion2, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion2, i, false);
+                    }
+                    // 計画停止１
+                    chkAllPlanStop1.IsChecked = false;
+                    chkAllPlanStop1.IsChecked = true;
+                    // 計画停止２
+                    chkAllPlanStop2.IsChecked = false;
+                    chkAllPlanStop2.IsChecked = true;
+
+                    break;
+                case "38_２号機": // 名古屋２号機
+
+                    //cmbExcFlag1.SelectedIndex = cmbExcFlag1.FindString("1");
+                    cmbExcFlag1.SelectedIndex = cmbExcFlag1.Items.IndexOf("1");
+
+                    // ライン停止１
+                    for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion1.Items[i].ToString();
+                        //if (line_stop.Equals("その他")) { clstLineStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion1.SetItemChecked(i, false);
+                        if (line_stop.Equals("その他")) { SetItemChecked(ref clstLineStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion1, i, false);
+                    }
+                    // ライン停止２
+                    chkAllLineStop2.IsChecked = false;
+                    chkAllLineStop2.IsChecked = true;
+                    // 計画停止１
+                    for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clsPlanStopExclusion1.Items[i].ToString();
+                        //if (!line_stop.Equals("その他")) { clsPlanStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clsPlanStopExclusion1.SetItemChecked(i, false);
+                        if (!line_stop.Equals("その他")) { SetItemChecked(ref clsPlanStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clsPlanStopExclusion1, i, false);
+                    }
+                    // 計画停止２
+                    chkAllPlanStop2.IsChecked = false;
+                    chkAllPlanStop2.IsChecked = true;
+
+                    break;
+                case "38_１３号機": // 名古屋１３号機
+
+                    //cmbExcFlag1.SelectedIndex = cmbExcFlag1.FindString("1");
+                    cmbExcFlag1.SelectedIndex = cmbExcFlag1.Items.IndexOf("1");
+
+                    // ライン停止１
+                    for (int i = 0; i < clstLineStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clstLineStopExclusion1.Items[i].ToString();
+                        //if (line_stop.Equals("その他")) { clstLineStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clstLineStopExclusion1.SetItemChecked(i, false);
+                        if (line_stop.Equals("その他")) { SetItemChecked(ref clstLineStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clstLineStopExclusion1, i, false);
+                    }
+                    // ライン停止２
+                    chkAllLineStop2.IsChecked = false;
+                    chkAllLineStop2.IsChecked = true;
+                    // 計画停止１
+                    for (int i = 0; i < clsPlanStopExclusion1.Items.Count; i++)
+                    {
+                        string line_stop = clsPlanStopExclusion1.Items[i].ToString();
+                        //if (!line_stop.Equals("その他")) { clsPlanStopExclusion1.SetItemChecked(i, true); continue; }
+                        //clsPlanStopExclusion1.SetItemChecked(i, false);
+                        if (!line_stop.Equals("その他")) { SetItemChecked(ref clsPlanStopExclusion1, i, true); continue; }
+                        SetItemChecked(ref clsPlanStopExclusion1, i, false);
+                    }
+                    // 計画停止２
+                    chkAllPlanStop2.IsChecked = false;
+                    chkAllPlanStop2.IsChecked = true;
+
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 控除チェックボックス OFF
+        /// </summary>
+        private void checkOffDeduction()
+        {
+            cmbExcFlag1.SelectedIndex = 0;
+
+            // ライン停止１
+            chkAllLineStop1.IsChecked = true;
+            chkAllLineStop1.IsChecked = false;
+            // ライン停止２
+            chkAllLineStop2.IsChecked = true;
+            chkAllLineStop2.IsChecked = false;
+            // 計画停止１
+            chkAllPlanStop1.IsChecked = true;
+            chkAllPlanStop1.IsChecked = false;
+            // 計画停止２
+            chkAllPlanStop2.IsChecked = true;
+            chkAllPlanStop2.IsChecked = false;
+        }
+
+        /// <summary>
+        /// 控除選択　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnExcSelect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                switch (vm.KindGraph())
+                {
+
+                    case 1:
+
+                        // 工場コード＋設備名
+                        // ※設備コードがユニークではない為、設備名を使用
+                        string FactoryGouki = txtFactoryCode.Text + "_" + txtMachine.Text;
+
+                        // (1)稼働時間
+                        checkOnDeduction(FactoryGouki);
+                        break;
+                    case 2:
+                        // (2) 計画停止時間
+                        break;
+                    case 3:
+                        // (3)ライン停止
+                        chkAllLineStop1.IsChecked = true;
+                        chkAllLineStop2.IsChecked = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// WPF版：チェックリストボックスのON/OFFを設定する
+        /// </summary>
+        /// <param name="clst">リストボックス</param>
+        /// <param name="i">配列番号</param>
+        /// <param name="bolCheck">true/false</param>
+        private void SetItemChecked(
+            ref ListBox clst,
+            int i,
+            Boolean bolCheck
+            )
+        {
+            CheckBox chk = (CheckBox)clst.Items[i];
+            chk.IsChecked = bolCheck;
+        }
+
+        /// <summary>
+        /// WPF版：LoadingRow
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void gvGraph1_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            DataRowView item = (DataRowView)e.Row.Item;
+            string row_top_data = (string)item[0];
+            if (row_top_data.Equals("総計"))
+            {
+                // 総計行の背景色を設定:System.Drawing.Color.DarkTurquoise;
+                //gvGraph1.Rows[gvGraph1.Rows.Count - 1].DefaultCellStyle.BackColor = gvGraph1.ColumnHeadersDefaultCellStyle.BackColor;
+
+                // WPF版：テーマの表示色取得
+                //e.Row.Style = gvMain.ColumnHeaderStyle;
+                Brush colForeColor = new SolidColorBrush();
+                Brush colBackColor = new SolidColorBrush();
+                Common.GetDataGridColor(ref colForeColor, ref colBackColor);
+                e.Row.Background = colBackColor;
+                e.Row.Foreground = colForeColor;
+            }
+
+        }
+
+        /// <summary>
+        /// 除外リスト選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cmbJogai_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                GraphAreaViewModel vm = (GraphAreaViewModel)DataContext;
+
+                //string jogai_item = cmbJogai.Text;
+                string jogai_item = (sender as ComboBox).SelectedItem as string;
+                if (string.IsNullOrEmpty(jogai_item)) return;
+
+                // 選択項目のデータ取得
+                clstJogai.Items.Clear();
+                var list = vm.DtMain.AsEnumerable().GroupBy(x => x[jogai_item].ToString()).OrderBy(x => x.Key);
+                foreach (var data in list)
+                {
+                    //clstJogai.Items.Add(data.Key, false);
+                    CheckBox chk = new CheckBox();
+                    chk.Content = data.Key;
+                    chk.IsChecked = false;
+                    clstJogai.Items.Add(chk);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 除外 全チェックあり／なし
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkJogai_Click(object sender, RoutedEventArgs e)
+        {
+            if (chkJogai.IsChecked == true)
+            {
+                for (int i = 0; i < clstJogai.Items.Count; i++)
+                {
+                    //clstJogai.SetItemChecked(i, true);
+                    SetItemChecked(ref clstJogai, i, true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clstJogai.Items.Count; i++)
+                {
+                    //clstJogai.SetItemChecked(i, false);
+                    SetItemChecked(ref clstJogai, i, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// クリップボードにコピーボタン(データ) クリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClipCopyData_Click(object sender, RoutedEventArgs e)
+        {
+            if (gvGraph1.ItemsSource == null) return;
+
+            //選択されたセルをクリップボードにコピーする
+            //gvGraph1.SelectAll();
+            //gvGraph1.ClipboardCopyMode =
+            //    DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
+            //Clipboard.SetDataObject(gvGraph1.GetClipboardContent());
+            StringBuilder sb = new StringBuilder();
+            DataGrid gv = gvGraph1;
+            //ヘッダを書き込む
+            List<string> headerrow = new List<string>();
+            foreach (DataGridColumn column in gv.Columns)
+            {
+                //フィールドを書き込む
+                //sr.Write(EncloseDoubleQuotesIfNeed(column.HeaderText));
+                if (string.IsNullOrEmpty(column.Header.ToString())) continue; // ヘッダ空白の場合は除外
+                headerrow.Add(column.Header.ToString());
+            }
+            sb.Append(string.Join(",", headerrow) + "\r\n");
+
+            //レコードを書き込む
+            for (int i = 0; i < gv.Items.Count; ++i)
+            {
+                var row = gv.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                if (row == null)
+                {
+                    // 対象の行が表示されていない場合、行オブジェクトが取得できないため
+                    // 対象の行が表示されるようスクロールします。
+                    gv.UpdateLayout();
+                    gv.ScrollIntoView(gv.Items[i]);
+                    // 再度、行オブジェクトを取得します。
+                    row = gv.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                }
+
+                List<string> datarow = new List<string>();
+                foreach (DataGridColumn column in gv.Columns)
+                {
+                    //フィールドを書き込む
+                    //sr.Write(EncloseDoubleQuotesIfNeed(gv[column.Index, row.Index].Value.ToString()));
+                    if (string.IsNullOrEmpty(column.Header.ToString())) continue; // ヘッダ空白の場合は除外
+
+                    var cell = gv.Columns[column.DisplayIndex].GetCellContent(row);
+                    if (cell == null)
+                    {
+                        gv.UpdateLayout();
+                        gv.ScrollIntoView(gv.Columns[column.DisplayIndex]);
+                        // 再度、セルオブジェクトを取得します。
+                        cell = gv.Columns[column.DisplayIndex].GetCellContent(row);
+                    }
+                    datarow.Add((cell as TextBlock)?.Text);
+                }
+                sb.Append(string.Join(",", datarow) + "\r\n");
+            }
+            Clipboard.SetText(sb.ToString());
+            MessageBox.Show("クリップボードにコピーしました。");
+
+        }
+
+        /// <summary>
+        /// クリップボードにコピーボタン(グラフ) クリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClipCopyGraph_Click(object sender, RoutedEventArgs e)
+        {
+            var windowsFormsHost = (WindowsFormsHost)grdGraph1.Children[0];
+            var chtGraph1 = (Chart)windowsFormsHost.Child;
+
+            if (chtGraph1 == null) return;
+
+            // 一旦 Stream オブジェクトに保存
+            System.IO.MemoryStream memStream = new System.IO.MemoryStream();
+            chtGraph1.SaveImage(memStream, System.Drawing.Imaging.ImageFormat.Bmp);
+            Bitmap bmp = new Bitmap(memStream);
+            //chtGraph1.SaveImage("C:/Temp/test.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+            //クリップボードにコピーする
+            //Clipboard.SetDataObject(memStream);
+            Clipboard.SetData(DataFormats.Bitmap, bmp);
+            MessageBox.Show("クリップボードにコピーしました。");
+        }
+
+    }
+}

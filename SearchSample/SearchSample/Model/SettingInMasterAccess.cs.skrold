@@ -1,0 +1,563 @@
+﻿using MRILossTool.DataModel;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.Model
+{
+    /// <summary>
+    /// 取込定義テーブル アクセスモデル
+    /// </summary>
+    class SettingInMasterAccess
+    {
+
+        #region "定数"
+        /// <summary>
+        /// DB接続文字列：Provider
+        /// </summary>
+        public string connectionStringBase = Common.connectionStringBase;
+
+        /// <summary>
+        /// 内部保持データ（MDB）
+        /// </summary>
+        //private string LocalDBName = Common.LocalMasterDBName;
+        private string LocalDBName = Common.LocalDBName;
+
+        /// <summary>
+        /// テーブル
+        /// </summary>
+        private string MasterTableName = "S_SETTING_IN";
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public SettingInMasterAccess()
+        {
+
+        }
+
+        /// <summary>
+        /// マスタデータ（MDB）の読み込み
+        /// </summary>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        /// <param name="setFlag">文字列変換有無：default有り</param>
+        public void GetMasterData(
+            ref DataSetMaster.S_SETTING_INDataTable dtMst,
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType,
+            bool setFlag = true
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+
+            // 取込定義マスタをロードする
+            dtMst = new DataSetMaster.S_SETTING_INDataTable();
+            if (strFormatType == null
+                    || string.IsNullOrEmpty(strFormatType))
+            {
+                return;
+            }
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string where = string.Empty;
+                    where += " AND CUST_CD='" + strCustomer + "'";
+                    where += " AND KOJOCD='" + strFactory + "'";
+                    where += " AND TABLE_N='" + strTargetTable + "'";
+                    where += " AND FORMAT_N='" + strFormatType + "'";
+                    string queryString = "SELECT * FROM " + MasterTableName + " WHERE 0=0 " + where + " ORDER BY CUST_CD,KOJOCD,TABLE_N,FORMAT_N,Format(POS, '000')";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dtMst);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    DataSetMaster.S_SETTING_INDataTable dtNew = new DataSetMaster.S_SETTING_INDataTable();
+                    foreach (DataSetMaster.S_SETTING_INRow row in dtMst.Rows)
+                    {
+                        DataSetMaster.S_SETTING_INRow newrow = dtNew.NewS_SETTING_INRow();
+                        newrow.ItemArray = row.ItemArray;
+                        if (setFlag)
+                        {
+                            string CHANGE_TYPE = row["CHANGE_TYPE"].ToString();
+                            newrow["CHANGE_TYPE"] = Common.change_type_dic.ContainsKey(CHANGE_TYPE) ? Common.change_type_dic[CHANGE_TYPE] : CHANGE_TYPE;
+                        }
+                        else
+                        {
+                            newrow["CHANGE_TYPE"] = row["CHANGE_TYPE"].ToString();
+                        }
+                        if (setFlag)
+                        {
+                            string ROUND_TYPE = row["ROUND_TYPE"].ToString();
+                            newrow["ROUND_TYPE"] = Common.round_type_dic.ContainsKey(ROUND_TYPE) ? Common.round_type_dic[ROUND_TYPE] : ROUND_TYPE;
+                        }
+                        else
+                        {
+                            newrow["ROUND_TYPE"] = row["ROUND_TYPE"].ToString();
+                        }
+                        dtNew.Rows.Add(newrow);
+                    }
+
+                    dtMst = dtNew;
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// フォーマット名の読み込み
+        /// </summary>
+        /// <param name="formatNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetFormatNameData(
+            ref DataTable formatNameDT
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            // マスタをロード
+            DataSetMaster.S_SETTING_INDataTable dt = new DataSetMaster.S_SETTING_INDataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string queryString = "SELECT * FROM " + MasterTableName + " ORDER BY CUST_CD,KOJOCD,TABLE_N,FORMAT_N";
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                    adapter.Fill(dt);
+                    adapter.Dispose();
+
+                    connection.Close();
+
+                    // コンボボックスを作成
+                    Dictionary<string, int> dic = new Dictionary<string, int>();
+                    Dictionary<string, int> dicF = new Dictionary<string, int>();
+                    formatNameDT.Rows.Clear();
+                    foreach (DataSetMaster.S_SETTING_INRow row in dt.Rows)
+                    {
+                        if (!dic.ContainsKey(row.CUST_CD + row.KOJOCD + row.TABLE_N))
+                        {
+                            formatNameDT.Rows.Add(new object[] { row.CUST_CD, row.KOJOCD, row.TABLE_N, "" });
+                            dic[row.CUST_CD + row.KOJOCD + row.TABLE_N] = 1;
+                        }
+                        if (!dicF.ContainsKey(row.CUST_CD + row.KOJOCD + row.TABLE_N + row.FORMAT_N))
+                        {
+                            formatNameDT.Rows.Add(new object[] { row.CUST_CD, row.KOJOCD, row.TABLE_N, row.FORMAT_N });
+                            dicF[row.CUST_CD + row.KOJOCD + row.TABLE_N + row.FORMAT_N] = 1;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// CSVファイルをロード
+        /// </summary>
+        /// <param name="columnName">一覧ヘッダ</param>
+        /// <param name="filenName">CSVファイル</param>
+        /// <param name="dtMst">データテーブル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        /// <param name="erro_list">結果リスト</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>0>:登録件数,-1:文字コードエラー,-2:CSVファイル読み込みエラー,-3:システムエラー</returns>
+        public int ReadCSVFile(
+            string[] columnName,
+            String filenName,
+            DataSetMaster.S_SETTING_INDataTable dtMst,
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType,
+            ref List<string> erro_list,
+            ref string strMsg
+            )
+        {
+            string strPath = string.Empty;
+
+            int ret = 0;
+            strMsg = "";
+
+            try
+            {
+                String strCharSet = "";                                  // 文字コード（CSV用）：未指定時はShift-JIS
+                String strDataSource = System.IO.Path.GetDirectoryName(filenName); // 対象ファイル名
+                String strFileName = System.IO.Path.GetFileName(filenName);
+                String strTableName = Guid.NewGuid().ToString("N").Substring(0, 8) + DateTime.Now.ToString("yyyyMMddHHmmss") + strFileName; // 対象テーブル名
+                strPath = strDataSource + "\\" + strTableName;
+
+                // 文字コードをチェック
+                string strInpCode = Common.getStringCode(filenName);
+                if (!strInpCode.Equals("Shift-JIS") && !strInpCode.Equals("UTF-8"))
+                {
+                    ret = -1;
+                    return ret;
+                }
+                if (strInpCode.Equals("UTF-8"))
+                {
+                    strCharSet = "CharacterSet=65001;";
+                }
+
+                List<string> column = new List<string>();
+                foreach (DataColumn col in dtMst.Columns)
+                {
+                    column.Add(col.ColumnName);
+                }
+
+                //ファイルの内容を読み込む
+                StreamReader sr =
+                    new StreamReader(filenName, Encoding.GetEncoding(strInpCode));
+
+                StringBuilder sb = new StringBuilder();
+                // ヘッダー
+                sb.AppendLine(string.Join(",", column));
+                string line;
+                int counter = 0;
+                string fix_col = strCustomer;
+                fix_col += "," + strFactory;
+                fix_col += "," + strTargetTable;
+                fix_col += "," + strFormatType;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (counter == 0) { counter++; continue; }
+                    sb.AppendLine(fix_col + "," + line);
+                    counter++;
+                }
+                sr.Close();
+
+                //書き込むファイルが既に存在している場合は上書き
+                StreamWriter sw = new StreamWriter(
+                    strPath,
+                    false,
+                    Encoding.GetEncoding(strInpCode));
+                sw.Write(sb.ToString());
+                sw.Close();
+
+                // ファイル読み込み
+                string connectionString = connectionStringBase + strDataSource + "; "
+                        + "Extended Properties=\"Text;" // ファイルプロパティ指定
+                        + "HDR=YES;"                    // ヘッダー設定
+                        + "FMT=Delimited;"              // フィールドの型
+                        + strCharSet                    // 文字コード
+                        + "\"";
+
+                // CSVファイル読み込み時の定義ファイル出力
+                Common.outputSchemaIni(strTableName, strDataSource, new List<string>(column), strCharSet);
+
+                // CSVファイルをロード
+                DataTable dtAdd = new DataTable();
+                string queryString = "SELECT * FROM [" + strTableName + "]";
+                try
+                {
+                    using (OleDbConnection connection = new OleDbConnection(connectionString))
+                    {
+                        connection.Open();
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(queryString, connection);
+                        adapter.Fill(dtAdd);
+
+                        connection.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ret = -2;
+                    strMsg = ex.Message;
+                    return ret;
+                }
+                finally
+                {
+                    if (File.Exists(strPath)) File.Delete(strPath);
+                }
+
+                var reverse_change_type = Common.change_type_dic.ToDictionary(x => x.Value, x => x.Key);
+                var reversed_round_type = Common.round_type_dic.ToDictionary(x => x.Value, x => x.Key);
+
+                // エラー情報
+                erro_list = new List<string>();
+
+                // データをDelete/Insert
+                using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalDBName))
+                {
+
+                    OleDbCommand command = new OleDbCommand();
+                    OleDbTransaction transaction = null;
+                    command.Connection = connection;
+                    int cnt = 0;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        // Assign transaction object for a pending local transaction.
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        String cust_cd = strCustomer;
+                        String kojocd = strFactory;
+                        String target_table = strTargetTable;
+                        String format_type = strFormatType;
+                        string where = string.Empty;
+                        where += " AND CUST_CD='" + cust_cd + "'";
+                        where += " AND KOJOCD='" + kojocd + "'";
+                        where += " AND TABLE_N='" + target_table + "'";
+                        where += " AND FORMAT_N='" + format_type + "'";
+
+                        // 取込定義削除
+                        command.CommandText = "DELETE FROM " + MasterTableName + " WHERE 0=0 " + where;
+                        command.ExecuteNonQuery();
+
+                        //// 置換定義削除
+                        //command.CommandText = "DELETE FROM S_REPLACE_IN WHERE 0=0 " + where;
+                        //command.ExecuteNonQuery();
+
+                        DataSetMaster.S_SETTING_INDataTable dt = new DataSetMaster.S_SETTING_INDataTable();
+
+                        // マスタ登録
+                        int lineno = 0;
+                        foreach (DataRow row in dtAdd.Rows)
+                        {
+                            try
+                            {
+                                lineno++;
+
+                                List<string> err_list2 = new List<string>();
+                                DataSetMaster.S_SETTING_INRow newrow = dt.NewS_SETTING_INRow();
+                                foreach (DataColumn col in dtAdd.Columns)
+                                {
+                                    string data = row[col.ColumnName].ToString();
+
+                                    if (!dt.Columns[col.ColumnName].AllowDBNull && string.IsNullOrEmpty(data))
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は必須です。"));
+                                    }
+                                    else if (data.Length > dt.Columns[col.ColumnName].MaxLength)
+                                    {
+                                        err_list2.Add(string.Format("{0}行目：{1}", lineno, "項目[" + col.ColumnName + "]は最大文字数を超えています。"));
+                                    }
+                                    else
+                                    {
+                                        newrow[col.ColumnName] = row[col.ColumnName];
+                                    }
+                                }
+
+                                if (err_list2.Count > 0)
+                                {
+                                    erro_list.AddRange(err_list2);
+                                    continue;
+                                }
+                                dt.Rows.Add(newrow);
+
+                                string CHANGE_TYPE = row["CHANGE_TYPE"] != null ? row["CHANGE_TYPE"].ToString() : "";
+                                row["CHANGE_TYPE"] = reverse_change_type.ContainsKey(CHANGE_TYPE) ? reverse_change_type[CHANGE_TYPE] : CHANGE_TYPE;
+                                string ROUND_TYPE = row["ROUND_TYPE"] != null ? row["ROUND_TYPE"].ToString() : "";
+                                row["ROUND_TYPE"] = reversed_round_type.ContainsKey(ROUND_TYPE) ? reversed_round_type[ROUND_TYPE] : ROUND_TYPE;
+
+                                List<string> values = new List<string>();
+                                foreach (DataColumn col in dtAdd.Columns)
+                                {
+                                    values.Add("'" + row[col.ColumnName] + "'");
+                                }
+                                command.CommandText =
+                                    "INSERT INTO " + MasterTableName + " VALUES ( " + string.Join(",", values) + " )";
+                                cnt += command.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                erro_list.Add(string.Format("{0}行目：{1}", lineno, ex.Message));
+                            }
+                        }
+
+                        if (erro_list.Count > 0)
+                        {
+                            transaction.Rollback();
+                        }
+                        else
+                        {
+                            // コミット
+                            transaction.Commit();
+
+                            ret = cnt;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = -3;
+                        strMsg = ex.Message;
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = -3;
+                strMsg = ex.Message;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(strPath) && File.Exists(strPath))
+                {
+                    File.Delete(strPath);
+                }
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// マスタデータの削除
+        /// </summary>
+        /// <param name="dtMst">マスタデータテーブル</param>
+        /// <param name="formatNameDT">フォーマット名データテーブル</param>
+        /// <param name="strCustomer">会社コード</param>
+        /// <param name="strFactory">工場コード</param>
+        /// <param name="strTargetTable">対象テーブル</param>
+        /// <param name="strFormatType">フォーマット名</param>
+        /// <param name="delcnt">削除件数</param>
+        /// <param name="strMsg">エラーメッセージ</param>
+        /// <returns>true/false</returns>
+        public bool DeleteMasterData(
+            ref DataSetMaster.S_SETTING_INDataTable dtMst,
+            ref DataTable formatNameDT,
+            string strCustomer,
+            string strFactory,
+            string strTargetTable,
+            string strFormatType,
+            ref int delcnt,
+            ref string strMsg
+            )
+        {
+            bool ret = true;
+            strMsg = "";
+
+            // データをDelete/Insert
+            using (OleDbConnection connection = new OleDbConnection(connectionStringBase + LocalDBName))
+            {
+
+                OleDbCommand command = new OleDbCommand();
+                OleDbTransaction transaction = null;
+                command.Connection = connection;
+
+                try
+                {
+                    connection.Open();
+
+                    // トランザクション開始
+                    transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                    // Assign transaction object for a pending local transaction.
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    // マスタ削除
+                    String cust_cd = strCustomer;
+                    String kojocd = strFactory;
+                    String target_table = strTargetTable;
+                    String format_type = strFormatType;
+                    string where = string.Empty;
+                    where += " AND CUST_CD='" + cust_cd + "'";
+                    where += " AND KOJOCD='" + kojocd + "'";
+                    where += " AND TABLE_N='" + target_table + "'";
+                    where += " AND FORMAT_N='" + format_type + "'";
+
+                    // 取込定義
+                    command.CommandText = "DELETE FROM S_SETTING_IN WHERE 0=0 " + where;
+                    delcnt = command.ExecuteNonQuery();
+
+                    // 置換定義
+                    command.CommandText = "DELETE FROM S_REPLACE_IN WHERE 0=0 " + where;
+                    command.ExecuteNonQuery();
+
+                    // コミット
+                    transaction.Commit();
+
+                    // 一覧再表示
+                    dtMst = new DataSetMaster.S_SETTING_INDataTable();
+
+                    // フォーマット名再読み込み
+                    DataRow delrow = null;
+                    foreach (DataRow row in formatNameDT.Rows)
+                    {
+                        if (row["FORMAT_N"].ToString().Equals(format_type))
+                        {
+                            delrow = row;
+                        }
+                    }
+                    if (delrow != null) formatNameDT.Rows.Remove(delrow);
+                }
+                catch (Exception ex)
+                {
+                    ret = false;
+                    strMsg = ex.Message;
+                    try
+                    {
+                        transaction.Rollback();
+                    }
+                    catch
+                    {
+                    }
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+
+            return ret;
+        }
+    }
+}

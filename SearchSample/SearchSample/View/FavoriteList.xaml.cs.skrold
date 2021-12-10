@@ -1,0 +1,430 @@
+﻿using MRILossTool.ViewModel;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using static MRILossTool.DataExtractClass;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// FavoriteList.xaml の相互作用ロジック
+    /// </summary>
+    public partial class FavoriteList : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        #endregion
+
+        /// <summary>
+        /// お気に入りリスト画面
+        /// </summary>
+        public FavoriteList()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+
+            // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(gvList);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                // お気に入りテーブルを読み込む
+                if (!GetListData())
+                {
+                    MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。",
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 表示データの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetListData()
+        {
+            bool ret = true;
+
+            try
+            {
+                FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+                // お気に入りテーブルを読み込む
+                if (!GetFavoriteTable())
+                {
+                    MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。",
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                if (vm.DtFavorite.Rows.Count == 0)
+                {
+                    MessageBox.Show("登録データがありません",
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // 一覧を生成
+                gvList.Items.Clear();
+                for (int i = 0; i < vm.DtFavorite.Rows.Count; i++)
+                {
+                    DataRow row = vm.DtFavorite.Rows[i];
+
+                    /*
+                    gvList.Rows.Add();
+                    gvList.Rows[i].Cells["colFavorite_n"].Value = row["FAVORITE_N"].ToString();
+                    gvList.Rows[i].Cells["colFavorite_id"].Value = row["FAVORITE_ID"].ToString();
+                    gvList.Rows[i].Cells["colTable_n"].Value = row["TABLE_N"].ToString();
+                    */
+                    DataExtractFavoriteListItem strCells = new DataExtractFavoriteListItem();
+                    strCells.ColFavorite_n = row["FAVORITE_N"].ToString();
+                    strCells.ColFavorite_id = row["FAVORITE_ID"].ToString();
+                    strCells.ColTable_n = row["TABLE_N"].ToString();
+                    strCells.ColSelect = true;
+
+                    // システムテンプレートの場合は編集不可
+                    if (row["USER_ID"].ToString().Equals(vm.SystemUserId()))
+                    {
+                        /*
+                        DataGridViewButtonCell colModify = (DataGridViewButtonCell)gvList.Rows[i].Cells["colModify"];
+                        colModify.ReadOnly = true;
+                        DataGridViewButtonCell colDelete = (DataGridViewButtonCell)gvList.Rows[i].Cells["colDelete"];
+                        colDelete.ReadOnly = true;
+                        */
+                        strCells.ColModify = false;
+                        strCells.ColDelete = false;
+                    }
+                    gvList.Items.Add(strCells);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        #region DB処理
+
+        /// <summary>
+        /// お気に入りテーブルの読み込み
+        /// </summary>
+        /// <returns>true/false</returns>
+        private bool GetFavoriteTable()
+        {
+            bool ret = true;
+            string strMsg = "";
+
+            try
+            {
+                FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+                // お気に入りテーブルの読み込み
+                ret = vm.GetFavoriteTable(ref strMsg);
+                if (ret == false)
+                {
+                    MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。\n" + strMsg,
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り名の取得
+        /// </summary>
+        /// <param name="strFavoriteName">お気に入り名</param>
+        /// <returns>1:存在する 0:存在しない 2:システムテンプレート</returns>
+        private int GetExistFavoriteName(String strFavoriteName)
+        {
+            int ret = 0;
+            string strMsg = "";
+
+            try
+            {
+                FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+                // お気に入り名の取得
+                ret = vm.GetExistFavoriteName(strFavoriteName, ref strMsg);
+                if (ret == 0 && strMsg != "")
+                {
+                    MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。\n" + strMsg,
+                        "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。\n" + ex.Message,
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = 0;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り名の変更
+        /// </summary>
+        /// <param name="FavoriteID">お気に入りID</param>
+        /// <param name="newFavoriteName">お気に入り名</param>
+        /// <returns></returns>
+        private bool RenameFavoriteName(string favoriteId, string userId, string newFavoriteName)
+        {
+            bool ret = true;
+            string strMsg = "";
+
+            try
+            {
+                FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+                // お気に入り名の変更
+                ret = vm.RenameFavoriteName(
+                    favoriteId, userId, newFavoriteName,
+                    ref strMsg);
+                if (ret == false)
+                {
+                    MessageBox.Show("お気に入り名の変更に失敗しました。\n" + strMsg,
+                        "DB更新エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("お気に入り名の変更に失敗しました。\n" + ex.Message,
+                    "DB更新エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// お気に入り情報の削除
+        /// </summary>
+        /// <param name="FavoriteID">お気に入りID</param>
+        /// <returns></returns>
+        private bool DeleteFavoriteTable(string FavoriteID)
+        {
+            bool ret = true;
+            string strMsg = "";
+
+            try
+            {
+                FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+                // お気に入り情報の削除
+                ret = vm.DeleteFavoriteTable(
+                    FavoriteID,
+                    ref strMsg);
+                if (ret == false)
+                {
+                    MessageBox.Show("お気に入りの削除に失敗しました。\n" + strMsg,
+                        "DB更新エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("お気に入りの削除に失敗しました。\n" + ex.Message,
+                    "DB更新エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ret = false;
+            }
+
+            return ret;
+        }
+
+        #endregion
+
+        #region ボタン
+
+        /// <summary>
+        /// 閉じる　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = false;
+            this.Close();
+        }
+
+        /// <summary>
+        /// 一覧の各ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnCell_Click(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine(((Button)sender).Tag);
+
+            FavoriteListViewModel vm = (FavoriteListViewModel)DataContext;
+
+            //DataGridView dgv = (DataGridView)sender;
+            //DataRow row = dtFavorite.Rows[e.RowIndex];
+            var btnCell = sender as Button;
+            var cell = DataGridHelper.GetCell((DataGridCellInfo)gvList.CurrentCell);
+            int rowIndex = DataGridHelper.GetRowIndex(cell);
+            DataRow row = vm.DtFavorite.Rows[rowIndex];
+
+            //if (dgv.Columns[e.ColumnIndex].Name == "colSelect")
+            if (btnCell.Tag.Equals("colSelect"))
+            {
+                // 選択　ボタンクリック
+                vm.SelectedFavoriteID = row["FAVORITE_ID"].ToString();
+                vm.SelectedFavoriteName = row["FAVORITE_N"].ToString();
+                vm.SelectedTableName = row["TABLE_N"].ToString();
+                vm.SelectedUserID = row["USER_ID"].ToString();
+
+                this.DialogResult = true;
+                this.Close();
+            }
+            //else if (dgv.Columns[e.ColumnIndex].Name == "colModify")
+            else if (btnCell.Tag.Equals("colModify"))
+            {
+                // 名前変更　ボタンクリック
+                if (row["USER_ID"].ToString().Equals(vm.SystemUserId()))
+                {
+                    // テンプレートの場合はボタン非表示の為、イベントを無視する
+                    return;
+                }
+                // お気に入り名の入力ダイアログを表示する
+                String strFavoriteName = "";
+                strFavoriteName = Microsoft.VisualBasic.Interaction.InputBox(
+                    "保存するお気に入り名を入力してください", "お気に入り登録",
+                    row["FAVORITE_N"].ToString(),
+                    -1, -1);
+
+                // 入力チェック
+                if (strFavoriteName == "")
+                {
+                    return;
+                }
+                // 重複チェック
+                if (GetExistFavoriteName(strFavoriteName) != 0)
+                {
+                    // 登録済みのお気に入り名と同じ場合
+                    MessageBox.Show("同じ名前が登録されています",
+                    "入力エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    return;
+                }
+
+                // お気に入り名変更処理
+                if (!RenameFavoriteName(row["FAVORITE_ID"].ToString(), row["USER_ID"].ToString(), strFavoriteName))
+                {
+                    return;
+                }
+            }
+            //else if (dgv.Columns[e.ColumnIndex].Name == "colDelete")
+            else if (btnCell.Tag.Equals("colDelete"))
+            {
+                // 削除　ボタンクリック
+                if (row["USER_ID"].ToString().Equals(vm.SystemUserId()))
+                {
+                    // テンプレートの場合はボタン非表示の為、イベントを無視する
+                    return;
+                }
+                if (MessageBox.Show("[" + row["FAVORITE_N"].ToString() + "]　を削除しますか？",
+                        "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question)
+                        != MessageBoxResult.OK)
+                {
+                    return;
+                }
+                // 削除処理
+                if (!DeleteFavoriteTable(row["FAVORITE_ID"].ToString()))
+                {
+                    return;
+                }
+            }
+            // 一覧を更新
+            if (!GetListData())
+            {
+                MessageBox.Show("お気に入りテーブルの読み込みに失敗しました。",
+                    "DB読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /**************************
+        /// <summary>
+        /// セル描画（CellPainting）
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void gvList_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            DataGridView dgv = (DataGridView)sender;
+            DataRow row = dtFavorite.Rows[e.RowIndex];
+
+            if (dgv.Columns[e.ColumnIndex].Name == "colModify")
+            {
+                // 名前変更　ボタン
+                if (row["USER_ID"].ToString().Equals(SystemUserId))
+                {
+                    // テンプレートの場合は非表示にする
+                    e.PaintBackground(e.CellBounds, false);
+                    e.Handled = true;
+                }
+            }
+            else if (dgv.Columns[e.ColumnIndex].Name == "colDelete")
+            {
+                // 削除　ボタン
+                if (row["USER_ID"].ToString().Equals(SystemUserId))
+                {
+                    // テンプレートの場合は非表示にする
+                    e.PaintBackground(e.CellBounds, false);
+                    e.Handled = true;
+                }
+            }
+        }
+        **********************/
+        #endregion
+
+        private void gvList_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            // 編集するとエラーになる為、無効にする
+            e.Cancel = true;
+        }
+    }
+}

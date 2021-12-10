@@ -1,0 +1,116 @@
+﻿using MRILossTool.View;
+using MRITool;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MRILossTool.ViewModel
+{
+    /// <summary>
+    /// グラフ画面 ViewModel
+    /// </summary>
+    class GraphArea4ViewModel
+    {
+        #region "DBアクセスモデル"
+
+        #endregion
+
+        #region "定数"
+
+        #endregion
+
+        #region "変数"
+
+        // 表示グラフ種類
+        private int prvKindGraph = 4;
+        /// <summary>
+        /// 表示グラフ種類セット
+        /// </summary>
+        /// <param name="kind">1:(1) 稼働時間, 2:(2) 計画停止時間, 3:(3) ライン停止, 4:(4) 停止理由</param>
+        public void SetKindGraph(int kind)
+        {
+            prvKindGraph = kind;
+        }
+        public int KindGraph()
+        {
+            return prvKindGraph;
+        }
+
+        /// <summary>
+        /// DBデータ
+        /// </summary>
+        private DataTable dtMain = new DataTable();         // メインデータ
+        public DataTable DtMain { get => dtMain; set => dtMain = value; }
+
+        private DataTable dtGraph1 = new DataTable();       // 表データ
+        public DataTable DtGraph1 { get => dtGraph1; set => dtGraph1 = value; }
+
+        private DataTable dtGraph2 = new DataTable();       // グラフデータ(全体像)
+        public DataTable DtGraph2 { get => dtGraph2; set => dtGraph2 = value; }
+
+        private DataTable dtGraph3 = new DataTable();      // グラフデータ(中段)
+        public DataTable DtGraph3 { get => dtGraph3; set => dtGraph3 = value; }
+
+        private DataTable dtGraph4 = new DataTable();   // グラフデータ(下段)
+        public DataTable DtGraph4 { get => dtGraph4; set => dtGraph4 = value; }
+
+        private DataTable dtStopReasonSelect = new DataTable();   // 選択データ
+        public DataTable DtStopReasonSelect { get => dtStopReasonSelect; set => dtStopReasonSelect = value; }
+
+        // 対象リスト画面
+        private TargetData frmTargetData = new TargetData();
+        public TargetData FrmTargetData { get => frmTargetData; set => frmTargetData = value; }
+
+        // DBAccessクラス
+        DBAccess dbaccess = new DBAccess();
+        public DBAccess Dbaccess { get => dbaccess; set => dbaccess = value; }
+
+
+        #endregion
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public GraphArea4ViewModel()
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 初期データ設定
+        /// </summary>
+        /// <param name="frmTargetData">対象データ画面</param>
+        /// <param name="kind">表示グラフ種類:1,2,3</param>
+        /// <param name="title">画面タイトル</param>
+        public void SetInitialData(
+            TargetData frmTargetData,
+            int kind,
+            string title)
+        {
+            try
+            {
+                // 表示グラフ種類セット
+                SetKindGraph(kind);
+
+                // DBデータセット
+                this.frmTargetData = frmTargetData;
+                this.dtMain = frmTargetData.GetSelectedData();      // 選択データ
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

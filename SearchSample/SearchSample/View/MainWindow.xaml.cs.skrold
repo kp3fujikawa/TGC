@@ -1,0 +1,228 @@
+﻿using ControlzEx.Theming;
+using MRILossTool.View;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace MRILossTool.View
+{
+    /// <summary>
+    /// MainWindow.xaml の相互作用ロジック
+    /// </summary>
+    public partial class MainWindow : MahApps.Metro.Controls.MetroWindow
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// メイン画面
+        /// </summary>
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            // WPF版：テーマ設定
+            Common.SettingTheme(this);
+        }
+
+        /// <summary>
+        /// Loadedイベント
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info("初期表示");
+
+                var demo_button = System.Configuration.ConfigurationManager.AppSettings["demo_button"];
+
+                if (demo_button != null && demo_button.Equals("ON"))
+                {
+                    btnDemo.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    btnDemo.Visibility = Visibility.Hidden;
+                }
+
+
+                var dlg = new Login();
+                dlg.Owner = this;
+                var result = dlg.ShowDialog();
+                if (!result.HasValue || !result.Value)
+                {
+                    this.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 終了　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnEnd_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnEnd.Content+"押下");
+
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// マスタメンテナンス　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnMaster_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnMaster.Content + "押下");
+
+                var dlg = new MasterMente();
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// データ取込　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDataImport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnDataImport.Content + "押下");
+
+                var dlg = new DataImport();
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// データ共通化　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDataChange_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnDataChange.Content + "押下");
+
+                var dlg = new DataChange();
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// データ抽出　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDataSearch_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnDataSearch.Content + "押下");
+
+                var dlg = new DataExtract();
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// デモ　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnDemo_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                logger.Info(btnDemo.Content + "押下");
+
+                var dlg = new DemoGraph();
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// WPF版：設定　ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSetting_Click(object sender, RoutedEventArgs e)
+        {
+            StyleSetting frm1 = new StyleSetting();
+
+            if (frm1.ShowDialog() == true)
+            {
+                // WPF版：テーマ設定
+                Common.SettingTheme(this);
+            }
+        }
+    }
+}
