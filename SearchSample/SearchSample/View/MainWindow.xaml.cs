@@ -93,10 +93,10 @@ namespace SearchSample.View
 
                 dataGrid2.ItemsSource = Table.DefaultView;
 
-                foreach (DataGridColumn col in dataGrid2.Columns)
-                {
-                    col.Width = 130;
-                }
+                //foreach (DataGridColumn col in dataGrid2.Columns)
+                //{
+                //    col.Width = 130;
+                //}
 
                 chkQualityData.IsChecked = true;
                 chkProcessData.IsChecked = true;
@@ -287,6 +287,54 @@ namespace SearchSample.View
         /// </summary>
         private void btnOutputSelect_Click(object sender, EventArgs e)
         {
+            OutputSettingDialog frm1 = new OutputSettingDialog(this);
+
+            frm1.ShowDialog();
+        }
+
+        /// 追加　リンククリック
+        /// </summary>
+        private void lnkAdd_Click(object sender, EventArgs e)
+        {
+            //Search();
+        }
+
+        /// お気に入り　リンククリック
+        /// </summary>
+        private void lnkLike_Click(object sender, EventArgs e)
+        {
+            LikeDialog frm1 = new LikeDialog(this);
+
+            frm1.ShowDialog();
+        }
+
+        /// お気に入り登録　リンククリック
+        /// </summary>
+        private void lnkLikeRegister_Click(object sender, EventArgs e)
+        {
+            LikeRegisterDialog frm1 = new LikeRegisterDialog(this);
+
+            frm1.ShowDialog();
+        }
+
+        /// 条件クリア　リンククリック
+        /// </summary>
+        private void lnkConditionClear_Click(object sender, EventArgs e)
+        {
+            //Search();
+        }
+
+        /// ファイルに保存　リンククリック
+        /// </summary>
+        private void lnkCSVOutput_Click(object sender, EventArgs e)
+        {
+            //Search();
+        }
+
+        /// DPIファイルに保存　リンククリック
+        /// </summary>
+        private void lnkDPIOutput_Click(object sender, EventArgs e)
+        {
             //Search();
         }
 
@@ -352,10 +400,10 @@ namespace SearchSample.View
             dataGrid2.Columns.Clear();
             dataGrid2.ItemsSource = Table.DefaultView;
 
-            foreach (DataGridColumn col in dataGrid2.Columns)
-            {
-                col.Width = 130;
-            }
+            //foreach (DataGridColumn col in dataGrid2.Columns)
+            //{
+            //    col.Width = 130;
+            //}
 
         }
 

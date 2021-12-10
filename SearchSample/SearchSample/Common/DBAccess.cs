@@ -285,7 +285,7 @@ namespace SearchSample
 
                         SQL += " FROM ([製造指図情報] AS " + T1 + " ";
                         SQL += " LEFT JOIN [実行処方製品] AS " + T2 + " ON (" + T2 + ".[製造指図番号] = " + T1 + ".[製造指図番号]) ) ";
-                        SQL += " LEFT JOIN [実行処方ヘッダ] AS " + T3 + " ON (" + T3 + ".[製造指図番号] = " + T2 + ".[製造指図番号] AND " + T3 + ".[処方ID] = " + T2 + ".[処方ID]) ";
+                        SQL += " LEFT JOIN [実行処方ヘッダ] AS " + T3 + " ON (" + T3 + ".[製造指図番号] = " + T1 + ".[製造指図番号] ) ";
 
                         SQL += " WHERE 1=1 " + CreateSearchCondiotion(seach, out addparam, out addtest);
 
@@ -448,6 +448,8 @@ namespace SearchSample
                             adapter2.Fill(tmpparamdt);
                             adapter2.Dispose();
 
+                            List<string> element_param_list = new List<string>();
+
                             foreach (DataRow row2 in tmpparamdt.Rows)
                             {
                                 string element_name = row2["要素名称"].ToString();
@@ -468,6 +470,8 @@ namespace SearchSample
                                 {
                                     paramdt.Columns.Add(col_name);
                                 }
+
+                                element_param_list.Add(element_name + Common.ColCennector + param_name);
 
                             }
 
@@ -511,8 +515,27 @@ namespace SearchSample
                                         "試験結果（報告用）",
                                         "規格１上限",
                                         "規格１下限",
-
                                         };
+
+                                // 品質データ抽出チェックあり
+                                foreach (string element_param_name in element_param_list)
+                                {
+
+                                    foreach (string test_name in seach.qulity_list)
+                                    {
+                                        string col_name = string.Empty;
+
+                                        foreach (string col in test_cols)
+                                        {
+                                            col_name = element_param_name + Common.ColCennector + test_name + Common.ColCennector + col;
+                                            if (!testdt.Columns.Contains(col_name))
+                                            {
+                                                testdt.Columns.Add(col_name);
+                                            }
+                                        }
+                                    }
+
+                                }
 
                                 List<string> param_list = new List<string>();
                                 foreach (string param in seach.qulity_list)
@@ -553,25 +576,6 @@ namespace SearchSample
                                 OleDbDataAdapter adapter3 = new OleDbDataAdapter(SQL, connection);
                                 adapter3.Fill(tmptestdt);
                                 adapter3.Dispose();
-
-                                // 品質データ抽出チェックあり
-                                foreach (DataRow row2 in tmptestdt.Rows)
-                                {
-                                    string element_name = row2["要素名称"].ToString();
-                                    string param_name = row2["パラメータ名称"].ToString();
-                                    string test_name = row2["試験項目名"].ToString();
-                                    string col_name = string.Empty;
-
-                                    foreach (string col in test_cols)
-                                    {
-                                        col_name = element_name + Common.ColCennector + param_name + Common.ColCennector + test_name + Common.ColCennector + col;
-                                        if (!testdt.Columns.Contains(col_name))
-                                        {
-                                            testdt.Columns.Add(col_name);
-                                        }
-                                    }
-
-                                }
 
                                 DataRow[] drs2 = testdt.Select("製造指図番号 = '" + pno + "'");
 

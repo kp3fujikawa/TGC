@@ -37,7 +37,7 @@
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
 
-        <Button x:Name="btnClose" Content="閉じる" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" 
+        <Button x:Name="btnClose" Content="閉じる" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
                 Height="30" Width="100" Click="btnClose_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="閉じる">
         </Button>
@@ -212,8 +212,26 @@
                 <StackPanel Margin="6" 
                             HorizontalAlignment="Left"
                             Width="200">
-                    <Label Content="追加"/>
-                    <Label Content="お気に入り" />
+                    <Label>
+                        <Hyperlink Click="lnkAdd_Click">
+                            <TextBlock Text="追加" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkLike_Click">
+                            <TextBlock Text="お気に入り" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkLikeRegister_Click">
+                            <TextBlock Text="お気に入り登録" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkConditionClear_Click">
+                            <TextBlock Text="条件クリア" />
+                        </Hyperlink>
+                    </Label>
                 </StackPanel>
             </Expander>
 
@@ -224,8 +242,16 @@
                 <StackPanel Margin="6" 
                             HorizontalAlignment="Left"
                             Width="200">
-                    <Label Content="ファイルに保存"/>
-                    <Label Content="DPIファイルに保存"/>
+                    <Label>
+                        <Hyperlink Click="lnkCSVOutput_Click">
+                            <TextBlock Text="ファイルに保存" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkDPIOutput_Click">
+                            <TextBlock Text="DPIファイルに保存" />
+                        </Hyperlink>
+                    </Label>
                 </StackPanel>
             </Expander>
 

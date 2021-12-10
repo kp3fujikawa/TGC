@@ -3,3 +3,7 @@
 ################################################################################
 
 /.vs
+/SearchSample/packages
+/SearchSample/.vs/SearchSample/v16
+/SearchSample/SearchSample/bin/Debug
+/SearchSample/SearchSample/obj/Debug
