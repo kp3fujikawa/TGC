@@ -45,7 +45,7 @@ namespace SearchSample.View
         {
             QuolityDialogViewModel vm = (QuolityDialogViewModel)DataContext;
             DataTable dt = new DataTable();
-            vm.GetTestitemList(out dt);
+            vm.GetTestitemNameList(out dt);
 
             List<string> list = new List<string>();
             foreach (DataRow row in dt.Rows)

@@ -55,7 +55,7 @@ namespace SearchSample
         /// <summary>
         /// カラム接続子
         /// </summary>
-        static public string ColCennector = "_";
+        static public string ColCennector = "　";
 
         /// <summary>
         /// 項目追加

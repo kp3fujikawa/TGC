@@ -395,7 +395,7 @@ namespace SearchSample.View
             }
 
             MainWindowViewModel vm = (MainWindowViewModel)DataContext;
-            vm.SearchData(s, out Table);
+            vm.SearchData(s, cmbDataDictinary.SelectedValue is null ? "" : cmbDataDictinary.SelectedValue.ToString(), out Table);
 
             dataGrid2.Columns.Clear();
             dataGrid2.ItemsSource = Table.DefaultView;

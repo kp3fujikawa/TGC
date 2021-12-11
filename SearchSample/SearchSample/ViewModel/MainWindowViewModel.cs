@@ -262,9 +262,9 @@ namespace SearchSample.ViewModel
         /// テーブルカラム名取得
         /// </summary>
         /// <returns>true/false</returns>
-        public bool SearchData(SearchData seach,out DataTable resulrdt)
+        public bool SearchData(SearchData seach, string dic, out DataTable resulrdt)
         {
-            return db.SearchData(seach, out resulrdt);
+            return db.SearchData(seach, dic, out resulrdt);
         }
 
     }

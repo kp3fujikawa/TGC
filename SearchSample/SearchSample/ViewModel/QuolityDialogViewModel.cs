@@ -35,12 +35,12 @@ namespace SearchSample.ViewModel
         }
 
         /// <summary>
-        /// 要素名.パラメータ名一覧取得
+        ///検査項目名一覧取得
         /// </summary>
         /// <returns>true/false</returns>
-        public bool GetTestitemList(out DataTable resulrdt)
+        public bool GetTestitemNameList(out DataTable resulrdt)
         {
-            return db.GetTestitemList(out resulrdt);
+            return db.GetTestitemNameList(out resulrdt);
         }
     }
 }
