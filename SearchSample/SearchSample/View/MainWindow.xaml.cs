@@ -6,6 +6,7 @@ using SearchSample.ViewModel;
 using System.Data;
 using SearchSample.Model;
 using System.Collections.Generic;
+using System.Windows.Input;
 
 namespace SearchSample.View
 {
@@ -136,9 +137,6 @@ namespace SearchSample.View
             SetComboBox(cmbCombi2, vm.SearchCombi);
             SetComboBox(cmbCombi3, vm.SearchCombi);
 
-            SetComboBox(cmbPageSize, vm.PageSize);
-            cmbPageSize.SelectedIndex = 0;
-
             DataTable cmbitem_dt = itemdt.Copy();
 
             DataRow newrow1 = cmbitem_dt.NewRow();
@@ -181,7 +179,7 @@ namespace SearchSample.View
             allClear();
 
             string value = cmbDataDictinary.SelectedValue.ToString();
-            if (value.Equals("1"))
+            if (value.Equals("1") || value.Equals("4"))
             {
                 // バッチ実績＋出荷実績
                 QualityEnabled();
@@ -259,7 +257,20 @@ namespace SearchSample.View
         /// </summary>
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            Search();
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                Search();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
         }
 
         /// <summary>
@@ -400,6 +411,9 @@ namespace SearchSample.View
             dataGrid2.Columns.Clear();
             dataGrid2.ItemsSource = Table.DefaultView;
 
+            ResultRecords.Text = Table.DefaultView.Count.ToString();
+            ResultColumns.Text = Table.Columns.Count.ToString();
+
             //foreach (DataGridColumn col in dataGrid2.Columns)
             //{
             //    col.Width = 130;
@@ -407,6 +421,12 @@ namespace SearchSample.View
 
         }
 
+        private void btnPlant_Click(object sender, RoutedEventArgs e)
+        {
+            PlantSearch frm1 = new PlantSearch();
+
+            frm1.Show();
+        }
     }
 
 }

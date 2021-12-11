@@ -230,6 +230,7 @@
     <Compile Include="ViewModel\OutputSettingDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeRegisterDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeDialogViewModel.cs" />
+    <Compile Include="ViewModel\PlantSearchViewModel.cs" />
     <Compile Include="ViewModel\QuolityDialogViewModel.cs" />
     <Compile Include="ViewModel\ErrorDialogViewModel.cs" />
     <Compile Include="ViewModel\MainWindowViewModel.cs" />
@@ -242,6 +243,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="View\LikeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\PlantSearch.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -271,6 +276,9 @@
     </Compile>
     <Compile Include="View\LikeDialog.xaml.cs">
       <DependentUpon>LikeDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\PlantSearch.xaml.cs">
+      <DependentUpon>PlantSearch.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\QuolityDialog.xaml.cs">
       <DependentUpon>QuolityDialog.xaml</DependentUpon>

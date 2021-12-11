@@ -7,9 +7,9 @@ using SearchSample.Model;
 namespace SearchSample.ViewModel
 {
     /// <summary>
-    /// メイン画面 ViewModel
+    /// プラント情報検索画面 ViewModel
     /// </summary>
-    class MainWindowViewModel
+    class PlantSearchViewModel
     {
         #region "DBアクセスモデル"
 
@@ -121,15 +121,13 @@ namespace SearchSample.ViewModel
             "0",
             "1",
             "2",
-            "3",
-            "4",
+            "3"
         };
         private String[] data_dictionary_text = {
             "",
             "バッチ実績＋出荷実績",
             "入出庫実績・在庫",
-            "品質情報",
-            "PT-395 反応",
+            "品質情報"
         };
 
         private DataTable data_dictionary_dt;
@@ -161,112 +159,18 @@ namespace SearchSample.ViewModel
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public MainWindowViewModel()
+        public PlantSearchViewModel()
         {
 
-        }
-
-        /// <summary>
-        /// テーブルカラム名取得
-        /// </summary>
-        /// <returns>true/false</returns>
-        public bool GetItemData(out DataTable rtndt)
-        {
-            rtndt = new DataTable();
-            rtndt.Columns.Add(Common.ComboBoxText);
-            rtndt.Columns.Add(Common.ComboBoxValue);
-
-            bool ret = true;
-
-            try
-            {
-                
-                DataTable table = new DataTable();
-                Dictionary<string, int> dic = new Dictionary<string, int>();
-                string table_name = string.Empty;
-
-                table_name = "製造指図情報";
-
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach(DataColumn col in table.Columns)
-                {
-                    if (dic.ContainsKey(col.ColumnName))
-                    {
-                        continue;
-                    }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
-
-                    dic[col.ColumnName] = 1;
-                }
-
-                table_name = "実行処方製品";
-
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach (DataColumn col in table.Columns)
-                {
-                    if (dic.ContainsKey(col.ColumnName))
-                    {
-                        continue;
-                    }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
-
-                    dic[col.ColumnName] = 1;
-                }
-
-                table_name = "実行処方ヘッダ";
-
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach (DataColumn col in table.Columns)
-                {
-                    if (dic.ContainsKey(col.ColumnName))
-                    {
-                        continue;
-                    }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
-
-                    dic[col.ColumnName] = 1;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                ret = false;
-            }
-            finally
-            {
-                
-            }
-            return ret;
         }
 
         /// <summary>
         /// データ検索
         /// </summary>
         /// <returns>true/false</returns>
-        public bool SearchData(SearchData seach, string dic, out DataTable resulrdt)
+        public bool SearchData(SearchData seach,out DataTable resulrdt)
         {
-            return db.SearchData(seach, dic, out resulrdt);
+            return db.SearchPlantData(seach, out resulrdt);
         }
 
     }

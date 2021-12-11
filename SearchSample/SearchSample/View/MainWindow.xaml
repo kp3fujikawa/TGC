@@ -37,10 +37,16 @@
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
 
-        <Button x:Name="btnClose" Content="閉じる" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
+        <StackPanel  Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+            <Button x:Name="btnClose" Content="閉じる" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
                 Height="30" Width="100" Click="btnClose_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="閉じる">
-        </Button>
+            </Button>
+            <Button x:Name="btnPlant" Content="プラント情報検索" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
+                Height="30" Width="100" Click="btnPlant_Click"
+                Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="プラント情報検索">
+            </Button>
+        </StackPanel>
 
         <Grid Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
@@ -161,37 +167,11 @@
                     Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="検索">
             </Button>
 
-            <StackPanel x:Name="Paging" Grid.Column="1" HorizontalAlignment="Left" Margin="4" Orientation="Horizontal" Visibility="Hidden">
-                <!--<Button        
-                    Margin="4,0"
-                    Content="&lt;&lt;"
-                    Command="{Binding FirstCommand}"/>-->
-                <Button Margin="4,0" Content="◀前へ" Command="{Binding PreviousCommand}"
-                    Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <ListBox x:Name="pageListBox" Width="Auto" Height="Auto" HorizontalContentAlignment="Stretch" ItemsSource="{Binding}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                    </ListBox>
-                </StackPanel>
-                <Button Margin="4,0" Content="次へ▶" Command="{Binding NextCommand}"
-                    Style="{StaticResource MahApps.Styles.Button.Square.Accent}"/>
-                <Label Content="合計"/>
-                <TextBlock Text="{Binding TotalItems}"/>
-                <Label Content="/"/>
-                <ComboBox x:Name="cmbPageSize" Style="{StaticResource MahApps.Styles.ComboBox}" />
-                <!--<Button
-                    Margin="4,0"
-                    Content="&gt;&gt;"
-                    Command="{Binding LastCommand}"/>-->
+            <StackPanel x:Name="Paging" Grid.Column="1" HorizontalAlignment="Left" Margin="4" Orientation="Horizontal" Visibility="Visible">
+                <TextBlock x:Name="ResultRecords" VerticalAlignment="Center"/>
+                <Label VerticalAlignment="Center">件</Label>
+                <TextBlock x:Name="ResultColumns" VerticalAlignment="Center"/>
+                <Label VerticalAlignment="Center">列</Label>
             </StackPanel>
 
         </Grid>

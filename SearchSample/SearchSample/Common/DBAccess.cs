@@ -144,7 +144,7 @@ namespace SearchSample
         }
 
         /// <summary>
-        /// 項目名の読み込み
+        /// データ検索
         /// </summary>
         /// <param name="table_name">対象テーブル名</param>
         /// <param name="itemNameDT">データテーブル</param>
@@ -196,13 +196,13 @@ namespace SearchSample
                         SQL += " SELECT ";
 
                         SQL += " " + T1 + ".[製造指図番号] ";
-                        if (string.IsNullOrEmpty(dic))
+                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                         {
                             SQL += " ," + T1 + ".[製造指図ステータス] ";
                         }
                         SQL += " ," + T1 + ".[品目コード] ";
                         SQL += " ," + T1 + ".[品名] ";
-                        if (string.IsNullOrEmpty(dic))
+                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                         {
                             SQL += " ," + T1 + ".[SAP製造指図番号] ";
                             SQL += " ," + T1 + ".[ASTキー] ";
@@ -223,7 +223,7 @@ namespace SearchSample
                         SQL += " ," + T2 + ".[処方ID] ";
                         SQL += " ," + T2 + ".[処方バージョン] ";
                         SQL += " ," + T2 + ".[処方製品連番] ";
-                        if (string.IsNullOrEmpty(dic))
+                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                         {
                             SQL += " ," + T2 + ".[表示順] ";
                             SQL += " ," + T2 + ".[製品種別] ";
@@ -314,7 +314,7 @@ namespace SearchSample
 
                         string[] element_cols = null;
 
-                        if (string.IsNullOrEmpty(dic))
+                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                         {
                             element_cols = new string[]{
                                     "工程予定時間",
@@ -363,7 +363,7 @@ namespace SearchSample
                             SQL += " ," + T4 + ".[処方バージョン] ";
                             SQL += " ," + T4 + ".[ステップID] ";
                             SQL += " ," + T4 + ".[要素名称] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T4 + ".[工程予定時間] ";
                                 SQL += " ," + T4 + ".[工程標準廃液量] ";
@@ -385,7 +385,7 @@ namespace SearchSample
                             }
                             SQL += " ," + T4 + ".[開始実績日時] ";
                             SQL += " ," + T4 + ".[終了実績日時] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T4 + ".[工程指図メモ] ";
                             }
@@ -393,7 +393,7 @@ namespace SearchSample
                             SQL += " ," + T5 + ".[パラメータID] ";
                             SQL += " ," + T5 + ".[パラメータ名称] ";
                             SQL += " ," + T5 + ".[設定値] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T5 + ".[工業単位] ";
                                 SQL += " ," + T5 + ".[指図確定時確認] ";
@@ -408,7 +408,7 @@ namespace SearchSample
                             }
                             SQL += " ," + T5 + ".[品目コード] ";
                             SQL += " ," + T5 + ".[品名] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T5 + ".[原材料グレード] ";
                                 SQL += " ," + T5 + ".[計量パターン] ";
@@ -438,7 +438,7 @@ namespace SearchSample
                                 SQL += " ," + T5 + ".[実績収集値] ";
                             }
                             SQL += " ," + T5 + ".[実績確定値] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T5 + ".[設定値変更者] ";
                                 SQL += " ," + T5 + ".[設定値変更日時] ";
@@ -465,7 +465,7 @@ namespace SearchSample
                             SQL += " ," + T5 + ".[実績荷姿数量] ";
                             SQL += " ," + T5 + ".[実績荷姿個数] ";
                             SQL += " ," + T5 + ".[実績数量] ";
-                            if (string.IsNullOrEmpty(dic))
+                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
                             {
                                 SQL += " ," + T5 + ".[SAP簿外] ";
                                 SQL += " ," + T5 + ".[SAP転記日] ";
@@ -476,6 +476,11 @@ namespace SearchSample
                             SQL += " LEFT JOIN [実行処方パラメータ] AS " + T5 + " ON " + T4 + ".[製造指図番号] = " + T5 + ".[製造指図番号] AND " + T4 + ".[ステップID] = " + T5 + ".[ステップID] ";
 
                             SQL += " WHERE " + T4 + ".[製造指図番号] = '" + pno + "'";
+                            if (dic.Equals("4"))
+                            {
+                                SQL += " AND MID(" + T4 + ".[ステップID],1,1) = '3'";
+                            }
+
                             SQL += " ORDER BY " + T4 + ".[製造指図番号], " + T4 + ".[ステップID], " + T5 + ".[パラメータID] ";
                             //if (param_list.Count>0)
                             //{
@@ -615,6 +620,10 @@ namespace SearchSample
                                 SQL += " LEFT JOIN [検査性状値] AS " + T9 + " ON (" + T9 + ".[Lab-Aid依頼番号] = " + T5 + ".[Lab-Aid依頼番号]) ";
 
                                 SQL += " WHERE " + T4 + ".[製造指図番号] = '" + pno + "'";
+                                if (dic.Equals("4"))
+                                {
+                                    SQL += " AND MID(" + T4 + ".[ステップID],1,1) = '3'";
+                                }
                                 SQL += " AND " + T9 + ".[試験項目名] in (" + string.Join(",", param_list) + ")";
                                 SQL += " ORDER BY " + T4 + ".[製造指図番号], " + T4 + ".[ステップID], " + T5 + ".[パラメータID] ";
 
@@ -858,6 +867,107 @@ namespace SearchSample
             return ret;
         }
 
+        /// <summary>
+        /// プラントデータ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchPlantData(
+            SearchData seach,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
 
+            resulrdt = new DataTable();
+            DataTable plantdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+                        resulrdt.Columns.Add("time");
+
+                        List<string> param_list = new List<string>();
+                        foreach (string param in seach.process_list)
+                        {
+                            resulrdt.Columns.Add(param);
+                            param_list.Add("'" + param + "'");
+                        }
+
+                        connection.Open();
+
+                        string SQL = "SELECT *";
+                        SQL += " FROM PI ";                        
+                        SQL += " WHERE tag in (" + string.Join(",", param_list) + ")";
+                        if (seach.product_date_start.HasValue)
+                        {
+                            SQL += " AND time >= :start_time";
+                        }
+                        if (seach.product_date_end.HasValue)
+                        {
+                            SQL += " AND time < :end_time";
+                        }
+                        SQL += " ORDER BY time";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        if (seach.product_date_start.HasValue)
+                        {
+                            adapter.SelectCommand.Parameters.Add(new OleDbParameter("start_time", seach.product_date_start.Value));
+                        }
+                        if (seach.product_date_end.HasValue)
+                        {
+                            adapter.SelectCommand.Parameters.Add(new OleDbParameter("end_time", seach.product_date_end.Value));
+                        }
+
+                        adapter.Fill(plantdt);
+                        adapter.Dispose();
+
+                        foreach (DataRow row in plantdt.Rows)
+                        {
+                            DataRow[] rows = resulrdt.Select("time = '" + row["time"].ToString() + "'");
+                            if (rows.Length == 0)
+                            {
+                                DataRow newRow = resulrdt.NewRow();
+                                newRow["time"] = row["time"];
+                                newRow[row["tag"].ToString()] = row["value"].ToString();
+                                resulrdt.Rows.Add(newRow);
+                            }
+                            else
+                            {
+                                rows[0][row["tag"].ToString()] = row["value"].ToString();
+                            }
+                        }
+
+
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
     }
 }
