@@ -225,6 +225,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Common\DBAccess.cs" />
+    <Compile Include="Model\OutputItem.cs" />
     <Compile Include="Model\SearchCondition.cs" />
     <Compile Include="Model\SearchData.cs" />
     <Compile Include="ViewModel\OutputSettingDialogViewModel.cs" />

@@ -20,6 +20,7 @@ namespace SearchSample.ViewModel
         #region "変数"
 
         private String[] search_condtinon_value = {
+            "",
             "=",
             "LIKE",
             ">",
@@ -28,6 +29,7 @@ namespace SearchSample.ViewModel
             "<="
         };
         private String[] search_condtinon_text = {
+            "",
             "と等しい",
             "を含む",
             "より大きい",

@@ -7,6 +7,9 @@ using System.Data;
 using SearchSample.Model;
 using System.Collections.Generic;
 using System.Windows.Input;
+using System.Windows.Data;
+using System.Collections.ObjectModel;
+using System.Windows.Media;
 
 namespace SearchSample.View
 {
@@ -27,7 +30,13 @@ namespace SearchSample.View
 
         private DataTable itemdt = new DataTable();
 
+        private DataTable cmbitem_dt = new DataTable();
+
         private List<string> _quality_list = new List<string>();
+
+        //private ObservableCollection<SearchGrid> dataList = new ObservableCollection<SearchGrid>();
+
+        //public ObservableCollection<SearchCondition> dataList { get; private set; }
 
         #endregion
 
@@ -55,6 +64,7 @@ namespace SearchSample.View
             Common.SettingTheme(this);
 
             // WPF版：DataGrid ColumnHeaderStyle設定
+            Common.SettingColumnHeaderStyle(searchGrid);
             Common.SettingColumnHeaderStyle(dataGrid2);
 
         }
@@ -84,7 +94,7 @@ namespace SearchSample.View
                 vm.GetItemData(out itemdt);
 
                 // コンボボックスリスト生成
-                CreateComboBox();
+                CreateDataDictinary(vm);
 
                 Table = new DataTable();
                 foreach (DataRow row in itemdt.Rows)
@@ -94,10 +104,8 @@ namespace SearchSample.View
 
                 dataGrid2.ItemsSource = Table.DefaultView;
 
-                //foreach (DataGridColumn col in dataGrid2.Columns)
-                //{
-                //    col.Width = 130;
-                //}
+                // 検索条件生成
+                CreateSearch();
 
                 chkQualityData.IsChecked = true;
                 chkProcessData.IsChecked = true;
@@ -111,14 +119,130 @@ namespace SearchSample.View
         }
 
         /// <summary>
-        /// 項目名コンボボックスリスト生成
+        /// 検索条件生成
         /// </summary>
         /// <returns>true/false</returns>
-        private void CreateComboBox()
+        private void CreateSearch()
+        {
+            CreateGridColmun();
+            ResetSearch();
+        }
+
+        private void ResetSearch()
+        {
+            // データグリッドにデータを設定します。
+            // データグリッドのItemSourceに設定するデータはObservableCollectionにする必要があります。
+            ObservableCollection<SearchCondition> dataList = new ObservableCollection<SearchCondition>();
+            for (int i = 0; i < 3; ++i)
+            {
+                dataList.Add(new SearchCondition
+                {
+                    item = "",
+                    value = "",
+                    condition = "",
+                    combi = "",
+                });
+            }
+            searchGrid.ItemsSource = dataList;
+        }
+
+        private void CreateGridColmun()
         {
             MainWindowViewModel vm = (MainWindowViewModel)DataContext;
-            CreateDataDictinary(vm);
-            CreateSearch(vm);
+
+            // グリッド初期設定
+            //searchGrid.IsReadOnly = true;              // 読取専用
+            //dataGrid.CanUserDeleteRows = false;      // 行削除禁止
+            //dataGrid.CanUserAddRows = false;         // 行挿入禁止
+            //searchGrid.HeadersVisibility = DataGridHeadersVisibility.Column;   // 先頭列非表示
+            searchGrid.AutoGenerateColumns = false;    // 列の自動追加禁止
+
+            this.cmbitem_dt = itemdt.Copy();
+
+            DataRow newrow1 = this.cmbitem_dt.NewRow();
+            newrow1[Common.ComboBoxText] = Common.item_param;
+            newrow1[Common.ComboBoxValue] = Common.item_param;
+            this.cmbitem_dt.Rows.Add(newrow1);
+
+            DataRow newrow2 = this.cmbitem_dt.NewRow();
+            newrow2[Common.ComboBoxText] = Common.item_test;
+            newrow2[Common.ComboBoxValue] = Common.item_test;
+            this.cmbitem_dt.Rows.Add(newrow2);
+
+            FrameworkElementFactory cmbItem = new FrameworkElementFactory(typeof(ComboBox));
+            cmbItem.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
+            cmbItem.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
+            cmbItem.SetValue(ComboBox.ItemsSourceProperty, this.cmbitem_dt.DefaultView);
+            cmbItem.SetValue(ComboBox.NameProperty, "cmbItem");
+            cmbItem.SetBinding(ComboBox.TextProperty, new Binding("item"));
+
+            DataGridTemplateColumn cmbItemColumn = new DataGridTemplateColumn()
+            {
+                Header = "項目",
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(ComboBox),
+                    VisualTree = cmbItem,
+                },
+                Width = 130,
+            };
+
+
+            FrameworkElementFactory txtValue = new FrameworkElementFactory(typeof(TextBox));
+            txtValue.SetBinding(TextBox.TextProperty, new Binding("value"));
+            txtValue.SetValue(TextBox.NameProperty, "txtValue");
+
+            DataGridTemplateColumn txtValueColumn = new DataGridTemplateColumn()
+            {
+                Header = "値",
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(TextBox),
+                    VisualTree = txtValue,
+                },
+                Width = 130,
+            };
+
+            FrameworkElementFactory cmbCondition = new FrameworkElementFactory(typeof(ComboBox));
+            cmbCondition.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
+            cmbCondition.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
+            cmbCondition.SetValue(ComboBox.ItemsSourceProperty, vm.SearchCondition.DefaultView);
+            cmbCondition.SetValue(ComboBox.NameProperty, "cmbCondition");
+            cmbCondition.SetBinding(ComboBox.TextProperty, new Binding("condition"));
+
+            DataGridTemplateColumn cmbConditionColumn = new DataGridTemplateColumn()
+            {
+                Header = "条件",
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(ComboBox),
+                    VisualTree = cmbCondition,
+                },
+                Width = 130,
+            };
+
+            FrameworkElementFactory cmbCombi = new FrameworkElementFactory(typeof(ComboBox));
+            cmbCombi.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
+            cmbCombi.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
+            cmbCombi.SetValue(ComboBox.ItemsSourceProperty, vm.SearchCombi.DefaultView);
+            cmbCombi.SetValue(ComboBox.NameProperty, "cmbCombi");
+            cmbCombi.SetBinding(ComboBox.TextProperty, new Binding("Combi"));
+
+            DataGridTemplateColumn cmbCombiColumn = new DataGridTemplateColumn()
+            {
+                Header = "結合子",
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(ComboBox),
+                    VisualTree = cmbCombi,
+                },
+                Width = 130,
+            };
+
+            searchGrid.Columns.Add(cmbItemColumn);
+            searchGrid.Columns.Add(txtValueColumn);
+            searchGrid.Columns.Add(cmbConditionColumn);
+            searchGrid.Columns.Add(cmbCombiColumn);
 
         }
 
@@ -127,37 +251,10 @@ namespace SearchSample.View
             SetComboBox(cmbDataDictinary, vm.DataDictionary);
 
         }
-        private void CreateSearch(MainWindowViewModel vm)
-        {
-            SetComboBox(cmbCondition1, vm.SearchCondition);
-            SetComboBox(cmbCondition2, vm.SearchCondition);
-            SetComboBox(cmbCondition3, vm.SearchCondition);
 
-            SetComboBox(cmbCombi1, vm.SearchCombi);
-            SetComboBox(cmbCombi2, vm.SearchCombi);
-            SetComboBox(cmbCombi3, vm.SearchCombi);
-
-            DataTable cmbitem_dt = itemdt.Copy();
-
-            DataRow newrow1 = cmbitem_dt.NewRow();
-            newrow1[Common.ComboBoxText] = Common.item_param;
-            newrow1[Common.ComboBoxValue] = Common.item_param;
-            cmbitem_dt.Rows.Add(newrow1);
-
-            DataRow newrow2 = cmbitem_dt.NewRow();
-            newrow2[Common.ComboBoxText] = Common.item_test;
-            newrow2[Common.ComboBoxValue] = Common.item_test;
-            cmbitem_dt.Rows.Add(newrow2);
-
-            SetComboBox(cmbItem1, cmbitem_dt);
-            SetComboBox(cmbItem2, cmbitem_dt);
-            SetComboBox(cmbItem3, cmbitem_dt);
-
-        }
         private void SetComboBox(ComboBox cmb, DataTable dt)
         {
             // コンボボックスを作成
-            //cmb.Items.Clear();
             cmb.ItemsSource = dt.DefaultView;
             cmb.DisplayMemberPath = Common.ComboBoxText;
             cmb.SelectedValuePath = Common.ComboBoxValue;
@@ -178,7 +275,7 @@ namespace SearchSample.View
         {
             allClear();
 
-            string value = cmbDataDictinary.SelectedValue.ToString();
+            string value = cmbDataDictinary.SelectedValue != null ? cmbDataDictinary.SelectedValue.ToString() : "";
             if (value.Equals("1") || value.Equals("4"))
             {
                 // バッチ実績＋出荷実績
@@ -207,16 +304,15 @@ namespace SearchSample.View
 
         private void allClear()
         {
-            MainWindowViewModel vm = (MainWindowViewModel)DataContext;
-            CreateSearch(vm);
+            ResetSearch();
 
             ProductDate1.SelectedDate = null;
             ProductDate2.SelectedDate = null;
 
-            chkQualityData.IsChecked = false;
+            chkQualityData.IsChecked = true;
             txtQualityData.Text = string.Empty;
 
-            chkProcessData.IsChecked = false;
+            chkProcessData.IsChecked = true;
             txtProcessData.Text = string.Empty;
         }
 
@@ -307,7 +403,15 @@ namespace SearchSample.View
         /// </summary>
         private void lnkAdd_Click(object sender, EventArgs e)
         {
-            //Search();
+            // データグリッドに行を追加します。
+            ObservableCollection<SearchCondition> dataList = searchGrid.ItemsSource as ObservableCollection<SearchCondition>;
+            dataList.Add(new SearchCondition
+            {
+                item = "",
+                value = "",
+                condition = "",
+                combi = "",
+            });
         }
 
         /// お気に入り　リンククリック
@@ -332,7 +436,7 @@ namespace SearchSample.View
         /// </summary>
         private void lnkConditionClear_Click(object sender, EventArgs e)
         {
-            //Search();
+            allClear();
         }
 
         /// ファイルに保存　リンククリック
@@ -357,30 +461,40 @@ namespace SearchSample.View
 
             // 検索条件生成
             SearchData s = new SearchData();
-            s.search_list.Add(new SearchCondition
-            {
-                item = cmbItem1.SelectedValue != null ? cmbItem1.SelectedValue.ToString() : "",
-                value = txtValue1.Text,
-                condition = cmbCondition1.SelectedValue != null ? cmbCondition1.SelectedValue.ToString() : "",
-                combi = cmbCombi1.SelectedValue != null ? cmbCombi1.SelectedValue.ToString() : "",
 
-            });
-            s.search_list.Add(new SearchCondition
+            // データグリッドの行数を取得します。
+            var rowCount = searchGrid.Items.Count;
+            // データグリッドの行数分繰り返します。
+            for (int i = 0; i < rowCount; ++i)
             {
-                item = cmbItem2.SelectedValue != null ? cmbItem2.SelectedValue.ToString() : "",
-                value = txtValue2.Text,
-                condition = cmbCondition2.SelectedValue != null ? cmbCondition2.SelectedValue.ToString() : "",
-                combi = cmbCombi2.SelectedValue != null ? cmbCombi2.SelectedValue.ToString() : "",
+                // データグリッドの行オブジェクトを取得します。
+                var row = searchGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                // 行オブジェクトが取得できない場合
+                if (row == null)
+                {
+                    // 対象の行が表示されていない場合、行オブジェクトが取得できないため
+                    // 対象の行が表示されるようスクロールします。
+                    searchGrid.UpdateLayout();
+                    searchGrid.ScrollIntoView(searchGrid.Items[i]);
+                    // 再度、行オブジェクトを取得します。
+                    row = searchGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                }
 
-            });
-            s.search_list.Add(new SearchCondition
-            {
-                item = cmbItem3.SelectedValue != null ? cmbItem3.SelectedValue.ToString() : "",
-                value = txtValue3.Text,
-                condition = cmbCondition3.SelectedValue != null ? cmbCondition3.SelectedValue.ToString() : "",
-                combi = cmbCombi3.SelectedValue != null ? cmbCombi3.SelectedValue.ToString() : "",
+                ComboBox cell1 = GetChildElement<ComboBox>((ContentPresenter)searchGrid.Columns[0].GetCellContent(row), 0);
+                TextBox cell2  = GetChildElement<TextBox>((ContentPresenter)searchGrid.Columns[1].GetCellContent(row), 0);
+                ComboBox cell3 = GetChildElement<ComboBox>((ContentPresenter)searchGrid.Columns[2].GetCellContent(row), 0);
+                ComboBox cell4 = GetChildElement<ComboBox>((ContentPresenter)searchGrid.Columns[3].GetCellContent(row), 0);
 
-            });
+                s.search_list.Add(new SearchCondition
+                {
+                    item = cell1.SelectedValue != null ? cell1.SelectedValue.ToString() : "",
+                    value = cell2.Text,
+                    condition = cell3.SelectedValue != null ? cell3.SelectedValue.ToString() : "",
+                    combi = cell4.SelectedValue != null ? cell4.SelectedValue.ToString() : "",
+
+                });
+
+            }
 
             s.product_date_start = ProductDate1.SelectedDate;
             s.product_date_end = ProductDate2.SelectedDate;
@@ -414,11 +528,6 @@ namespace SearchSample.View
             ResultRecords.Text = Table.DefaultView.Count.ToString();
             ResultColumns.Text = Table.Columns.Count.ToString();
 
-            //foreach (DataGridColumn col in dataGrid2.Columns)
-            //{
-            //    col.Width = 130;
-            //}
-
         }
 
         private void btnPlant_Click(object sender, RoutedEventArgs e)
@@ -426,6 +535,36 @@ namespace SearchSample.View
             PlantSearch frm1 = new PlantSearch();
 
             frm1.Show();
+        }
+
+        private T GetChildElement<T>(DependencyObject reference, int childIdx) where T : FrameworkElement
+        {
+            //==== 子要素取得 ====//
+            var child = VisualTreeHelper.GetChild(reference, childIdx);
+            if (child == null)
+            {
+                return null;
+            }
+            if (child is T)
+            {
+                return child as T;
+            }
+
+
+            //==== 子要素内を探す ====//
+            DependencyObject elem = reference;
+            int count = VisualTreeHelper.GetChildrenCount(child);
+            for (int idx = 0; idx < count; idx++)
+            {
+                elem = GetChildElement<T>(child, idx);
+                if (elem != null)
+                {
+                    break;
+                }
+            }
+
+
+            return elem as T;
         }
     }
 

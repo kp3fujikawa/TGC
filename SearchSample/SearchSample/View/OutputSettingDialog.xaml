@@ -10,7 +10,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
         ResizeMode="CanResizeWithGrip"
-        Title="お気に入り" Height="420" Width="600" 
+        Title="お気に入り" Height="420" Width="800" 
         Loaded="Window_Loaded">
     <mahApps:MetroWindow.DataContext>
         <local:OutputSettingDialogViewModel/>

@@ -10,7 +10,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
         ResizeMode="CanResizeWithGrip"
-        Title="検索" Height="700" Width="1200"
+        Title="検索" Height="750" Width="1200"
         Loaded="Window_Loaded"
         WindowStartupLocation="CenterOwner">
     <mahApps:MetroWindow.DataContext>
@@ -25,7 +25,7 @@
             <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="110"/>
+            <RowDefinition Height="120"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
@@ -67,43 +67,8 @@
 
         <Label Content="検索条件" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.351,0.421" Width="90"/>
 
-        <Grid Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" Height="100" Width="500" ShowGridLines="False">
-            <!-- 行を定義 -->
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <!-- 列を定義 -->
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition />
-                <ColumnDefinition />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-
-            <Label Grid.Row="0" Grid.Column="0" Style="{StaticResource LabelHeaderStyle}" Content="項目"/>
-            <ComboBox x:Name="cmbItem1" Grid.Row="1" Grid.Column="0" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbItem2" Grid.Row="2" Grid.Column="0" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbItem3" Grid.Row="3" Grid.Column="0" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            
-            <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource LabelHeaderStyle}" Content="値"/>
-            <TextBox x:Name="txtValue1" Grid.Row="1" Grid.Column="1" Text=""/>
-            <TextBox x:Name="txtValue2" Grid.Row="2" Grid.Column="1" Text=""/>
-            <TextBox x:Name="txtValue3" Grid.Row="3" Grid.Column="1" Text=""/>
-            
-            <Label Grid.Row="0" Grid.Column="2" Style="{StaticResource LabelHeaderStyle}" Content="条件"/>
-            <ComboBox x:Name="cmbCondition1" Grid.Row="1" Grid.Column="2" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbCondition2" Grid.Row="2" Grid.Column="2" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbCondition3" Grid.Row="3" Grid.Column="2" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            
-            <Label Grid.Row="0" Grid.Column="3" Style="{StaticResource LabelHeaderStyle}" Content="結合子"/>
-            <ComboBox x:Name="cmbCombi1" Grid.Row="1" Grid.Column="3" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbCombi2" Grid.Row="2" Grid.Column="3" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-            <ComboBox x:Name="cmbCombi3" Grid.Row="3" Grid.Column="3" Style="{StaticResource MahApps.Styles.ComboBox}"/>
-
-        </Grid>
+        <DataGrid x:Name="searchGrid" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" Margin="10,0,0,0" CanUserAddRows="False"
+                  Style="{StaticResource MyGridStyle}" ColumnHeaderStyle="{StaticResource MyColumnHeaderStyle}"/>
 
         <Grid Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
