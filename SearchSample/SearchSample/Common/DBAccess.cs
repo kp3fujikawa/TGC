@@ -969,5 +969,112 @@ namespace SearchSample
 
             return ret;
         }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetItemParameter(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T1 = Common.table_dic["製造指図情報"];
+                        string T2 = Common.table_dic["実行処方製品"];
+                        string T3 = Common.table_dic["実行処方ヘッダ"];
+                        string T4 = Common.table_dic["実行処方要素"];
+                        string T5 = Common.table_dic["実行処方パラメータ"];
+                        string T6 = Common.table_dic["実行処方リソース"];
+                        string T7 = Common.table_dic["実行処方その他情報"];
+                        string T8 = Common.table_dic["原材料引当"];
+                        string T9 = Common.table_dic["検査性状値"];
+                        string T10 = Common.table_dic["検査結果"];
+
+                        string SQL = string.Empty;
+
+                        SQL += " SELECT ";
+
+                        SQL += " " + T4 + ".[製造指図番号] ";
+                        SQL += " ," + T4 + ".[処方ID] ";
+                        SQL += " ," + T4 + ".[処方バージョン] ";
+                        SQL += " ," + T4 + ".[ステップID] ";
+                        SQL += " ," + T4 + ".[要素名称] ";
+                        SQL += " ," + T5 + ".[パラメータID] ";
+                        SQL += " ," + T5 + ".[パラメータ名称] ";
+
+                        SQL += " FROM [実行処方要素] AS " + T4 + " ";
+                        SQL += " LEFT JOIN [実行処方パラメータ] AS " + T5 + " ON " + T4 + ".[製造指図番号] = " + T5 + ".[製造指図番号] AND " + T4 + ".[ステップID] = " + T5 + ".[ステップID] ";
+
+                        SQL += " WHERE 1=1 ";
+                        if (dic.Equals("4"))
+                        {
+                            SQL += " AND MID(" + T4 + ".[ステップID],1,1) = '3'";
+                        }
+
+                        SQL += " ORDER BY " + T4 + ".[製造指図番号], " + T4 + ".[ステップID], " + T5 + ".[パラメータID] ";
+
+                        DataTable paramdt = new DataTable();
+
+                        OleDbDataAdapter adapter2 = new OleDbDataAdapter(SQL, connection);
+                        adapter2.Fill(paramdt);
+                        adapter2.Dispose();
+
+                        foreach (DataRow row2 in paramdt.Rows)
+                        {
+                            string element_name = row2["要素名称"].ToString();
+                            string param_name = row2["パラメータ名称"].ToString().Replace(".", "-");
+                            string col_name = string.Empty;
+
+                            if (!string.IsNullOrEmpty(param_name))
+                            {
+                                col_name = element_name + Common.ColCennector + param_name;
+                                if (!resulrdt.Columns.Contains(col_name))
+                                {
+                                    resulrdt.Columns.Add(col_name);
+                                }
+                            }
+
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
     }
 }

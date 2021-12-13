@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SearchSample.Model;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -38,15 +39,24 @@ namespace SearchSample.ViewModel
         /// テーブルカラム名取得
         /// </summary>
         /// <returns>true/false</returns>
-        public bool GetItemList(out List<string> colmun_list)
+        public bool GetItemList(string dic, out List<string> colmun_list)
         {
             colmun_list = new List<string>();
 
-            foreach (KeyValuePair<string, string> kvp in Common.table_dic)
+            List<string> tables = new List<string>();
+            tables.Add("製造指図情報");
+            tables.Add("実行処方製品");
+            tables.Add("実行処方ヘッダ");
+            tables.Add("実行処方要素");
+            tables.Add("実行処方パラメータ");
+            if (!dic.Equals("2"))
             {
-                string table_name = kvp.Key;
+                tables.Add("検査性状値");
+            }
 
-                DataTable table = new DataTable();
+            foreach (string table_name in tables)
+            {
+               DataTable table = new DataTable();
                 if (!db.GetItemNameData(table_name, out table))
                 {
                     return false;
@@ -57,6 +67,14 @@ namespace SearchSample.ViewModel
                     colmun_list.Add("["+table_name+"].["+col.ColumnName+"]");
                 }
 
+            }
+
+            DataTable output_item_dt = new DataTable();
+            db.GetItemParameter(dic, out output_item_dt);
+
+            foreach (DataColumn col in output_item_dt.Columns)
+            {
+                colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
             }
 
             return true;
