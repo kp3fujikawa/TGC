@@ -125,6 +125,10 @@ namespace SearchSample.ViewModel
             "2",
             "3",
             "4",
+            "5",
+            "6",
+            "7",
+            "8",
         };
         private String[] data_dictionary_text = {
             "",
@@ -132,6 +136,10 @@ namespace SearchSample.ViewModel
             "入出庫実績・在庫",
             "品質情報",
             "PT-395 反応",
+            "工程金属マテバラ",
+            "フィルターの溶剤通液量",
+            "プロセスデータ①(原材料管理)",
+            "工程時間予実",
         };
 
         private DataTable data_dictionary_dt;
