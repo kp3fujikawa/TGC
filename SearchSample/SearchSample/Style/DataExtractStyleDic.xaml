@@ -3,28 +3,6 @@
                     xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
                     xmlns:local="clr-namespace:SearchSample.Style">
 
-    <!-- データグリッド：通常 -->
-    <!--
-    <Style x:Key="grid-normal" TargetType="DataGrid">
-        <Setter Property="VerticalAlignment" Value="Top"/>
-        <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="Grid.Row" Value="1"/>
-        <Setter Property="HorizontalScrollBarVisibility" Value="Visible"/>
-        <Setter Property="AutoGenerateColumns" Value="False"/>
-        <Setter Property="IsReadOnly" Value="False"/>
-        <Setter Property="CanUserAddRows" Value="False"/>
-        <Setter Property="AlternationCount" Value="1"/>
-        <Setter Property="AlternatingRowBackground" Value="#B2CEEBF7"/>
-        <Setter Property="SelectionMode" Value="Single"/>
-        <Setter Property="VerticalGridLinesBrush" Value="Gray"/>
-        <Setter Property="HorizontalGridLinesBrush" Value="Gray"/>
-    </Style>
-    <Style TargetType="DataGridCell">
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Height" Value="25" />
-    </Style>
-    -->
     <!-- データグリッド -->
     <Style x:Key="MyGridStyle" TargetType="DataGrid"
            BasedOn="{StaticResource MahApps.Styles.DataGrid}">
@@ -48,126 +26,6 @@
         <!--<Setter Property="FontWeight" Value="Bold"/>-->
     </Style>
 
-    <!-- コンボボックス：通常 -->
-    <Style x:Key="dgc-combo" TargetType="DataGridCell">
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Height" Value="25" />
-    </Style>
-
-    <!-- コンボボックスの背景色変更Template -->
-    <ControlTemplate x:Key="ComboBoxToggleButtonStyle" TargetType="{x:Type ToggleButton}">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="20" />
-            </Grid.ColumnDefinitions>
-            <!-- ToggleButton -->
-            <Border x:Name="Border" Grid.ColumnSpan="2" BorderThickness="1">
-                <!-- ToggleButtonのBoorder -->
-                <Border.BorderBrush>
-                    <SolidColorBrush Color="#FFACACAC"/>
-                </Border.BorderBrush>
-                <!-- ToggleButton -->
-                <Border.Background>
-                    <SolidColorBrush Color="#FFF0F0F0"/>
-                </Border.Background>
-            </Border>
-            <!-- ToggleButton横のTextBox -->
-            <Border Grid.Column="0" Margin="1" >
-                <!-- ToggleButton横のTextBoxのBoorder -->
-                <Border.BorderBrush>
-                    <SolidColorBrush Color="#FFACACAC" />
-                </Border.BorderBrush>
-                <!-- ToggleButton横のTextBox -->
-                <Border.Background>
-                    <SolidColorBrush Color="#FFFFFFC0"/>
-                </Border.Background>
-            </Border>
-            <!-- Popupの選択した項目 -->
-            <Path x:Name="Arrow"
-                    Grid.Column="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Data="M0,0 L0,2 L4,6 L8,2 L8,0 L4,4 z" 
-                    Fill="#FFACACAC">
-            </Path>
-        </Grid>
-    </ControlTemplate>
-
-    <!-- コンボボックス：必須入力（背景色変更Style） -->
-    <Style x:Key="RequiredComboBoxStyle" TargetType="{x:Type ComboBox}">
-        <Setter Property="SnapsToDevicePixels" Value="true" />
-        <Setter Property="OverridesDefaultStyle" Value="true" />
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-        <Setter Property="ScrollViewer.CanContentScroll" Value="true" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ComboBox}">
-                    <Grid>
-                        <ToggleButton x:Name="ToggleButton"
-                                        Template="{StaticResource ComboBoxToggleButtonStyle}"
-                                        Grid.Column="2"
-                                        Focusable="false"
-                                        ClickMode="Press"
-                                        IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                        <ContentPresenter x:Name="ContentSite"
-                                            IsHitTestVisible="False"
-                                            Content="{TemplateBinding SelectionBoxItem}"
-                                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                            Margin="3,3,23,3"
-                                            VerticalAlignment="Stretch"
-                                            HorizontalAlignment="Left">
-                        </ContentPresenter>
-                        <TextBox x:Name="PART_EditableTextBox"
-                                Style="{x:Null}"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Bottom"
-                                Margin="3,3,23,3"
-                                Focusable="True"
-                                Background="Transparent"
-                                Visibility="Hidden"
-                                IsReadOnly="{TemplateBinding IsReadOnly}" >
-                            <TextBox.Template>
-                                <ControlTemplate TargetType="TextBox" >
-                                    <Border Name="PART_ContentHost" Focusable="False" />
-                                </ControlTemplate>
-                            </TextBox.Template>
-                        </TextBox>
-                        <Popup x:Name="Popup"
-                                Placement="Bottom"
-                                IsOpen="{TemplateBinding IsDropDownOpen}"
-                                AllowsTransparency="True"
-                                Focusable="False"
-                                PopupAnimation="None">
-                            <Grid x:Name="DropDown"
-                                    SnapsToDevicePixels="True"
-                                    MinWidth="{TemplateBinding ActualWidth}"
-                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                <Border x:Name="DropDownBorder"
-                                        Background="White" BorderBrush="#CCCCCC"
-                                        BorderThickness="1"/>
-                                <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
-                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
-                                </ScrollViewer>
-                            </Grid>
-                        </Popup>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="HasItems" Value="false">
-                            <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95" />
-                        </Trigger>
-                        <Trigger Property="IsGrouping" Value="true">
-                            <Setter Property="ScrollViewer.CanContentScroll" Value="false" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <!-- プログレスバー -->
     <Style x:Key="{x:Type ProgressBar}" TargetType="{x:Type ProgressBar}">
         <Setter Property="Height" Value="20"/>
@@ -176,15 +34,6 @@
         <!-- 色 -->
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="lightblue"/>
-    </Style>
-
-    <!-- コンボボックス：通常 -->
-    <Style x:Key="LabelHeaderStyle" TargetType="Label">
-        <Setter Property="BorderThickness" Value="1,1,1,1" />
-        <Setter Property="Background" Value="DarkGreen" />
-        <Setter Property="Foreground" Value="White" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
     </Style>
 
 </ResourceDictionary>

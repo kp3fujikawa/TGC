@@ -43,40 +43,69 @@ namespace SearchSample.ViewModel
         {
             colmun_list = new List<string>();
 
-            List<string> tables = new List<string>();
-            tables.Add("製造指図情報");
-            tables.Add("実行処方製品");
-            tables.Add("実行処方ヘッダ");
-            tables.Add("実行処方要素");
-            tables.Add("実行処方パラメータ");
-            if (!dic.Equals("2"))
+            //List<string> tables = new List<string>();
+            //tables.Add("製造指図情報");
+            //tables.Add("実行処方製品");
+            //tables.Add("実行処方ヘッダ");
+            //tables.Add("実行処方要素");
+            //tables.Add("実行処方パラメータ");
+            //if (!dic.Equals("2"))
+            //{
+            //    tables.Add("検査性状値");
+            //}
+
+            //foreach (string table_name in tables)
+            //{
+            //   DataTable table = new DataTable();
+            //    if (!db.GetItemNameData(table_name, out table))
+            //    {
+            //        return false;
+            //    }
+
+            //    foreach (DataColumn col in table.Columns)
+            //    {
+            //        colmun_list.Add("["+table_name+"].["+col.ColumnName+"]");
+            //    }
+
+            //}
+
+            DataTable output_item_dt1 = new DataTable();
+            db.GetItem1(dic, out output_item_dt1);
+
+            foreach (DataColumn col in output_item_dt1.Columns)
             {
-                tables.Add("検査性状値");
+                colmun_list.Add(col.ColumnName);
             }
 
-            foreach (string table_name in tables)
+            DataTable output_item_dt2 = new DataTable();
+            db.GetItem2(dic, out output_item_dt2);
+
+            foreach (DataColumn col in output_item_dt2.Columns)
             {
-               DataTable table = new DataTable();
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach (DataColumn col in table.Columns)
-                {
-                    colmun_list.Add("["+table_name+"].["+col.ColumnName+"]");
-                }
-
+                colmun_list.Add(col.ColumnName);
             }
 
-            DataTable output_item_dt = new DataTable();
-            db.GetItemParameter(dic, out output_item_dt);
+            DataTable output_item_dt3 = new DataTable();
+            db.GetItemParameter(dic, out output_item_dt3);
 
-            foreach (DataColumn col in output_item_dt.Columns)
+            foreach (DataColumn col in output_item_dt3.Columns)
             {
-                colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
+                //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
+                colmun_list.Add(col.ColumnName);
             }
 
+            return true;
+        }
+
+        public bool GetOutputItem(string dic, out DataTable dt)
+        {
+            db.GetOutputItem(dic, out dt);
+            return true;
+        }
+
+        public bool SetOutputItem(string dic, List<OutputItem> list)
+        {
+            db.SetOutputItem(dic, list);
             return true;
         }
     }

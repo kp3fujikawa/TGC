@@ -194,101 +194,8 @@ namespace SearchSample
 
                         string SQL = "";
                         SQL += " SELECT ";
-
-                        SQL += " " + T1 + ".[製造指図番号] ";
-                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                        {
-                            SQL += " ," + T1 + ".[製造指図ステータス] ";
-                        }
-                        SQL += " ," + T1 + ".[品目コード] ";
-                        SQL += " ," + T1 + ".[品名] ";
-                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                        {
-                            SQL += " ," + T1 + ".[SAP製造指図番号] ";
-                            SQL += " ," + T1 + ".[ASTキー] ";
-                            SQL += " ," + T1 + ".[指図作成区分] ";
-                            SQL += " ," + T1 + ".[ASTPLANNER計画取込状態] ";
-                            SQL += " ," + T1 + ".[ASTPLANNER計画取込状態変更者] ";
-                            SQL += " ," + T1 + ".[ASTPLANNER計画取込状態変更日時] ";
-                            SQL += " ," + T1 + ".[Exapilot連携状況] ";
-                            SQL += " ," + T1 + ".[製造指図確認者] ";
-                            SQL += " ," + T1 + ".[製造指図確認日] ";
-                            SQL += " ," + T1 + ".[充填包装確認者] ";
-                            SQL += " ," + T1 + ".[充填包装確認日] ";
-                            SQL += " ," + T1 + ".[締め実行フラグ] ";
-                        }
-
-                        //SQL += " ," + T2 + ".[製造指図番号] ";
-                        SQL += " ," + T2 + ".[連番] ";
-                        SQL += " ," + T2 + ".[処方ID] ";
-                        SQL += " ," + T2 + ".[処方バージョン] ";
-                        SQL += " ," + T2 + ".[処方製品連番] ";
-                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                        {
-                            SQL += " ," + T2 + ".[表示順] ";
-                            SQL += " ," + T2 + ".[製品種別] ";
-                            SQL += " ," + T2 + ".[荷姿コード] ";
-                            SQL += " ," + T2 + ".[荷姿名] ";
-                            SQL += " ," + T2 + ".[入り目] ";
-                            SQL += " ," + T2 + ".[小数点以下有効桁数] ";
-                            SQL += " ," + T2 + ".[端数処理コード] ";
-                            SQL += " ," + T2 + ".[製品グループ] ";
-                            SQL += " ," + T2 + ".[製品コード] ";
-                            SQL += " ," + T2 + ".[製品グレード] ";
-                            SQL += " ," + T2 + ".[製品名] ";
-                            SQL += " ," + T2 + ".[製造予定量] ";
-                            SQL += " ," + T2 + ".[備考] ";
-                            SQL += " ," + T2 + ".[向け先コード] ";
-                            SQL += " ," + T2 + ".[向け先名称] ";
-                            SQL += " ," + T2 + ".[出荷ロット] ";
-                            SQL += " ," + T2 + ".[SAPロット] ";
-                            SQL += " ," + T2 + ".[在庫ユニークキー] ";
-                            SQL += " ," + T2 + ".[製造予定量確定値] ";
-                            SQL += " ," + T2 + ".[製造実績量収集値] ";
-                            SQL += " ," + T2 + ".[製造実績量確定値] ";
-                            SQL += " ," + T2 + ".[SAP製造日] ";
-                            SQL += " ," + T2 + ".[SAP保証日] ";
-
-                            //SQL += " ," + T3 + ".[製造指図番号] ";
-                            //SQL += " ," + T3 + ".[処方ID] ";
-                            //SQL += " ," + T3 + ".[処方バージョン] ";
-                            SQL += " ," + T3 + ".[有効期限（自）] ";
-                            SQL += " ," + T3 + ".[有効期限（至）] ";
-                            SQL += " ," + T3 + ".[系列コード] ";
-                            SQL += " ," + T3 + ".[組織コード] ";
-                            SQL += " ," + T3 + ".[組織名] ";
-                            SQL += " ," + T3 + ".[処方スケール] ";
-                            SQL += " ," + T3 + ".[単位] ";
-                            SQL += " ," + T3 + ".[最大値] ";
-                            SQL += " ," + T3 + ".[最小値] ";
-                            SQL += " ," + T3 + ".[理論収量設定値] ";
-                            SQL += " ," + T3 + ".[処方作成日時] ";
-                            SQL += " ," + T3 + ".[処方承認日時] ";
-                            SQL += " ," + T3 + ".[処方作成者] ";
-                            SQL += " ," + T3 + ".[処方承認者] ";
-                            SQL += " ," + T3 + ".[元処方ID] ";
-                            SQL += " ," + T3 + ".[元処方バージョン] ";
-                            SQL += " ," + T3 + ".[有効期間ID] ";
-                            SQL += " ," + T3 + ".[SAP製造バージョン] ";
-                            SQL += " ," + T3 + ".[備考] AS 処方ヘッダ備考";
-                            SQL += " ," + T3 + ".[バッチ実行回数] ";
-                            SQL += " ," + T3 + ".[製造予定数量] ";
-                            SQL += " ," + T3 + ".[製造実績数量] ";
-                            SQL += " ," + T3 + ".[開始予定日時] ";
-                            SQL += " ," + T3 + ".[終了予定日時] ";
-                            SQL += " ," + T3 + ".[開始実績日時] ";
-                            SQL += " ," + T3 + ".[終了実績日時] ";
-                            SQL += " ," + T3 + ".[製造ロット] ";
-                            SQL += " ," + T3 + ".[着手実績日時] ";
-                            SQL += " ," + T3 + ".[中止実績日時] ";
-                            SQL += " ," + T3 + ".[Exapilot終了実績日時] ";
-                            SQL += " ," + T3 + ".[Exapilot中止実績日時] ";
-                            SQL += " ," + T3 + ".[収量用ブレンド量] ";
-                            SQL += " ," + T3 + ".[収量] ";
-                            SQL += " ," + T3 + ".[理論収量] ";
-                            SQL += " ," + T3 + ".[収率] ";
-                            SQL += " ," + T3 + ".[製造指図メモ] ";
-                        }
+                        SQL += SelectItem1(dic);
+                        
 
                         SQL += " FROM ([製造指図情報] AS " + T1 + " ";
                         SQL += " LEFT JOIN [実行処方製品] AS " + T2 + " ON (" + T2 + ".[製造指図番号] = " + T1 + ".[製造指図番号]) ) ";
@@ -312,42 +219,7 @@ namespace SearchSample
 
                         paramdt = productdt.Copy();
 
-                        string[] element_cols = null;
-
-                        if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                        {
-                            element_cols = new string[]{
-                                    "工程予定時間",
-                                    "工程標準廃液量",
-                                    "機器グループID",
-                                    "前段取り時間",
-                                    "製造時間",
-                                    "後段取り時間",
-                                    "標準廃液量",
-                                    "備考",
-                                    "後続ステップID",
-                                    "開始予定日時",
-                                    "終了予定日時",
-                                    "工程ステータス",
-                                    "工程終了取消フラグ",
-                                    "使用機器ID",
-                                    "実績前段取り時間",
-                                    "実績製造時間",
-                                    "実績後段取り時間",
-                                    "開始実績日時",
-                                    "終了実績日時",
-                                    "工程指図メモ",
-                                    "開始予定日時",
-                                    "終了予定日時",
-                                    };
-                        }
-                        else
-                        {
-                            element_cols = new string[]{
-                                    "開始実績日時",
-                                    "終了実績日時",
-                                    };
-                        }
+                        string[] element_cols = GetElementCol(dic);
 
                         foreach (DataRow row in productdt.Rows)
                         {
@@ -358,119 +230,7 @@ namespace SearchSample
 
                             SQL += " SELECT ";
 
-                            SQL += " " + T4 + ".[製造指図番号] ";
-                            SQL += " ," + T4 + ".[処方ID] ";
-                            SQL += " ," + T4 + ".[処方バージョン] ";
-                            SQL += " ," + T4 + ".[ステップID] ";
-                            SQL += " ," + T4 + ".[要素名称] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T4 + ".[工程予定時間] ";
-                                SQL += " ," + T4 + ".[工程標準廃液量] ";
-                                SQL += " ," + T4 + ".[機器グループID] ";
-                                SQL += " ," + T4 + ".[前段取り時間] ";
-                                SQL += " ," + T4 + ".[製造時間] ";
-                                SQL += " ," + T4 + ".[後段取り時間] ";
-                                SQL += " ," + T4 + ".[標準廃液量] ";
-                                SQL += " ," + T4 + ".[備考] ";
-                                SQL += " ," + T4 + ".[後続ステップID] ";
-                                SQL += " ," + T4 + ".[開始予定日時] ";
-                                SQL += " ," + T4 + ".[終了予定日時] ";
-                                SQL += " ," + T4 + ".[工程ステータス] ";
-                                SQL += " ," + T4 + ".[工程終了取消フラグ] ";
-                                SQL += " ," + T4 + ".[使用機器ID] ";
-                                SQL += " ," + T4 + ".[実績前段取り時間] ";
-                                SQL += " ," + T4 + ".[実績製造時間] ";
-                                SQL += " ," + T4 + ".[実績後段取り時間] ";
-                            }
-                            SQL += " ," + T4 + ".[開始実績日時] ";
-                            SQL += " ," + T4 + ".[終了実績日時] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T4 + ".[工程指図メモ] ";
-                            }
-
-                            SQL += " ," + T5 + ".[パラメータID] ";
-                            SQL += " ," + T5 + ".[パラメータ名称] ";
-                            SQL += " ," + T5 + ".[設定値] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T5 + ".[工業単位] ";
-                                SQL += " ," + T5 + ".[指図確定時確認] ";
-                                SQL += " ," + T5 + ".[表示順] ";
-                                SQL += " ," + T5 + ".[実績収集] ";
-                                SQL += " ," + T5 + ".[小数点以下有効桁数] ";
-                                SQL += " ," + T5 + ".[端数処理コード] ";
-                                SQL += " ," + T5 + ".[パラメータ属性] ";
-                                SQL += " ," + T5 + ".[ExapilotDL対象] ";
-                                SQL += " ," + T5 + ".[パラメータ種別] ";
-                                SQL += " ," + T5 + ".[SAP構成品明細番号] ";
-                            }
-                            SQL += " ," + T5 + ".[品目コード] ";
-                            SQL += " ," + T5 + ".[品名] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T5 + ".[原材料グレード] ";
-                                SQL += " ," + T5 + ".[計量パターン] ";
-                                SQL += " ," + T5 + ".[計量上限] ";
-                                SQL += " ," + T5 + ".[計量下限] ";
-                                SQL += " ," + T5 + ".[仕込パターン] ";
-                                SQL += " ," + T5 + ".[端切単位] ";
-                                SQL += " ," + T5 + ".[原材料投入口] ";
-                                SQL += " ," + T5 + ".[廃液排出予定時間] ";
-                                SQL += " ," + T5 + ".[廃液排出タンク] ";
-                                SQL += " ," + T5 + ".[充填パターン] ";
-                                SQL += " ," + T5 + ".[充填包装設備] ";
-                                SQL += " ," + T5 + ".[製品種別] ";
-                                SQL += " ," + T5 + ".[荷姿コード] ";
-                                SQL += " ," + T5 + ".[荷姿名称] ";
-                                SQL += " ," + T5 + ".[荷姿数量] ";
-                                SQL += " ," + T5 + ".[荷姿個数] ";
-                                SQL += " ," + T5 + ".[数量] ";
-                                SQL += " ," + T5 + ".[サンプル採取予定時刻] ";
-                                SQL += " ," + T5 + ".[サンプルコード] ";
-                                SQL += " ," + T5 + ".[プロトコルコード] ";
-                                SQL += " ," + T5 + ".[SAP消費生産] ";
-                                SQL += " ," + T5 + ".[在庫受払対象] ";
-                                SQL += " ," + T5 + ".[SAP連携対象] ";
-                                SQL += " ," + T5 + ".[備考] AS 備考T5 ";
-                                SQL += " ," + T5 + ".[確定値] ";
-                                SQL += " ," + T5 + ".[実績収集値] ";
-                            }
-                            SQL += " ," + T5 + ".[実績確定値] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T5 + ".[設定値変更者] ";
-                                SQL += " ," + T5 + ".[設定値変更日時] ";
-                                SQL += " ," + T5 + ".[実績値変更者] ";
-                                SQL += " ," + T5 + ".[実績値変更日時] ";
-                                SQL += " ," + T5 + ".[設定値確認者] ";
-                                SQL += " ," + T5 + ".[設定値確認日時] ";
-                                SQL += " ," + T5 + ".[実績値確認者] ";
-                                SQL += " ," + T5 + ".[実績値確認日時] ";
-                                SQL += " ," + T5 + ".[実績品目コード] ";
-                                SQL += " ," + T5 + ".[実績品名] ";
-                                SQL += " ," + T5 + ".[実績ロット] ";
-                                SQL += " ," + T5 + ".[実績廃液排出時間] ";
-                            }
-                            SQL += " ," + T5 + ".[実績サンプル採取時間] ";
-                            SQL += " ," + T5 + ".[MES検査予定番号] ";
-                            SQL += " ," + T5 + ".[実績サンプルコード] ";
-                            SQL += " ," + T5 + ".[実績プロトコルコード] ";
-                            SQL += " ," + T5 + ".[Lab-Aid依頼番号] ";
-                            SQL += " ," + T5 + ".[Lab-Aid合否判定] ";
-                            SQL += " ," + T5 + ".[計量支援指図番号] ";
-                            SQL += " ," + T5 + ".[実績荷姿コード] ";
-                            SQL += " ," + T5 + ".[実績荷姿名] ";
-                            SQL += " ," + T5 + ".[実績荷姿数量] ";
-                            SQL += " ," + T5 + ".[実績荷姿個数] ";
-                            SQL += " ," + T5 + ".[実績数量] ";
-                            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
-                            {
-                                SQL += " ," + T5 + ".[SAP簿外] ";
-                                SQL += " ," + T5 + ".[SAP転記日] ";
-                                SQL += " ," + T5 + ".[SAP連携済フラグ] ";
-                            }
+                            SQL += SelectItem2(dic);
 
                             SQL += " FROM [実行処方要素] AS " + T4 + " ";
                             SQL += " LEFT JOIN [実行処方パラメータ] AS " + T5 + " ON " + T4 + ".[製造指図番号] = " + T5 + ".[製造指図番号] AND " + T4 + ".[ステップID] = " + T5 + ".[ステップID] ";
@@ -482,6 +242,7 @@ namespace SearchSample
                             }
 
                             SQL += " ORDER BY " + T4 + ".[製造指図番号], " + T4 + ".[ステップID], " + T5 + ".[パラメータID] ";
+
                             //if (param_list.Count>0)
                             //{
                             //    SQL += " AND " + T5 + ".[パラメータ名称] in (" + string.Join(",", param_list) + ")";
@@ -708,6 +469,280 @@ namespace SearchSample
             }
 
             return ret;
+        }
+
+        private string SelectItem1(string dic)
+        {
+            string T1 = Common.table_dic["製造指図情報"];
+            string T2 = Common.table_dic["実行処方製品"];
+            string T3 = Common.table_dic["実行処方ヘッダ"];
+            string T4 = Common.table_dic["実行処方要素"];
+            string T5 = Common.table_dic["実行処方パラメータ"];
+
+            string SQL = "";
+
+            SQL += " " + T1 + ".[製造指図番号] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T1 + ".[製造指図ステータス] ";
+            }
+            SQL += " ," + T1 + ".[品目コード] ";
+            SQL += " ," + T1 + ".[品名] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T1 + ".[SAP製造指図番号] ";
+                SQL += " ," + T1 + ".[ASTキー] ";
+                SQL += " ," + T1 + ".[指図作成区分] ";
+                SQL += " ," + T1 + ".[ASTPLANNER計画取込状態] ";
+                SQL += " ," + T1 + ".[ASTPLANNER計画取込状態変更者] ";
+                SQL += " ," + T1 + ".[ASTPLANNER計画取込状態変更日時] ";
+                SQL += " ," + T1 + ".[Exapilot連携状況] ";
+                SQL += " ," + T1 + ".[製造指図確認者] ";
+                SQL += " ," + T1 + ".[製造指図確認日] ";
+                SQL += " ," + T1 + ".[充填包装確認者] ";
+                SQL += " ," + T1 + ".[充填包装確認日] ";
+                SQL += " ," + T1 + ".[締め実行フラグ] ";
+            }
+
+            //SQL += " ," + T2 + ".[製造指図番号] ";
+            SQL += " ," + T2 + ".[連番] ";
+            SQL += " ," + T2 + ".[処方ID] ";
+            SQL += " ," + T2 + ".[処方バージョン] ";
+            SQL += " ," + T2 + ".[処方製品連番] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T2 + ".[表示順] ";
+                SQL += " ," + T2 + ".[製品種別] ";
+                SQL += " ," + T2 + ".[荷姿コード] ";
+                SQL += " ," + T2 + ".[荷姿名] ";
+                SQL += " ," + T2 + ".[入り目] ";
+                SQL += " ," + T2 + ".[小数点以下有効桁数] ";
+                SQL += " ," + T2 + ".[端数処理コード] ";
+                SQL += " ," + T2 + ".[製品グループ] ";
+                SQL += " ," + T2 + ".[製品コード] ";
+                SQL += " ," + T2 + ".[製品グレード] ";
+                SQL += " ," + T2 + ".[製品名] ";
+                SQL += " ," + T2 + ".[製造予定量] ";
+                SQL += " ," + T2 + ".[備考] ";
+                SQL += " ," + T2 + ".[向け先コード] ";
+                SQL += " ," + T2 + ".[向け先名称] ";
+                SQL += " ," + T2 + ".[出荷ロット] ";
+                SQL += " ," + T2 + ".[SAPロット] ";
+                SQL += " ," + T2 + ".[在庫ユニークキー] ";
+                SQL += " ," + T2 + ".[製造予定量確定値] ";
+                SQL += " ," + T2 + ".[製造実績量収集値] ";
+                SQL += " ," + T2 + ".[製造実績量確定値] ";
+                SQL += " ," + T2 + ".[SAP製造日] ";
+                SQL += " ," + T2 + ".[SAP保証日] ";
+
+                //SQL += " ," + T3 + ".[製造指図番号] ";
+                //SQL += " ," + T3 + ".[処方ID] ";
+                //SQL += " ," + T3 + ".[処方バージョン] ";
+                SQL += " ," + T3 + ".[有効期限（自）] ";
+                SQL += " ," + T3 + ".[有効期限（至）] ";
+                SQL += " ," + T3 + ".[系列コード] ";
+                SQL += " ," + T3 + ".[組織コード] ";
+                SQL += " ," + T3 + ".[組織名] ";
+                SQL += " ," + T3 + ".[処方スケール] ";
+                SQL += " ," + T3 + ".[単位] ";
+                SQL += " ," + T3 + ".[最大値] ";
+                SQL += " ," + T3 + ".[最小値] ";
+                SQL += " ," + T3 + ".[理論収量設定値] ";
+                SQL += " ," + T3 + ".[処方作成日時] ";
+                SQL += " ," + T3 + ".[処方承認日時] ";
+                SQL += " ," + T3 + ".[処方作成者] ";
+                SQL += " ," + T3 + ".[処方承認者] ";
+                SQL += " ," + T3 + ".[元処方ID] ";
+                SQL += " ," + T3 + ".[元処方バージョン] ";
+                SQL += " ," + T3 + ".[有効期間ID] ";
+                SQL += " ," + T3 + ".[SAP製造バージョン] ";
+                SQL += " ," + T3 + ".[備考] AS 処方ヘッダ備考";
+                SQL += " ," + T3 + ".[バッチ実行回数] ";
+                SQL += " ," + T3 + ".[製造予定数量] ";
+                SQL += " ," + T3 + ".[製造実績数量] ";
+                SQL += " ," + T3 + ".[開始予定日時] ";
+                SQL += " ," + T3 + ".[終了予定日時] ";
+                SQL += " ," + T3 + ".[開始実績日時] ";
+                SQL += " ," + T3 + ".[終了実績日時] ";
+                SQL += " ," + T3 + ".[製造ロット] ";
+                SQL += " ," + T3 + ".[着手実績日時] ";
+                SQL += " ," + T3 + ".[中止実績日時] ";
+                SQL += " ," + T3 + ".[Exapilot終了実績日時] ";
+                SQL += " ," + T3 + ".[Exapilot中止実績日時] ";
+                SQL += " ," + T3 + ".[収量用ブレンド量] ";
+                SQL += " ," + T3 + ".[収量] ";
+                SQL += " ," + T3 + ".[理論収量] ";
+                SQL += " ," + T3 + ".[収率] ";
+                SQL += " ," + T3 + ".[製造指図メモ] ";
+            }
+
+            return SQL;
+        }
+
+        private string SelectItem2(string dic)
+        {
+            string T1 = Common.table_dic["製造指図情報"];
+            string T2 = Common.table_dic["実行処方製品"];
+            string T3 = Common.table_dic["実行処方ヘッダ"];
+            string T4 = Common.table_dic["実行処方要素"];
+            string T5 = Common.table_dic["実行処方パラメータ"];
+
+            string SQL = "";
+
+            SQL += " " + T4 + ".[製造指図番号] ";
+            SQL += " ," + T4 + ".[処方ID] ";
+            SQL += " ," + T4 + ".[処方バージョン] ";
+            SQL += " ," + T4 + ".[ステップID] ";
+            SQL += " ," + T4 + ".[要素名称] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T4 + ".[工程予定時間] ";
+                SQL += " ," + T4 + ".[工程標準廃液量] ";
+                SQL += " ," + T4 + ".[機器グループID] ";
+                SQL += " ," + T4 + ".[前段取り時間] ";
+                SQL += " ," + T4 + ".[製造時間] ";
+                SQL += " ," + T4 + ".[後段取り時間] ";
+                SQL += " ," + T4 + ".[標準廃液量] ";
+                SQL += " ," + T4 + ".[備考] ";
+                SQL += " ," + T4 + ".[後続ステップID] ";
+                SQL += " ," + T4 + ".[開始予定日時] ";
+                SQL += " ," + T4 + ".[終了予定日時] ";
+                SQL += " ," + T4 + ".[工程ステータス] ";
+                SQL += " ," + T4 + ".[工程終了取消フラグ] ";
+                SQL += " ," + T4 + ".[使用機器ID] ";
+                SQL += " ," + T4 + ".[実績前段取り時間] ";
+                SQL += " ," + T4 + ".[実績製造時間] ";
+                SQL += " ," + T4 + ".[実績後段取り時間] ";
+            }
+            SQL += " ," + T4 + ".[開始実績日時] ";
+            SQL += " ," + T4 + ".[終了実績日時] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T4 + ".[工程指図メモ] ";
+            }
+
+            SQL += " ," + T5 + ".[パラメータID] ";
+            SQL += " ," + T5 + ".[パラメータ名称] ";
+            SQL += " ," + T5 + ".[設定値] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T5 + ".[工業単位] ";
+                SQL += " ," + T5 + ".[指図確定時確認] ";
+                SQL += " ," + T5 + ".[表示順] ";
+                SQL += " ," + T5 + ".[実績収集] ";
+                SQL += " ," + T5 + ".[小数点以下有効桁数] ";
+                SQL += " ," + T5 + ".[端数処理コード] ";
+                SQL += " ," + T5 + ".[パラメータ属性] ";
+                SQL += " ," + T5 + ".[ExapilotDL対象] ";
+                SQL += " ," + T5 + ".[パラメータ種別] ";
+                SQL += " ," + T5 + ".[SAP構成品明細番号] ";
+            }
+            SQL += " ," + T5 + ".[品目コード] ";
+            SQL += " ," + T5 + ".[品名] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T5 + ".[原材料グレード] ";
+                SQL += " ," + T5 + ".[計量パターン] ";
+                SQL += " ," + T5 + ".[計量上限] ";
+                SQL += " ," + T5 + ".[計量下限] ";
+                SQL += " ," + T5 + ".[仕込パターン] ";
+                SQL += " ," + T5 + ".[端切単位] ";
+                SQL += " ," + T5 + ".[原材料投入口] ";
+                SQL += " ," + T5 + ".[廃液排出予定時間] ";
+                SQL += " ," + T5 + ".[廃液排出タンク] ";
+                SQL += " ," + T5 + ".[充填パターン] ";
+                SQL += " ," + T5 + ".[充填包装設備] ";
+                SQL += " ," + T5 + ".[製品種別] ";
+                SQL += " ," + T5 + ".[荷姿コード] ";
+                SQL += " ," + T5 + ".[荷姿名称] ";
+                SQL += " ," + T5 + ".[荷姿数量] ";
+                SQL += " ," + T5 + ".[荷姿個数] ";
+                SQL += " ," + T5 + ".[数量] ";
+                SQL += " ," + T5 + ".[サンプル採取予定時刻] ";
+                SQL += " ," + T5 + ".[サンプルコード] ";
+                SQL += " ," + T5 + ".[プロトコルコード] ";
+                SQL += " ," + T5 + ".[SAP消費生産] ";
+                SQL += " ," + T5 + ".[在庫受払対象] ";
+                SQL += " ," + T5 + ".[SAP連携対象] ";
+                SQL += " ," + T5 + ".[備考] AS 備考T5 ";
+                SQL += " ," + T5 + ".[確定値] ";
+                SQL += " ," + T5 + ".[実績収集値] ";
+            }
+            SQL += " ," + T5 + ".[実績確定値] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T5 + ".[設定値変更者] ";
+                SQL += " ," + T5 + ".[設定値変更日時] ";
+                SQL += " ," + T5 + ".[実績値変更者] ";
+                SQL += " ," + T5 + ".[実績値変更日時] ";
+                SQL += " ," + T5 + ".[設定値確認者] ";
+                SQL += " ," + T5 + ".[設定値確認日時] ";
+                SQL += " ," + T5 + ".[実績値確認者] ";
+                SQL += " ," + T5 + ".[実績値確認日時] ";
+                SQL += " ," + T5 + ".[実績品目コード] ";
+                SQL += " ," + T5 + ".[実績品名] ";
+                SQL += " ," + T5 + ".[実績ロット] ";
+                SQL += " ," + T5 + ".[実績廃液排出時間] ";
+            }
+            SQL += " ," + T5 + ".[実績サンプル採取時間] ";
+            SQL += " ," + T5 + ".[MES検査予定番号] ";
+            SQL += " ," + T5 + ".[実績サンプルコード] ";
+            SQL += " ," + T5 + ".[実績プロトコルコード] ";
+            SQL += " ," + T5 + ".[Lab-Aid依頼番号] ";
+            SQL += " ," + T5 + ".[Lab-Aid合否判定] ";
+            SQL += " ," + T5 + ".[計量支援指図番号] ";
+            SQL += " ," + T5 + ".[実績荷姿コード] ";
+            SQL += " ," + T5 + ".[実績荷姿名] ";
+            SQL += " ," + T5 + ".[実績荷姿数量] ";
+            SQL += " ," + T5 + ".[実績荷姿個数] ";
+            SQL += " ," + T5 + ".[実績数量] ";
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                SQL += " ," + T5 + ".[SAP簿外] ";
+                SQL += " ," + T5 + ".[SAP転記日] ";
+                SQL += " ," + T5 + ".[SAP連携済フラグ] ";
+            }
+
+            return SQL;
+        }
+
+        private string[] GetElementCol(string dic)
+        {
+
+            if (string.IsNullOrEmpty(dic) || dic.Equals("0"))
+            {
+                return new string[]{
+                                    "工程予定時間",
+                                    "工程標準廃液量",
+                                    "機器グループID",
+                                    "前段取り時間",
+                                    "製造時間",
+                                    "後段取り時間",
+                                    "標準廃液量",
+                                    "備考",
+                                    "後続ステップID",
+                                    "開始予定日時",
+                                    "終了予定日時",
+                                    "工程ステータス",
+                                    "工程終了取消フラグ",
+                                    "使用機器ID",
+                                    "実績前段取り時間",
+                                    "実績製造時間",
+                                    "実績後段取り時間",
+                                    "開始実績日時",
+                                    "終了実績日時",
+                                    "工程指図メモ",
+                                    "開始予定日時",
+                                    "終了予定日時",
+                                    };
+            }
+            else
+            {
+                return new string[]{
+                                    "開始実績日時",
+                                    "終了実績日時",
+                                    };
+            } 
         }
 
         public string CreateSearchCondiotion(SearchData s, out bool addparam, out bool addtest)
@@ -976,6 +1011,146 @@ namespace SearchSample
         /// <param name="table_name">対象テーブル名</param>
         /// <param name="itemNameDT">データテーブル</param>
         /// <returns>true/false</returns>
+        public bool GetItem1(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T1 = Common.table_dic["製造指図情報"];
+                        string T2 = Common.table_dic["実行処方製品"];
+                        string T3 = Common.table_dic["実行処方ヘッダ"];
+
+                        string SQL = "";
+
+                        SQL += " SELECT ";
+                        SQL += SelectItem1(dic);
+
+                        SQL += " FROM ([製造指図情報] AS " + T1 + " ";
+                        SQL += " LEFT JOIN [実行処方製品] AS " + T2 + " ON (" + T2 + ".[製造指図番号] = " + T1 + ".[製造指図番号]) ) ";
+                        SQL += " LEFT JOIN [実行処方ヘッダ] AS " + T3 + " ON (" + T3 + ".[製造指図番号] = " + T1 + ".[製造指図番号] ) ";
+
+                        SQL += " WHERE 1=0 ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetItem2(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T1 = Common.table_dic["製造指図情報"];
+                        string T2 = Common.table_dic["実行処方製品"];
+                        string T3 = Common.table_dic["実行処方ヘッダ"];
+                        string T4 = Common.table_dic["実行処方要素"];
+                        string T5 = Common.table_dic["実行処方パラメータ"];
+
+                        string SQL = "";
+
+                        SQL += " SELECT ";
+                        SQL += SelectItem2(dic);
+
+                        SQL += " FROM [実行処方要素] AS " + T4 + " ";
+                        SQL += " LEFT JOIN [実行処方パラメータ] AS " + T5 + " ON " + T4 + ".[製造指図番号] = " + T5 + ".[製造指図番号] AND " + T4 + ".[ステップID] = " + T5 + ".[ステップID] ";
+
+                        SQL += " WHERE 1=0 ";
+                        SQL += " ORDER BY " + T4 + ".[製造指図番号], " + T4 + ".[ステップID], " + T5 + ".[パラメータID] ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
         public bool GetItemParameter(
             string dic,
             out DataTable resulrdt
@@ -1001,11 +1176,6 @@ namespace SearchSample
                         string T3 = Common.table_dic["実行処方ヘッダ"];
                         string T4 = Common.table_dic["実行処方要素"];
                         string T5 = Common.table_dic["実行処方パラメータ"];
-                        string T6 = Common.table_dic["実行処方リソース"];
-                        string T7 = Common.table_dic["実行処方その他情報"];
-                        string T8 = Common.table_dic["原材料引当"];
-                        string T9 = Common.table_dic["検査性状値"];
-                        string T10 = Common.table_dic["検査結果"];
 
                         string SQL = string.Empty;
 
@@ -1032,15 +1202,26 @@ namespace SearchSample
 
                         DataTable paramdt = new DataTable();
 
-                        OleDbDataAdapter adapter2 = new OleDbDataAdapter(SQL, connection);
-                        adapter2.Fill(paramdt);
-                        adapter2.Dispose();
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(paramdt);
+                        adapter.Dispose();
+
+                        string[] element_cols = GetElementCol(dic);
 
                         foreach (DataRow row2 in paramdt.Rows)
                         {
                             string element_name = row2["要素名称"].ToString();
                             string param_name = row2["パラメータ名称"].ToString().Replace(".", "-");
                             string col_name = string.Empty;
+
+                            foreach (string col in element_cols)
+                            {
+                                col_name = element_name + Common.ColCennector + col;
+                                if (!resulrdt.Columns.Contains(col_name))
+                                {
+                                    resulrdt.Columns.Add(col_name);
+                                }
+                            }
 
                             if (!string.IsNullOrEmpty(param_name))
                             {
@@ -1050,7 +1231,6 @@ namespace SearchSample
                                     resulrdt.Columns.Add(col_name);
                                 }
                             }
-
                         }
 
                     }
@@ -1076,5 +1256,177 @@ namespace SearchSample
 
             return ret;
         }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetOutputItem(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = string.Empty;
+
+                        SQL += " SELECT ";
+
+                        SQL += " [項目名] ";
+                        SQL += " ,[表示順] ";
+                        SQL += " ,[ソート順] ";
+                        SQL += " ,[ソート方向] ";
+                        SQL += " ,[表示有無] ";
+
+                        SQL += " FROM [出力項目] ";
+
+                        SQL += " WHERE [データディクショナリ] = '"+dic+"' ";
+                        
+                        SQL += " ORDER BY [表示順] ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SetOutputItem(
+            string dic,
+            List<OutputItem> list
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                // データをDelete/Insert
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+
+                    OleDbCommand command = new OleDbCommand();
+                    OleDbTransaction transaction = null;
+                    command.Connection = connection;
+                    int cnt = 0;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        // Assign transaction object for a pending local transaction.
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // 取込定義削除
+                        command.CommandText = "DELETE FROM [出力項目] WHERE [データディクショナリ] = '" + dic + "'";
+                        command.ExecuteNonQuery();
+
+                        int count = 0;
+                        foreach (OutputItem items in list)
+                        {
+                            try
+                            {
+                                List<string> values = new List<string>();
+                                values.Add("'" + items.output_item + "'");
+                                values.Add("'" + dic + "'");
+                                values.Add("'" + (count+1).ToString() + "'");
+                                values.Add("'" + items.sort + "'");
+                                values.Add("'" + items.sort_dir + "'");
+                                values.Add("'" + (items.display ? "1" : "") + "'");
+
+                                command.CommandText =
+                                    "INSERT INTO [出力項目] ([項目名],[データディクショナリ],[表示順],[ソート順],[ソート方向],[表示有無]) "+
+                                            "VALUES ( " + string.Join(",", values) + " )";
+                                cnt += command.ExecuteNonQuery();
+                                count++;
+                            }
+                            catch (Exception ex)
+                            {
+                                ret = false;
+                                transaction.Rollback();
+                            }
+                        }
+
+                        // コミット
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+
     }
 }

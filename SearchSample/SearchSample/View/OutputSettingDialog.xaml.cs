@@ -24,6 +24,12 @@ namespace SearchSample.View
     public partial class OutputSettingDialog : MahApps.Metro.Controls.MetroWindow
     {
         private MainWindow main;
+        private string dic;
+        public ObservableCollection<OutputItem> dataList { get; private set; }
+
+        public DataTable SortDt { get; private set; }
+
+        public DataTable SortDtDir { get; private set; }
 
         /// <summary>
         /// エラーダイアログ
@@ -39,6 +45,8 @@ namespace SearchSample.View
             Common.SettingColumnHeaderStyle(dataGrid);
 
             this.main = main;
+
+            this.dic = this.main.cmbDataDictinary.SelectedValue is null ? "" : this.main.cmbDataDictinary.SelectedValue.ToString();
         }
 
         /// <summary>
@@ -50,42 +58,38 @@ namespace SearchSample.View
         {
             OutputSettingDialogViewModel vm = (OutputSettingDialogViewModel)DataContext;
 
-            //DataTable dt = new DataTable();
-            //dt.Columns.Add("上へ");
-            //dt.Columns.Add("下へ");
-            //dt.Columns.Add("表示有無");
-            //dt.Columns.Add("項目名");
-            //dt.Columns.Add("ソート順序");
-            //dt.Columns.Add("ソート方向");
-
             List<string> colmun_list = new List<string>();
-            vm.GetItemList(this.main.cmbDataDictinary.SelectedValue is null ? "" : this.main.cmbDataDictinary.SelectedValue.ToString(),
-                out colmun_list);
+            vm.GetItemList(this.dic, out colmun_list);
 
-            ObservableCollection<OutputItem> dataList = new ObservableCollection<OutputItem>();
-            foreach (string colmun in colmun_list)
+            DataTable output_item_dt = new DataTable();
+            vm.GetOutputItem(this.dic, out output_item_dt);
+
+            SortDt = new DataTable();
+            SortDt.Columns.Add(Common.ComboBoxText);
+            SortDt.Columns.Add(Common.ComboBoxValue);
+
+            for (int i = 0; i < colmun_list.Count; i++)
             {
-                dataList.Add(new OutputItem
-                {
-                    output_item = colmun,
-                    display = true,
-                    sort = "",
-                    sort_dir = "",
-                });
-                ;
+                DataRow newrow = SortDt.NewRow();
+                newrow[Common.ComboBoxText] = (i + 1).ToString();
+                newrow[Common.ComboBoxValue] = (i + 1).ToString();
+                SortDt.Rows.Add(newrow);
             }
 
-            //foreach (string colmun in colmun_list)
-            //{
-            //    DataRow newrow = dt.NewRow();
-            //    newrow["上へ"] = "∧";
-            //    newrow["下へ"] = "∨";
-            //    newrow["表示有無"] = "1";
-            //    newrow["項目名"] = colmun;
-            //    newrow["ソート順序"] = "";
-            //    newrow["ソート方向"] = "昇順";
-            //    dt.Rows.Add(newrow);
-            //}
+            SortDtDir = new DataTable();
+            SortDtDir.Columns.Add(Common.ComboBoxText);
+            SortDtDir.Columns.Add(Common.ComboBoxValue);
+
+           string[] sort_dir_list = { "昇順", "降順" };
+
+            foreach (string sort_dir in sort_dir_list)
+            {
+                DataRow newrow = SortDtDir.NewRow();
+                newrow[Common.ComboBoxText] = sort_dir;
+                newrow[Common.ComboBoxValue] = sort_dir;
+                SortDtDir.Rows.Add(newrow);
+            }
+
 
             // グリッド初期設定
             //dataGrid.IsReadOnly = true;              // 読取専用
@@ -109,7 +113,6 @@ namespace SearchSample.View
                 //Width = 50,
             };
 
-
             FrameworkElementFactory down = new FrameworkElementFactory(typeof(Button));
             down.SetBinding(TextBlock.TextProperty, new Binding("down"));
             down.SetValue(Button.ContentProperty, "∨");
@@ -125,9 +128,15 @@ namespace SearchSample.View
                 //Width = 50,
             };
 
+            Style display_style = new Style();
+            display_style.Setters.Add(new Setter
+            {
+                Property = CheckBox.HorizontalAlignmentProperty,
+                Value = HorizontalAlignment.Center
+            }); ;
+
             FrameworkElementFactory chkDisplay = new FrameworkElementFactory(typeof(CheckBox));
-            chkDisplay.SetBinding(TextBlock.TextProperty, new Binding("display"));
-            chkDisplay.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            chkDisplay.SetBinding(ComboBox.TextProperty, new Binding("display"));
 
             DataGridTemplateColumn chkDisplayColumn = new DataGridTemplateColumn()
             {
@@ -137,11 +146,22 @@ namespace SearchSample.View
                     DataType = typeof(CheckBox),
                     VisualTree = chkDisplay,
                 },
-                //Width = 50,
+                //Width = 130,
             };
+
+            //DataGridCheckBoxColumn chkDisplayColumn = new DataGridCheckBoxColumn()
+            //{
+            //    Header = "表示有無",
+            //    Binding = new Binding("display"),
+            //    CellStyle = display_style,
+
+
+            //    //Width = 50,
+            //};
 
             FrameworkElementFactory txtItemName = new FrameworkElementFactory(typeof(TextBox));
             txtItemName.SetBinding(TextBox.TextProperty, new Binding("output_item"));
+            txtItemName.SetValue(TextBox.IsReadOnlyProperty, true);
 
             DataGridTemplateColumn txtItemNameColumn = new DataGridTemplateColumn()
             {
@@ -154,12 +174,19 @@ namespace SearchSample.View
                 //Width = 130,
             };
 
-            DataTable sort_dt = new DataTable();
+            //DataGridTextColumn txtItemNameColumn = new DataGridTextColumn()
+            //{
+            //    Header = "項目名",
+            //    Binding = new Binding("output_item"),
+            //    //Width = 130,
+            //};
+
+
 
             FrameworkElementFactory cmbSort = new FrameworkElementFactory(typeof(ComboBox));
             cmbSort.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
             cmbSort.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
-            cmbSort.SetValue(ComboBox.ItemsSourceProperty, sort_dt.DefaultView);
+            cmbSort.SetValue(ComboBox.ItemsSourceProperty, SortDt.DefaultView);
             cmbSort.SetValue(ComboBox.NameProperty, "cmbCondition");
             cmbSort.SetBinding(ComboBox.TextProperty, new Binding("sort"));
 
@@ -174,21 +201,71 @@ namespace SearchSample.View
                 //Width = 130,
             };
 
-            DataTable sort_dir_dt = new DataTable();
+            FrameworkElementFactory cmbSortDir = new FrameworkElementFactory(typeof(ComboBox));
+            cmbSortDir.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
+            cmbSortDir.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
+            cmbSortDir.SetValue(ComboBox.ItemsSourceProperty, SortDtDir.DefaultView);
+            cmbSortDir.SetBinding(ComboBox.TextProperty, new Binding("sort_dir"));
 
-            FrameworkElementFactory rdoSortDir = new FrameworkElementFactory(typeof(RadioButton));
-            rdoSortDir.SetValue(RadioButton.GroupNameProperty, "sort_dir_group");
-            rdoSortDir.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
-
-            DataGridTemplateColumn rdoSortDirColumn = new DataGridTemplateColumn()
+            DataGridTemplateColumn cmbSortDirColumn = new DataGridTemplateColumn()
             {
-                Header = "ソート順序",
+                Header = "ソート方向",
                 CellTemplate = new DataTemplate()
                 {
-                    DataType = typeof(RadioButton),
-                    VisualTree = rdoSortDir,
+                    DataType = typeof(ComboBox),
+                    VisualTree = cmbSortDir,
                 },
                 //Width = 130,
+            };
+
+            //FrameworkElementFactory rdoSortDir1 = new FrameworkElementFactory(typeof(RadioButton));
+            //rdoSortDir1.SetValue(RadioButton.NameProperty, "asc");
+            //rdoSortDir1.SetValue(RadioButton.ContentProperty, "昇順");
+            ////rdoSortDir1.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
+            //rdoSortDir1.SetValue(RadioButton.IsCheckedProperty, "{Binding Path=ModeArray[0], Mode=TwoWay}");
+
+            //FrameworkElementFactory rdoSortDir2 = new FrameworkElementFactory(typeof(RadioButton));
+            //rdoSortDir2.SetValue(RadioButton.NameProperty, "desc");
+            //rdoSortDir2.SetValue(RadioButton.ContentProperty, "降順");
+            ////rdoSortDir2.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
+
+            //FrameworkElementFactory stkSortDir = new FrameworkElementFactory(typeof(StackPanel));
+            //stkSortDir.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+            //stkSortDir.AppendChild(rdoSortDir1);
+            //stkSortDir.AppendChild(rdoSortDir2);
+
+            //DataGridTemplateColumn rdoSortDirColumn = new DataGridTemplateColumn()
+            //{
+            //    Header = "ソート方向",
+            //    CellTemplate = new DataTemplate()
+            //    {
+            //        DataType = typeof(StackPanel),
+            //        VisualTree = stkSortDir,
+            //    },
+            //    //Width = 130,
+            //};
+
+            //FrameworkElementFactory txtSortDir = new FrameworkElementFactory(typeof(TextBox));
+            //txtSortDir.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
+
+            //DataGridTemplateColumn txtSortDirColumn = new DataGridTemplateColumn()
+            //{
+            //    Header = "",
+            //    CellTemplate = new DataTemplate()
+            //    {
+            //        DataType = typeof(TextBox),
+            //        VisualTree = txtSortDir,
+            //    },
+            //    Width = 0,
+            //    //Visibility = Visibility.Hidden,
+            //    //Width = 130,
+            //};
+
+            DataGridTextColumn txtSortDirColumn = new DataGridTextColumn()
+            {
+                Header = "",
+                Binding = new Binding("sort_dir"),
+                Width = 0,
             };
 
             dataGrid.Columns.Add(hlup);
@@ -196,10 +273,175 @@ namespace SearchSample.View
             dataGrid.Columns.Add(chkDisplayColumn);
             dataGrid.Columns.Add(txtItemNameColumn);
             dataGrid.Columns.Add(cmbSortColumn);
-            dataGrid.Columns.Add(rdoSortDirColumn);
+            dataGrid.Columns.Add(cmbSortDirColumn);
+            //dataGrid.Columns.Add(rdoSortDirColumn);
+            //dataGrid.Columns.Add(txtSortDirColumn);
 
+
+            this.dataList = new ObservableCollection<OutputItem>();
+            int count = 0;
+            foreach (string colmun in colmun_list)
+            {
+
+                DataRow[] drs = output_item_dt.Select("項目名 = '" + colmun + "'");
+
+                if (drs.Length>0)
+                {
+                    bool display = drs[0]["表示有無"].ToString().Equals("有") ? true : false;
+
+                    dataList.Add(new OutputItem
+                    {
+                        output_item = colmun,
+                        display = display,
+                        sort = drs[0]["ソート順"].ToString(),
+                        sort_dir = drs[0]["ソート方向"].ToString(),
+                    });
+                }
+                else
+                {
+                    dataList.Add(new OutputItem
+                    {
+                        output_item = colmun,
+                        display = true,
+                        sort = "",
+                        sort_dir = "",
+                    });
+                }
+
+                count++;
+            }
 
             dataGrid.ItemsSource = dataList;
+        }
+
+        public void UpdateQueueData(object sender, DataGridRowEditEndingEventArgs e)
+        {
+            if (e.EditAction == DataGridEditAction.Commit)
+            {
+                DataGridRow dgRow = e.Row;
+                DataRowView rowView = dgRow.Item as DataRowView;
+                DataRow drItem = rowView.Row;
+                //Queue.Rows.RemoveAt(e.Row.GetIndex());
+                //Queue.ImportRow(drItem);
+                //WriteXML();
+            }
+        }
+
+        private void dataGrid_CurCellChange(object sender, EventArgs e)
+        {
+            // String variable used to show message.
+            string myString = "CurrentCellChanged event raised, cell focus is at ";
+            // Get the co-ordinates of the focussed cell.
+            string myPoint = dataGrid.CurrentCell.Column + "," +
+                           dataGrid.CurrentCell.Item;
+
+            OutputItem item = (OutputItem)dataGrid.CurrentCell.Item;
+
+            // Create the alert message.
+            myString = myString + "(" + myPoint + ")";
+            // Show Co-ordinates when CurrentCellChanged event is raised.
+            //MessageBox.Show(myString, "Current cell co-ordinates");
+        }
+
+        private void dataGrid_CheckChange(object sender, EventArgs e)
+        {
+            // String variable used to show message.
+            string myString = "CurrentCellChanged event raised, cell focus is at ";
+            // Get the co-ordinates of the focussed cell.
+            string myPoint = dataGrid.CurrentCell.Column + "," +
+                           dataGrid.CurrentCell.Item;
+
+            OutputItem item = (OutputItem)dataGrid.CurrentCell.Item;
+
+            // Create the alert message.
+            myString = myString + "(" + myPoint + ")";
+            // Show Co-ordinates when CurrentCellChanged event is raised.
+            //MessageBox.Show(myString, "Current cell co-ordinates");
+        }
+
+        private void dataGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            //DataGrid dataGrid = (DataGrid)sender;
+
+            //// データグリッドの行数を取得します。
+            //var rowCount = dataGrid.Items.Count;
+            //// データグリッドの行数分繰り返します。
+            //for (int i = 0; i < rowCount; ++i)
+            //{
+            //    // データグリッドの行オブジェクトを取得します。
+            //    var row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+
+            //    // 行オブジェクトが取得できない場合
+            //    if (row == null)
+            //    {
+            //        // 対象の行が表示されていない場合、行オブジェクトが取得できないため
+            //        // 対象の行が表示されるようスクロールします。
+            //        dataGrid.UpdateLayout();
+            //        dataGrid.ScrollIntoView(dataGrid.Items[i]);
+            //        // 再度、行オブジェクトを取得します。
+            //        row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+            //    }
+
+            //    TextBlock txt = (TextBlock)dataGrid.Columns[6].GetCellContent(row);
+
+            //    StackPanel stk = GetChildElement<StackPanel>((ContentPresenter)dataGrid.Columns[5].GetCellContent(row), 0);
+
+            //    if (stk != null)
+            //    {
+            //        RadioButton rdo1 = GetChildElement<RadioButton>(stk, 0);
+            //        RadioButton rdo2 = GetChildElement<RadioButton>(stk, 1);
+
+            //        rdo1.GroupName = "sort_dir_group" + i;
+            //        rdo2.GroupName = "sort_dir_group" + i;
+
+            //        if (txt.Text.Equals("asc"))
+            //        {
+            //            rdo1.IsChecked = true;
+            //        }
+            //        else if (txt.Text.Equals("desc"))
+            //        {
+            //            rdo2.IsChecked = true;
+            //        }
+            //    }
+
+            //}
+        }
+
+        private T GetChildElement<T>(DependencyObject reference, int childIdx) where T : FrameworkElement
+        {
+            try
+            {
+                //==== 子要素取得 ====//
+                var child = VisualTreeHelper.GetChild(reference, childIdx);
+                if (child == null)
+                {
+                    return null;
+                }
+                if (child is T)
+                {
+                    return child as T;
+                }
+
+
+                //==== 子要素内を探す ====//
+                DependencyObject elem = reference;
+                int count = VisualTreeHelper.GetChildrenCount(child);
+                for (int idx = 0; idx < count; idx++)
+                {
+                    elem = GetChildElement<T>(child, idx);
+                    if (elem != null)
+                    {
+                        break;
+                    }
+                }
+
+                return elem as T;
+            }
+            catch (Exception ex) 
+            { 
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -229,15 +471,48 @@ namespace SearchSample.View
         /// <param name="e"></param>
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
-            
-            //List<string> rtn = new List<string>();
-            //foreach (string a in list1.SelectedItems)
-            //{
-            //    if (string.IsNullOrEmpty(a)) continue;
-            //    rtn.Add(a);
-            //}
+            OutputSettingDialogViewModel vm = (OutputSettingDialogViewModel)DataContext;
 
-            //main.QualityList = rtn;
+            List<OutputItem> list = new List<OutputItem>();
+
+            // データグリッドの行数を取得します。
+            var rowCount = dataGrid.Items.Count;
+            // データグリッドの行数分繰り返します。
+            for (int i = 0; i < rowCount; ++i)
+            {
+                // データグリッドの行オブジェクトを取得します。
+                var row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+
+                // 行オブジェクトが取得できない場合
+                if (row == null)
+                {
+                    // 対象の行が表示されていない場合、行オブジェクトが取得できないため
+                    // 対象の行が表示されるようスクロールします。
+                    dataGrid.UpdateLayout();
+                    dataGrid.ScrollIntoView(dataGrid.Items[i]);
+                    // 再度、行オブジェクトを取得します。
+                    row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+                }
+
+                //CheckBox display = (CheckBox)dataGrid.Columns[2].GetCellContent(row);
+                CheckBox display = GetChildElement<CheckBox>((ContentPresenter)dataGrid.Columns[2].GetCellContent(row), 0);
+                //TextBlock ouput_item = (TextBlock)dataGrid.Columns[3].GetCellContent(row);
+                TextBox ouput_item = GetChildElement<TextBox>((ContentPresenter)dataGrid.Columns[3].GetCellContent(row), 0);
+                ComboBox sort = GetChildElement<ComboBox>((ContentPresenter)dataGrid.Columns[4].GetCellContent(row), 0);
+                ComboBox sort_dir = GetChildElement<ComboBox>((ContentPresenter)dataGrid.Columns[5].GetCellContent(row), 0);
+
+                list.Add(new OutputItem()
+                {
+                    display = display == null ? false : (bool)display.IsChecked,
+                    output_item = ouput_item.Text,
+                    sort = sort.SelectedValue == null ? "" : sort.SelectedValue.ToString(),
+                    sort_dir = sort_dir.SelectedValue == null ? "" : sort_dir.SelectedValue.ToString(),
+                });
+
+
+            }
+
+            vm.SetOutputItem(this.dic, list);
 
             this.Close();
         }

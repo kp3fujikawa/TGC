@@ -39,18 +39,18 @@
 
         <StackPanel  Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
             <Button x:Name="btnClose" Content="閉じる" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
-                Height="30" Width="100" Click="btnClose_Click"
+                Height="30" Width="120" Click="btnClose_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="閉じる">
             </Button>
             <Button x:Name="btnPlant" Content="プラント情報検索" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
-                Height="30" Width="100" Click="btnPlant_Click"
+                Height="30" Width="120" Click="btnPlant_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="プラント情報検索">
             </Button>
         </StackPanel>
 
         <Grid Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
@@ -59,7 +59,7 @@
             <ComboBox x:Name="cmbDataDictinary" Grid.Column="1" Style="{StaticResource MahApps.Styles.ComboBox}"
                       SelectionChanged="cmbDataDictinary_SelectionChanged"/>
             <Button x:Name="btnOutputSelect" Content="出力項目選択" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" 
-                Height="30" Width="100" Click="btnOutputSelect_Click"
+                Height="30" Width="120" Click="btnOutputSelect_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="出力項目選択">
             </Button>
 
@@ -72,10 +72,10 @@
 
         <Grid Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
-                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="50"/>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="120"/>
             </Grid.ColumnDefinitions>
 
             <Label Grid.Column="0" Content="製造日"/>
@@ -87,7 +87,7 @@
 
         <Grid Grid.Row="5" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="30"/>
                 <ColumnDefinition Width="400"/>
                 <ColumnDefinition/>
@@ -105,7 +105,7 @@
 
         <Grid Grid.Row="6" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="30"/>
                 <ColumnDefinition Width="400"/>
                 <ColumnDefinition/>
@@ -128,7 +128,7 @@
             </Grid.ColumnDefinitions>
 
             <Button x:Name="btnSearch" Content="検索" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" 
-                    Height="30" Width="100" Click="btnSearch_Click"
+                    Height="30" Width="120" Click="btnSearch_Click"
                     Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="検索">
             </Button>
 
