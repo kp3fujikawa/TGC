@@ -21,19 +21,15 @@ namespace SearchSample.View
     /// </summary>
     public partial class LikeRegisterDialog : MahApps.Metro.Controls.MetroWindow
     {
-        private MainWindow main;
-
         /// <summary>
         /// エラーダイアログ
         /// </summary>
-        public LikeRegisterDialog(MainWindow main)
+        public LikeRegisterDialog()
         {
             InitializeComponent();
 
             // WPF版：テーマ設定
             Common.SettingTheme(this);
-
-            this.main = main;
         }
 
         /// <summary>

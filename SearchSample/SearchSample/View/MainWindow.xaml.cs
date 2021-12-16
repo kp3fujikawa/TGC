@@ -445,7 +445,7 @@ namespace SearchSample.View
         /// </summary>
         private void lnkLike_Click(object sender, EventArgs e)
         {
-            LikeDialog frm1 = new LikeDialog(this);
+            LikeDialog frm1 = new LikeDialog();
 
             frm1.ShowDialog();
         }
@@ -454,7 +454,7 @@ namespace SearchSample.View
         /// </summary>
         private void lnkLikeRegister_Click(object sender, EventArgs e)
         {
-            LikeRegisterDialog frm1 = new LikeRegisterDialog(this);
+            LikeRegisterDialog frm1 = new LikeRegisterDialog();
 
             frm1.ShowDialog();
         }

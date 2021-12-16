@@ -44,7 +44,7 @@
                 <ColumnDefinition Width="600" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Style="{StaticResource LabelHeaderStyle}" Content="タグ" Height="70" VerticalAlignment="Center" Margin="0,0,0,0"/>
+            <Label Grid.Row="0" Grid.Column="0" Content="タグ" Height="70" VerticalAlignment="Center" Margin="0,0,0,0"/>
             <TextBox x:Name="txtValue1" Text="" Grid.Row="0" Grid.Column="1" Height="70" Margin="10,0,10,0"/>
         </Grid>
 
@@ -89,7 +89,7 @@
         <DataGrid x:Name="dataGrid2" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" Margin="10,0,0,0" CanUserAddRows="False"
                   Style="{StaticResource MyGridStyle}" ColumnHeaderStyle="{StaticResource MyColumnHeaderStyle}"/>
 
-        <Grid Grid.RowSpan="4" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" ShowGridLines="False">
+        <Grid Grid.RowSpan="5" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
@@ -102,7 +102,21 @@
                 <StackPanel Margin="6" 
                             HorizontalAlignment="Left"
                             Width="200">
-                    <Label Content="お気に入り" />
+                    <Label>
+                        <Hyperlink Click="lnkLike_Click">
+                            <TextBlock Text="お気に入り" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkLikeRegister_Click">
+                            <TextBlock Text="お気に入り登録" />
+                        </Hyperlink>
+                    </Label>
+                    <Label>
+                        <Hyperlink Click="lnkConditionClear_Click">
+                            <TextBlock Text="条件クリア" />
+                        </Hyperlink>
+                    </Label>
                 </StackPanel>
             </Expander>
 

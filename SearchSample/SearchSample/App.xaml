@@ -4,7 +4,7 @@
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:local="clr-namespace:SearchSample"
-             StartupUri="View/MainWindow.xaml"
+             StartupUri="View/MainMenu.xaml"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <ResourceDictionary>

@@ -42,10 +42,6 @@
                 Height="30" Width="120" Click="btnClose_Click"
                 Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="閉じる">
             </Button>
-            <Button x:Name="btnPlant" Content="プラント情報検索" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" 
-                Height="30" Width="120" Click="btnPlant_Click"
-                Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="プラント情報検索">
-            </Button>
         </StackPanel>
 
         <Grid Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
@@ -105,16 +101,17 @@
 
         <Grid Grid.Row="6" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="106"/>
                 <ColumnDefinition Width="30"/>
                 <ColumnDefinition Width="400"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <Label Grid.Column="0" Content="プロセスデータ抽出" />
-            <CheckBox x:Name="chkProcessData" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"></CheckBox>
-            <TextBox x:Name="txtProcessData" Grid.Column="2" />
-            <Button x:Name="btnProcessData" Content="選択" Grid.Column="3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" 
+            <Label Grid.Column="0" Content="プロセスデータ抽出" Grid.ColumnSpan="2" />
+            <CheckBox x:Name="chkProcessData" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="7,8"></CheckBox>
+            <TextBox x:Name="txtProcessData" Grid.Column="3" />
+            <Button x:Name="btnProcessData" Content="選択" Grid.Column="4" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,0,0" 
                     Height="30" Width="50" Click="btnProcessData_Click"
                     Style="{StaticResource MahApps.Styles.Button.Square.Accent}" ToolTip="選択">
             </Button>

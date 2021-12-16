@@ -21,12 +21,10 @@ namespace SearchSample.View
     /// </summary>
     public partial class LikeDialog : MahApps.Metro.Controls.MetroWindow
     {
-        private MainWindow main;
-
         /// <summary>
         /// エラーダイアログ
         /// </summary>
-        public LikeDialog(MainWindow main)
+        public LikeDialog()
         {
             InitializeComponent();
 
@@ -35,8 +33,6 @@ namespace SearchSample.View
 
             // WPF版：DataGrid ColumnHeaderStyle設定
             Common.SettingColumnHeaderStyle(dataGrid);
-
-            this.main = main;
         }
 
         /// <summary>

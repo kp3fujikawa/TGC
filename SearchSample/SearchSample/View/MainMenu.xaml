@@ -1,0 +1,136 @@
+﻿<mahApps:MetroWindow x:Class="SearchSample.View.MainMenu"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SearchSample.ViewModel"
+        mc:Ignorable="d"
+        xmlns:mahApps="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:l="clr-namespace:SearchSample.Control"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        ResizeMode="CanResizeWithGrip"
+        Title="検索" Height="750" Width="1200"
+        Loaded="Window_Loaded"
+        WindowStartupLocation="CenterOwner">
+    <mahApps:MetroWindow.DataContext>
+        <local:MainMenuViewModel/>
+    </mahApps:MetroWindow.DataContext>
+    <Window.Resources>
+        <ResourceDictionary Source="../Style/DataExtractStyleDic.xaml"/>
+    </Window.Resources>
+    <Grid>
+        <!-- 行を定義 -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="200"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="170" />
+        </Grid.ColumnDefinitions>
+
+
+        <StackPanel  Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center"  Height="150" Width="150" Background="LightGray">
+            <l:DropDownMenuButton Width="120" Height="32" HorizontalAlignment="Center" Background="LightGray" BorderThickness="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="データ検索" />
+                    <Path Width="8" Height="6" Margin="8,0,0,0" Stretch="Fill" Fill="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type l:DropDownMenuButton}},Path=Foreground}" Data="F1 M 57.5692,88L 99.1384,16L 16,16L 57.5692,88 Z "/>
+                </StackPanel>
+                <l:DropDownMenuButton.DropDownContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="製造実績情報検索" Click="MenuItem1_Click" />
+                        <MenuItem Header="プラント情報検索" Click="MenuItem2_Click" />
+                    </ContextMenu>
+                </l:DropDownMenuButton.DropDownContextMenu>
+            </l:DropDownMenuButton>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center"  Height="150" Width="150" Background="LightGray">
+            <l:DropDownMenuButton Width="120" Height="32" HorizontalAlignment="Center" Background="LightGray" BorderThickness="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="データ管理" />
+                    <Path Width="8" Height="6" Margin="8,0,0,0" Stretch="Fill" Fill="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type l:DropDownMenuButton}},Path=Foreground}" Data="F1 M 57.5692,88L 99.1384,16L 16,16L 57.5692,88 Z "/>
+                </StackPanel>
+                <l:DropDownMenuButton.DropDownContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="データディクショナリ一覧" />
+                        <MenuItem Header="辞書一覧" />
+                    </ContextMenu>
+                </l:DropDownMenuButton.DropDownContextMenu>
+            </l:DropDownMenuButton>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="0" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center"  Height="150" Width="150" Background="LightGray">
+            <l:DropDownMenuButton Width="120" Height="32" Background="LightGray" BorderThickness="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="トレース／履歴" />
+                    <Path Width="8" Height="6" Margin="8,0,0,0" Stretch="Fill" Fill="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type l:DropDownMenuButton}},Path=Foreground}" Data="F1 M 57.5692,88L 99.1384,16L 16,16L 57.5692,88 Z "/>
+                </StackPanel>
+                <l:DropDownMenuButton.DropDownContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="メッセージ・操作履歴" />
+                        <MenuItem Header="パスワード変更履歴" />
+                        <MenuItem Header="認証履歴" />
+                        <MenuItem Header="トレースログダウンロード" />
+                    </ContextMenu>
+                </l:DropDownMenuButton.DropDownContextMenu>
+            </l:DropDownMenuButton>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="0" Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center"  Height="150" Width="150" Background="LightGray">
+            <l:DropDownMenuButton Width="120" Height="32" Background="LightGray" BorderThickness="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="システム設定" />
+                    <Path Width="8" Height="6" Margin="8,0,0,0" Stretch="Fill" Fill="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type l:DropDownMenuButton}},Path=Foreground}" Data="F1 M 57.5692,88L 99.1384,16L 16,16L 57.5692,88 Z "/>
+                </StackPanel>
+                <l:DropDownMenuButton.DropDownContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="パスワード変更" />
+                        <MenuItem Header="ユーザ一覧" />
+                        <MenuItem Header="お知らせ登録" />
+                    </ContextMenu>
+                </l:DropDownMenuButton.DropDownContextMenu>
+            </l:DropDownMenuButton>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="0" Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center"  Height="150" Width="150" Background="LightGray">
+            <l:DropDownMenuButton Width="120" Height="32" Background="LightGray" BorderThickness="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="マスタ" />
+                    <Path Width="8" Height="6" Margin="8,0,0,0" Stretch="Fill" Fill="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type l:DropDownMenuButton}},Path=Foreground}" Data="F1 M 57.5692,88L 99.1384,16L 16,16L 57.5692,88 Z "/>
+                </StackPanel>
+                <l:DropDownMenuButton.DropDownContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="マスタメンテナンス" />
+                        <MenuItem Header="変更履歴一覧" />
+                    </ContextMenu>
+                </l:DropDownMenuButton.DropDownContextMenu>
+            </l:DropDownMenuButton>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Top" Orientation="Vertical" HorizontalAlignment="Left">
+            <Label Content="お知らせ"></Label>
+            <DataGrid x:Name="infoGrid" Margin="10,0,0,0" CanUserAddRows="False" Height="300" AutoGenerateColumns="False"
+                    Style="{StaticResource MyGridStyle}" ColumnHeaderStyle="{StaticResource MyColumnHeaderStyle}">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="詳細表示" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button x:Name="btnInfoDetail" Content="詳細" Click="btnInfoDetail_Click"></Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="タイトル" MinWidth="500"></DataGridTextColumn>
+                    <DataGridTextColumn Header="登録日時" MinWidth="100"></DataGridTextColumn>
+                    <DataGridTextColumn Header="登録者" MinWidth="100"></DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+        
+    </Grid>
+</mahApps:MetroWindow>

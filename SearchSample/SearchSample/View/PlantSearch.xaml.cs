@@ -193,6 +193,31 @@ namespace SearchSample.View
 
         }
 
+
+        /// お気に入り　リンククリック
+        /// </summary>
+        private void lnkLike_Click(object sender, EventArgs e)
+        {
+            LikeDialog frm1 = new LikeDialog();
+
+            frm1.ShowDialog();
+        }
+
+        /// お気に入り登録　リンククリック
+        /// </summary>
+        private void lnkLikeRegister_Click(object sender, EventArgs e)
+        {
+            LikeRegisterDialog frm1 = new LikeRegisterDialog();
+
+            frm1.ShowDialog();
+        }
+
+        /// 条件クリア　リンククリック
+        /// </summary>
+        private void lnkConditionClear_Click(object sender, EventArgs e)
+        {
+            allClear();
+        }
     }
 
 }

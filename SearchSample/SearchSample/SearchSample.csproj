@@ -225,9 +225,11 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Common\DBAccess.cs" />
+    <Compile Include="Control\DropDownMenuButton.cs" />
     <Compile Include="Model\OutputItem.cs" />
     <Compile Include="Model\SearchCondition.cs" />
     <Compile Include="Model\SearchData.cs" />
+    <Compile Include="ViewModel\MainMenuViewModel.cs" />
     <Compile Include="ViewModel\OutputSettingDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeRegisterDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeDialogViewModel.cs" />
@@ -235,6 +237,10 @@
     <Compile Include="ViewModel\QuolityDialogViewModel.cs" />
     <Compile Include="ViewModel\ErrorDialogViewModel.cs" />
     <Compile Include="ViewModel\MainWindowViewModel.cs" />
+    <Page Include="View\MainMenu.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\OutputSettingDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -269,6 +275,9 @@
     </Compile>
     <Compile Include="Common\Common.cs" />
     <Compile Include="ViewModel\StyleSettingViewModel.cs" />
+    <Compile Include="View\MainMenu.xaml.cs">
+      <DependentUpon>MainMenu.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\OutputSettingDialog.xaml.cs">
       <DependentUpon>OutputSettingDialog.xaml</DependentUpon>
     </Compile>
