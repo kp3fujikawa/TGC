@@ -1297,7 +1297,77 @@ namespace SearchSample
 
                         SQL += " WHERE [データディクショナリ] = '"+dic+"' ";
                         
-                        SQL += " ORDER BY [表示順] ";
+                        SQL += " ORDER BY [表示順] asc";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetOutputItemDisplay(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = string.Empty;
+
+                        SQL += " SELECT ";
+
+                        SQL += " [項目名] ";
+                        SQL += " ,[表示順] ";
+                        SQL += " ,[ソート順] ";
+                        SQL += " ,[ソート方向] ";
+                        SQL += " ,[表示有無] ";
+
+                        SQL += " FROM [出力項目] ";
+
+                        SQL += " WHERE [データディクショナリ] = '" + dic + "' AND [表示有無] = '1'";
+
+                        SQL += " ORDER BY [表示順] asc";
 
                         OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
                         adapter.Fill(resulrdt);
@@ -1368,7 +1438,6 @@ namespace SearchSample
                         command.CommandText = "DELETE FROM [出力項目] WHERE [データディクショナリ] = '" + dic + "'";
                         command.ExecuteNonQuery();
 
-                        int count = 0;
                         foreach (OutputItem items in list)
                         {
                             try
@@ -1376,7 +1445,7 @@ namespace SearchSample
                                 List<string> values = new List<string>();
                                 values.Add("'" + items.output_item + "'");
                                 values.Add("'" + dic + "'");
-                                values.Add("'" + (count+1).ToString() + "'");
+                                values.Add("'" + items.line_no + "'");
                                 values.Add("'" + items.sort + "'");
                                 values.Add("'" + items.sort_dir + "'");
                                 values.Add("'" + (items.display ? "1" : "") + "'");
@@ -1385,7 +1454,6 @@ namespace SearchSample
                                     "INSERT INTO [出力項目] ([項目名],[データディクショナリ],[表示順],[ソート順],[ソート方向],[表示有無]) "+
                                             "VALUES ( " + string.Join(",", values) + " )";
                                 cnt += command.ExecuteNonQuery();
-                                count++;
                             }
                             catch (Exception ex)
                             {
@@ -1393,6 +1461,79 @@ namespace SearchSample
                                 transaction.Rollback();
                             }
                         }
+
+                        // コミット
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool DeleteOutputItem(
+            string dic
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            try
+            {
+                // データをDelete/Insert
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+
+                    OleDbCommand command = new OleDbCommand();
+                    OleDbTransaction transaction = null;
+                    command.Connection = connection;
+                    int cnt = 0;
+
+                    try
+                    {
+                        connection.Open();
+
+                        // トランザクション開始
+                        transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                        // Assign transaction object for a pending local transaction.
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
+                        // 取込定義削除
+                        command.CommandText = "DELETE FROM [出力項目] WHERE [データディクショナリ] = '" + dic + "'";
+                        command.ExecuteNonQuery();
 
                         // コミット
                         transaction.Commit();

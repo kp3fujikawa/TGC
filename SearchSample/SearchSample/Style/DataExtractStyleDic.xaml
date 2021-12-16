@@ -36,4 +36,8 @@
         <Setter Property="Foreground" Value="lightblue"/>
     </Style>
 
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
 </ResourceDictionary>
