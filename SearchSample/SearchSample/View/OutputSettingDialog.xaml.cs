@@ -135,24 +135,23 @@ namespace SearchSample.View
                 //Width = 50,
             };
 
-            Style display_style = new Style();
-            display_style.Setters.Add(new Setter
-            {
-                Property = CheckBox.HorizontalAlignmentProperty,
-                Value = HorizontalAlignment.Center
-            }); ;
-
             FrameworkElementFactory chkDisplay = new FrameworkElementFactory(typeof(CheckBox));
-            Binding bind_display = new Binding("display");
-            bind_display.NotifyOnSourceUpdated = true;
-            bind_display.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            chkDisplay.SetValue(CheckBox.IsCheckedProperty, bind_display);
             chkDisplay.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             chkDisplay.SetValue(CheckBox.NameProperty, "chkDisplay");
 
+            Binding bind_display = new Binding("display");
+            bind_display.NotifyOnSourceUpdated = true;
+            bind_display.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            chkDisplay.SetBinding(CheckBox.IsCheckedProperty, bind_display);
+
+            CheckBox headerchk = new CheckBox();
+            headerchk.Content = "表示有無";
+            headerchk.AddHandler(CheckBox.CheckedEvent, new RoutedEventHandler(chk_event));
+            headerchk.AddHandler(CheckBox.UncheckedEvent, new RoutedEventHandler(unchk_event));
+
             DataGridTemplateColumn chkDisplayColumn = new DataGridTemplateColumn()
             {
-                Header = "表示有無",
+                Header = headerchk,
                 CellTemplate = new DataTemplate()
                 {
                     DataType = typeof(CheckBox),
@@ -265,12 +264,12 @@ namespace SearchSample.View
             //    //Width = 130,
             //};
 
-            DataGridTextColumn txtSortDirColumn = new DataGridTextColumn()
-            {
-                Header = "",
-                Binding = new Binding("sort_dir"),
-                Width = 0,
-            };
+            //DataGridTextColumn txtSortDirColumn = new DataGridTextColumn()
+            //{
+            //    Header = "",
+            //    Binding = new Binding("sort_dir"),
+            //    Width = 0,
+            //};
 
             dataGrid.Columns.Add(hlup);
             dataGrid.Columns.Add(hldown);
@@ -324,7 +323,7 @@ namespace SearchSample.View
                 this.dataList.Add(new OutputItem
                 {
                     output_item = colmun,
-                    display = true,
+                    display = false,
                     sort = "",
                     sort_dir = "",
                     line_no = String.Format("{0:D4}", (max_line_no++)).ToString(),
@@ -362,6 +361,57 @@ namespace SearchSample.View
             //DataGrid dataGrid = (DataGrid)sender;
 
         }
+
+        public void chk_event(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                for (int i = 0; i < this.dataList.Count; i++)
+                {
+                    OutputItem tmprow = new OutputItem()
+                    {
+                        output_item = this.dataList[i].output_item,
+                        display = true,
+                        sort = this.dataList[i].sort,
+                        sort_dir = this.dataList[i].sort_dir,
+                        line_no = this.dataList[i].line_no,
+                    };
+                    this.dataList[i] = tmprow;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+        }
+
+        public void unchk_event(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                for (int i = 0; i < this.dataList.Count; i++)
+                {
+                    OutputItem tmprow = new OutputItem()
+                    {
+                        output_item = this.dataList[i].output_item,
+                        display = false,
+                        sort = this.dataList[i].sort,
+                        sort_dir = this.dataList[i].sort_dir,
+                        line_no = this.dataList[i].line_no,
+                    };
+                    this.dataList[i] = tmprow;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+        }
+
 
         //private RelayCommand<int> _selectNameCommand;
         public void up_event(object sender, RoutedEventArgs e)
@@ -424,43 +474,6 @@ namespace SearchSample.View
         }
 
 
-        private T GetChildElement<T>(DependencyObject reference, int childIdx) where T : FrameworkElement
-        {
-            try
-            {
-                //==== 子要素取得 ====//
-                var child = VisualTreeHelper.GetChild(reference, childIdx);
-                if (child == null)
-                {
-                    return null;
-                }
-                if (child is T)
-                {
-                    return child as T;
-                }
-
-
-                //==== 子要素内を探す ====//
-                DependencyObject elem = reference;
-                int count = VisualTreeHelper.GetChildrenCount(child);
-                for (int idx = 0; idx < count; idx++)
-                {
-                    elem = GetChildElement<T>(child, idx);
-                    if (elem != null)
-                    {
-                        break;
-                    }
-                }
-
-                return elem as T;
-            }
-            catch (Exception ex) 
-            { 
-            }
-
-            return null;
-        }
-
         /// <summary>
         /// 出力項目設定を初期化　ボタンクリック
         /// </summary>
@@ -481,7 +494,7 @@ namespace SearchSample.View
                 this.dataList.Add(new OutputItem
                 {
                     output_item = colmun,
-                    display = true,
+                    display = false,
                     sort = "",
                     sort_dir = "",
                     line_no = String.Format("{0:D4}", (max_line_no++)).ToString(),
@@ -514,7 +527,7 @@ namespace SearchSample.View
 
             vm.SetOutputItem(this.dic, this.dataList.ToList());
 
-            //this.Close();
+            this.Close();
         }
     }
 }

@@ -1333,6 +1333,76 @@ namespace SearchSample
         /// <param name="table_name">対象テーブル名</param>
         /// <param name="itemNameDT">データテーブル</param>
         /// <returns>true/false</returns>
+        public bool GetOutputItemDisplay(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = string.Empty;
+
+                        SQL += " SELECT ";
+
+                        SQL += " [項目名] ";
+                        SQL += " ,[表示順] ";
+                        SQL += " ,[ソート順] ";
+                        SQL += " ,[ソート方向] ";
+                        SQL += " ,[表示有無] ";
+
+                        SQL += " FROM [出力項目] ";
+
+                        SQL += " WHERE [データディクショナリ] = '" + dic + "' AND [表示有無] = '1'";
+
+                        SQL += " ORDER BY [表示順] asc";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
         public bool SetOutputItem(
             string dic,
             List<OutputItem> list

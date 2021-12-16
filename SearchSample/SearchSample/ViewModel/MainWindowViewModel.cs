@@ -3,6 +3,7 @@ using SearchSample.DataModel;
 using System.Data;
 using System.Collections.Generic;
 using SearchSample.Model;
+using System.ComponentModel;
 
 namespace SearchSample.ViewModel
 {
@@ -11,6 +12,12 @@ namespace SearchSample.ViewModel
     /// </summary>
     class MainWindowViewModel
     {
+
+        public MainWindowViewModel()
+        {
+
+        }
+
         #region "DBアクセスモデル"
 
         private DBAccess db = new DBAccess();
@@ -169,14 +176,6 @@ namespace SearchSample.ViewModel
         #endregion
 
         /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        public MainWindowViewModel()
-        {
-
-        }
-
-        /// <summary>
         /// テーブルカラム名取得
         /// </summary>
         /// <returns>true/false</returns>
@@ -278,6 +277,89 @@ namespace SearchSample.ViewModel
         {
             return db.SearchData(seach, dic, out resulrdt);
         }
+
+        public bool GetOutputItem(string dic, out DataTable dt)
+        {
+            dt = new DataTable();
+
+            DataTable tmpdt = new DataTable();
+            db.GetOutputItemDisplay(dic, out tmpdt);
+
+            if (tmpdt.Rows.Count>0){
+                foreach (DataRow row in tmpdt.Rows)
+                {
+                    string col = row["項目名"].ToString();
+                    if (!dt.Columns.Contains(col))
+                    {
+                        dt.Columns.Add(col);
+                    }
+                }
+            }
+            else
+            {
+                
+                //List<string> colmun_list = new List<string>();
+                //this.GetItemList(dic, out colmun_list);
+
+                //foreach (string colmun in colmun_list)
+                //{
+                //    dt.Columns.Add(colmun);
+                //}
+
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// テーブルカラム名取得
+        /// </summary>
+        /// <returns>true/false</returns>
+        public bool GetItemList(string dic, out List<string> colmun_list)
+        {
+            colmun_list = new List<string>();
+            Dictionary<string, int> except_list = new Dictionary<string, int>();
+
+            DataTable output_item_dt1 = new DataTable();
+            db.GetItem1(dic, out output_item_dt1);
+
+            foreach (DataColumn col in output_item_dt1.Columns)
+            {
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
+            }
+
+            DataTable output_item_dt2 = new DataTable();
+            db.GetItem2(dic, out output_item_dt2);
+
+            foreach (DataColumn col in output_item_dt2.Columns)
+            {
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
+            }
+
+            DataTable output_item_dt3 = new DataTable();
+            db.GetItemParameter(dic, out output_item_dt3);
+
+            foreach (DataColumn col in output_item_dt3.Columns)
+            {
+                //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
+            }
+
+            return true;
+        }
+
 
     }
 }
