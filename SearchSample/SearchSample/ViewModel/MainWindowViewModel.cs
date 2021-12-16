@@ -129,6 +129,11 @@ namespace SearchSample.ViewModel
             "6",
             "7",
             "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
         };
         private String[] data_dictionary_text = {
             "",
@@ -140,6 +145,11 @@ namespace SearchSample.ViewModel
             "フィルターの溶剤通液量",
             "プロセスデータ①(原材料管理)",
             "工程時間予実",
+            "品目マスタ",
+            "荷姿マスタ",
+            "保管場所マスタ",
+            "配送先マスタ",
+            "ユーザマスタ",
         };
 
         private DataTable data_dictionary_dt;
