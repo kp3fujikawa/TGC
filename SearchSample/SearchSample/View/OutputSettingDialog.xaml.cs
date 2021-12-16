@@ -25,11 +25,13 @@ namespace SearchSample.View
     {
         private MainWindow main;
         private string dic;
-        public ObservableCollection<OutputItem> dataList { get; private set; }
+        public ObservableCollection<OutputItem> dataList { get; set; }
 
-        public DataTable SortDt { get; private set; }
+        public DataTable SortDt { get; set; }
 
-        public DataTable SortDtDir { get; private set; }
+        public DataTable SortDtDir { get; set; }
+
+        public List<string> colmun_list { get; set; }
 
         /// <summary>
         /// エラーダイアログ
@@ -58,8 +60,9 @@ namespace SearchSample.View
         {
             OutputSettingDialogViewModel vm = (OutputSettingDialogViewModel)DataContext;
 
-            List<string> colmun_list = new List<string>();
-            vm.GetItemList(this.dic, out colmun_list);
+            List<string> int_colmun_list = new List<string>();
+            vm.GetItemList(this.dic, out int_colmun_list);
+            colmun_list = int_colmun_list;
 
             DataTable output_item_dt = new DataTable();
             vm.GetOutputItem(this.dic, out output_item_dt);
@@ -99,8 +102,10 @@ namespace SearchSample.View
             dataGrid.AutoGenerateColumns = false;    // 列の自動追加禁止
 
             FrameworkElementFactory up = new FrameworkElementFactory(typeof(Button));
-            up.SetBinding(TextBlock.TextProperty, new Binding("up"));
             up.SetValue(Button.ContentProperty, "∧");
+            up.SetValue(Button.NameProperty, "btnUp");
+            up.SetValue(Button.UidProperty, new Binding("line_no"));
+            up.AddHandler(Button.ClickEvent, new RoutedEventHandler(up_event));
 
             DataGridTemplateColumn hlup = new DataGridTemplateColumn()
             {
@@ -114,8 +119,10 @@ namespace SearchSample.View
             };
 
             FrameworkElementFactory down = new FrameworkElementFactory(typeof(Button));
-            down.SetBinding(TextBlock.TextProperty, new Binding("down"));
             down.SetValue(Button.ContentProperty, "∨");
+            down.SetValue(Button.NameProperty, "btnDown");
+            down.SetValue(Button.UidProperty, new Binding("line_no"));
+            down.AddHandler(Button.ClickEvent, new RoutedEventHandler(down_event));
 
             DataGridTemplateColumn hldown = new DataGridTemplateColumn()
             {
@@ -136,7 +143,12 @@ namespace SearchSample.View
             }); ;
 
             FrameworkElementFactory chkDisplay = new FrameworkElementFactory(typeof(CheckBox));
-            chkDisplay.SetBinding(ComboBox.TextProperty, new Binding("display"));
+            Binding bind_display = new Binding("display");
+            bind_display.NotifyOnSourceUpdated = true;
+            bind_display.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            chkDisplay.SetValue(CheckBox.IsCheckedProperty, bind_display);
+            chkDisplay.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            chkDisplay.SetValue(CheckBox.NameProperty, "chkDisplay");
 
             DataGridTemplateColumn chkDisplayColumn = new DataGridTemplateColumn()
             {
@@ -149,19 +161,10 @@ namespace SearchSample.View
                 //Width = 130,
             };
 
-            //DataGridCheckBoxColumn chkDisplayColumn = new DataGridCheckBoxColumn()
-            //{
-            //    Header = "表示有無",
-            //    Binding = new Binding("display"),
-            //    CellStyle = display_style,
-
-
-            //    //Width = 50,
-            //};
-
             FrameworkElementFactory txtItemName = new FrameworkElementFactory(typeof(TextBox));
             txtItemName.SetBinding(TextBox.TextProperty, new Binding("output_item"));
             txtItemName.SetValue(TextBox.IsReadOnlyProperty, true);
+            txtItemName.SetValue(TextBox.NameProperty, "txtItemName");
 
             DataGridTemplateColumn txtItemNameColumn = new DataGridTemplateColumn()
             {
@@ -174,21 +177,17 @@ namespace SearchSample.View
                 //Width = 130,
             };
 
-            //DataGridTextColumn txtItemNameColumn = new DataGridTextColumn()
-            //{
-            //    Header = "項目名",
-            //    Binding = new Binding("output_item"),
-            //    //Width = 130,
-            //};
-
-
 
             FrameworkElementFactory cmbSort = new FrameworkElementFactory(typeof(ComboBox));
             cmbSort.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
             cmbSort.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
             cmbSort.SetValue(ComboBox.ItemsSourceProperty, SortDt.DefaultView);
-            cmbSort.SetValue(ComboBox.NameProperty, "cmbCondition");
-            cmbSort.SetBinding(ComboBox.TextProperty, new Binding("sort"));
+            cmbSort.SetValue(ComboBox.NameProperty, "cmbSort");
+
+            Binding bind_sort = new Binding("sort");
+            bind_sort.NotifyOnSourceUpdated = true;
+            bind_sort.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            cmbSort.SetBinding(ComboBox.TextProperty, bind_sort);
 
             DataGridTemplateColumn cmbSortColumn = new DataGridTemplateColumn()
             {
@@ -205,7 +204,12 @@ namespace SearchSample.View
             cmbSortDir.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
             cmbSortDir.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
             cmbSortDir.SetValue(ComboBox.ItemsSourceProperty, SortDtDir.DefaultView);
-            cmbSortDir.SetBinding(ComboBox.TextProperty, new Binding("sort_dir"));
+            cmbSortDir.SetValue(ComboBox.NameProperty, "cmbSortDir");
+
+            Binding bind_sort_dir = new Binding("sort_dir");
+            bind_sort_dir.NotifyOnSourceUpdated = true;
+            bind_sort_dir.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            cmbSortDir.SetBinding(ComboBox.TextProperty, bind_sort_dir);
 
             DataGridTemplateColumn cmbSortDirColumn = new DataGridTemplateColumn()
             {
@@ -279,133 +283,146 @@ namespace SearchSample.View
 
 
             this.dataList = new ObservableCollection<OutputItem>();
-            int count = 0;
+
+            Dictionary<string, int> except_list = new Dictionary<string, int>();
+
+            int max_line_no = 1;
+
+            foreach (DataRow row in output_item_dt.Rows)
+            {
+                bool display = row["表示有無"].ToString().Equals("1") ? true : false;
+                int current_line_no = string.IsNullOrEmpty(row["表示順"].ToString()) ? 0 : int.Parse(row["表示順"].ToString());
+
+                if (current_line_no > max_line_no)
+                {
+                    max_line_no = current_line_no;
+                }
+
+                this.dataList.Add(new OutputItem
+                {
+                    output_item = row["項目名"].ToString(),
+                    display = display,
+                    sort = row["ソート順"].ToString(),
+                    sort_dir = row["ソート方向"].ToString(),
+                    line_no = row["表示順"].ToString(),
+                });
+
+                if (!except_list.ContainsKey(row["項目名"].ToString()))
+                {
+                    except_list[row["項目名"].ToString()] = 0;
+                }
+            }
+
             foreach (string colmun in colmun_list)
             {
 
-                DataRow[] drs = output_item_dt.Select("項目名 = '" + colmun + "'");
-
-                if (drs.Length>0)
+                if (except_list.ContainsKey(colmun))
                 {
-                    bool display = drs[0]["表示有無"].ToString().Equals("有") ? true : false;
-
-                    dataList.Add(new OutputItem
-                    {
-                        output_item = colmun,
-                        display = display,
-                        sort = drs[0]["ソート順"].ToString(),
-                        sort_dir = drs[0]["ソート方向"].ToString(),
-                    });
-                }
-                else
-                {
-                    dataList.Add(new OutputItem
-                    {
-                        output_item = colmun,
-                        display = true,
-                        sort = "",
-                        sort_dir = "",
-                    });
+                    continue;
                 }
 
-                count++;
+                this.dataList.Add(new OutputItem
+                {
+                    output_item = colmun,
+                    display = true,
+                    sort = "",
+                    sort_dir = "",
+                    line_no = String.Format("{0:D4}", (max_line_no++)).ToString(),
+                });
             }
 
-            dataGrid.ItemsSource = dataList;
+            dataGrid.ItemsSource = this.dataList;
         }
 
-        public void UpdateQueueData(object sender, DataGridRowEditEndingEventArgs e)
+        private void dataGrid_SourceUpdated(object sender, DataTransferEventArgs e)
         {
-            if (e.EditAction == DataGridEditAction.Commit)
-            {
-                DataGridRow dgRow = e.Row;
-                DataRowView rowView = dgRow.Item as DataRowView;
-                DataRow drItem = rowView.Row;
-                //Queue.Rows.RemoveAt(e.Row.GetIndex());
-                //Queue.ImportRow(drItem);
-                //WriteXML();
-            }
-        }
+            //OutputItem row = new OutputItem();
 
-        private void dataGrid_CurCellChange(object sender, EventArgs e)
-        {
-            // String variable used to show message.
-            string myString = "CurrentCellChanged event raised, cell focus is at ";
-            // Get the co-ordinates of the focussed cell.
-            string myPoint = dataGrid.CurrentCell.Column + "," +
-                           dataGrid.CurrentCell.Item;
-
-            OutputItem item = (OutputItem)dataGrid.CurrentCell.Item;
-
-            // Create the alert message.
-            myString = myString + "(" + myPoint + ")";
-            // Show Co-ordinates when CurrentCellChanged event is raised.
-            //MessageBox.Show(myString, "Current cell co-ordinates");
-        }
-
-        private void dataGrid_CheckChange(object sender, EventArgs e)
-        {
-            // String variable used to show message.
-            string myString = "CurrentCellChanged event raised, cell focus is at ";
-            // Get the co-ordinates of the focussed cell.
-            string myPoint = dataGrid.CurrentCell.Column + "," +
-                           dataGrid.CurrentCell.Item;
-
-            OutputItem item = (OutputItem)dataGrid.CurrentCell.Item;
-
-            // Create the alert message.
-            myString = myString + "(" + myPoint + ")";
-            // Show Co-ordinates when CurrentCellChanged event is raised.
-            //MessageBox.Show(myString, "Current cell co-ordinates");
-        }
-
-        private void dataGrid_Loaded(object sender, RoutedEventArgs e)
-        {
-            //DataGrid dataGrid = (DataGrid)sender;
-
-            //// データグリッドの行数を取得します。
-            //var rowCount = dataGrid.Items.Count;
-            //// データグリッドの行数分繰り返します。
-            //for (int i = 0; i < rowCount; ++i)
+            //var type = e.OriginalSource.GetType();
+            //if (type == typeof(ComboBox))
             //{
-            //    // データグリッドの行オブジェクトを取得します。
-            //    var row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-
-            //    // 行オブジェクトが取得できない場合
-            //    if (row == null)
-            //    {
-            //        // 対象の行が表示されていない場合、行オブジェクトが取得できないため
-            //        // 対象の行が表示されるようスクロールします。
-            //        dataGrid.UpdateLayout();
-            //        dataGrid.ScrollIntoView(dataGrid.Items[i]);
-            //        // 再度、行オブジェクトを取得します。
-            //        row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-            //    }
-
-            //    TextBlock txt = (TextBlock)dataGrid.Columns[6].GetCellContent(row);
-
-            //    StackPanel stk = GetChildElement<StackPanel>((ContentPresenter)dataGrid.Columns[5].GetCellContent(row), 0);
-
-            //    if (stk != null)
-            //    {
-            //        RadioButton rdo1 = GetChildElement<RadioButton>(stk, 0);
-            //        RadioButton rdo2 = GetChildElement<RadioButton>(stk, 1);
-
-            //        rdo1.GroupName = "sort_dir_group" + i;
-            //        rdo2.GroupName = "sort_dir_group" + i;
-
-            //        if (txt.Text.Equals("asc"))
-            //        {
-            //            rdo1.IsChecked = true;
-            //        }
-            //        else if (txt.Text.Equals("desc"))
-            //        {
-            //            rdo2.IsChecked = true;
-            //        }
-            //    }
+            //    ComboBox obj = (ComboBox)e.OriginalSource;
+            //    row = (OutputItem)obj.DataContext;
+            //}
+            //else if (type == typeof(CheckBox))
+            //{
+            //    CheckBox obj = (CheckBox)e.OriginalSource;
+            //    row = (OutputItem)obj.DataContext;
 
             //}
+
+            //else if (type == typeof(TextBox))
+            //{
+            //    TextBox obj = (TextBox)e.OriginalSource;
+            //    row = (OutputItem)obj.DataContext;
+            //}
+
+            //OutputItem CheckCd01 = this.dataList.FirstOrDefault(l => l.output_item == row.output_item);
+
+            //DataGrid dataGrid = (DataGrid)sender;
+
         }
+
+        //private RelayCommand<int> _selectNameCommand;
+        public void up_event(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Button btn = (Button)e.OriginalSource;
+                int current_line_no = int.Parse(btn.Uid);
+
+                if (current_line_no > 1)
+                {
+                    int before_line_no = current_line_no - 1;
+
+                    OutputItem current_data = this.dataList[current_line_no - 1];
+                    OutputItem before_data = this.dataList[before_line_no - 1];
+
+                    current_data.line_no = String.Format("{0:D4}", before_line_no);
+                    before_data.line_no = String.Format("{0:D4}", current_line_no);
+
+                    this.dataList[current_line_no - 1] = before_data;
+                    this.dataList[before_line_no - 1] = current_data;
+
+                }
+
+            }
+            catch(Exception ex)
+            {
+
+            }
+
+        }
+
+        public void down_event(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Button btn = (Button)e.OriginalSource;
+                int current_line_no = int.Parse(btn.Uid);
+
+                if (current_line_no < this.dataList.Count + 1)
+                {
+                    int after_line_no = current_line_no + 1;
+
+                    OutputItem current_data = this.dataList[current_line_no - 1];
+                    OutputItem after_data = this.dataList[after_line_no - 1];
+
+                    current_data.line_no = String.Format("{0:D4}", after_line_no);
+                    after_data.line_no = String.Format("{0:D4}", current_line_no);
+
+                    this.dataList[current_line_no - 1] = after_data;
+                    this.dataList[after_line_no - 1] = current_data;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
 
         private T GetChildElement<T>(DependencyObject reference, int childIdx) where T : FrameworkElement
         {
@@ -451,7 +468,29 @@ namespace SearchSample.View
         /// <param name="e"></param>
         private void btnInitialize_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            OutputSettingDialogViewModel vm = (OutputSettingDialogViewModel)DataContext;
+
+            vm.DeleteOutputItem(this.dic);
+
+            this.dataList = new ObservableCollection<OutputItem>();
+
+            int max_line_no = 1;
+
+            foreach (string colmun in colmun_list)
+            {
+                this.dataList.Add(new OutputItem
+                {
+                    output_item = colmun,
+                    display = true,
+                    sort = "",
+                    sort_dir = "",
+                    line_no = String.Format("{0:D4}", (max_line_no++)).ToString(),
+                });
+            }
+
+            dataGrid.ItemsSource = this.dataList;
+
+            //this.Close();
         }
 
         /// <summary>
@@ -473,48 +512,9 @@ namespace SearchSample.View
         {
             OutputSettingDialogViewModel vm = (OutputSettingDialogViewModel)DataContext;
 
-            List<OutputItem> list = new List<OutputItem>();
+            vm.SetOutputItem(this.dic, this.dataList.ToList());
 
-            // データグリッドの行数を取得します。
-            var rowCount = dataGrid.Items.Count;
-            // データグリッドの行数分繰り返します。
-            for (int i = 0; i < rowCount; ++i)
-            {
-                // データグリッドの行オブジェクトを取得します。
-                var row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-
-                // 行オブジェクトが取得できない場合
-                if (row == null)
-                {
-                    // 対象の行が表示されていない場合、行オブジェクトが取得できないため
-                    // 対象の行が表示されるようスクロールします。
-                    dataGrid.UpdateLayout();
-                    dataGrid.ScrollIntoView(dataGrid.Items[i]);
-                    // 再度、行オブジェクトを取得します。
-                    row = dataGrid.ItemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-                }
-
-                //CheckBox display = (CheckBox)dataGrid.Columns[2].GetCellContent(row);
-                CheckBox display = GetChildElement<CheckBox>((ContentPresenter)dataGrid.Columns[2].GetCellContent(row), 0);
-                //TextBlock ouput_item = (TextBlock)dataGrid.Columns[3].GetCellContent(row);
-                TextBox ouput_item = GetChildElement<TextBox>((ContentPresenter)dataGrid.Columns[3].GetCellContent(row), 0);
-                ComboBox sort = GetChildElement<ComboBox>((ContentPresenter)dataGrid.Columns[4].GetCellContent(row), 0);
-                ComboBox sort_dir = GetChildElement<ComboBox>((ContentPresenter)dataGrid.Columns[5].GetCellContent(row), 0);
-
-                list.Add(new OutputItem()
-                {
-                    display = display == null ? false : (bool)display.IsChecked,
-                    output_item = ouput_item.Text,
-                    sort = sort.SelectedValue == null ? "" : sort.SelectedValue.ToString(),
-                    sort_dir = sort_dir.SelectedValue == null ? "" : sort_dir.SelectedValue.ToString(),
-                });
-
-
-            }
-
-            vm.SetOutputItem(this.dic, list);
-
-            this.Close();
+            //this.Close();
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace SearchSample.ViewModel
 {
@@ -42,6 +43,7 @@ namespace SearchSample.ViewModel
         public bool GetItemList(string dic, out List<string> colmun_list)
         {
             colmun_list = new List<string>();
+            Dictionary<string, int> except_list = new Dictionary<string, int>();
 
             //List<string> tables = new List<string>();
             //tables.Add("製造指図情報");
@@ -74,7 +76,11 @@ namespace SearchSample.ViewModel
 
             foreach (DataColumn col in output_item_dt1.Columns)
             {
-                colmun_list.Add(col.ColumnName);
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
             }
 
             DataTable output_item_dt2 = new DataTable();
@@ -82,7 +88,11 @@ namespace SearchSample.ViewModel
 
             foreach (DataColumn col in output_item_dt2.Columns)
             {
-                colmun_list.Add(col.ColumnName);
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
             }
 
             DataTable output_item_dt3 = new DataTable();
@@ -91,7 +101,11 @@ namespace SearchSample.ViewModel
             foreach (DataColumn col in output_item_dt3.Columns)
             {
                 //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
-                colmun_list.Add(col.ColumnName);
+                if (!except_list.ContainsKey(col.ColumnName))
+                {
+                    except_list[col.ColumnName] = 0;
+                    colmun_list.Add(col.ColumnName);
+                }
             }
 
             return true;
@@ -108,5 +122,12 @@ namespace SearchSample.ViewModel
             db.SetOutputItem(dic, list);
             return true;
         }
+
+        public bool DeleteOutputItem(string dic)
+        {
+            db.DeleteOutputItem(dic);
+            return true;
+        }
+
     }
 }

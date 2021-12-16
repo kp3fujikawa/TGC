@@ -14,6 +14,7 @@ namespace SearchSample.Model
         public string sort_dir { get; set; }
         public string up { get; set; }
         public string dwon { get; set; }
+        public string line_no { get; set; }
 
     }
 }
