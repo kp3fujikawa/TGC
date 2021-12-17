@@ -50,6 +50,18 @@ namespace SearchSample
                 {"原材料引当", "T8"},
                 {"検査性状値", "T9"},
                 {"検査結果", "T10"},
+                {"在庫ユニークキー管理", "T11"},
+                {"ロット情報", "T12"},
+                {"個体の情報", "T13"},
+                {"受払", "T14"},
+                {"移庫指図", "T15"},
+                {"受払ワーク", "T16"},
+                {"荷揃指図", "T17"},
+                {"品転指図", "T18"},
+                {"在庫（日別）", "T19"},
+                {"月末在庫", "T20"},
+                {"タンク", "T21"},
+                {"タンクレベル履歴", "T22"},
             };
 
         /// <summary>
@@ -147,6 +159,126 @@ namespace SearchSample
             });;
             dataGrid.ColumnHeaderStyle = style;
         }
+
+        public static bool GetItemList(DBAccess db, string dic, out List<string> colmun_list)
+        {
+            colmun_list = new List<string>();
+            Dictionary<string, int> except_list = new Dictionary<string, int>();
+
+            //List<string> tables = new List<string>();
+            //tables.Add("製造指図情報");
+            //tables.Add("実行処方製品");
+            //tables.Add("実行処方ヘッダ");
+            //tables.Add("実行処方要素");
+            //tables.Add("実行処方パラメータ");
+            //if (!dic.Equals("2"))
+            //{
+            //    tables.Add("検査性状値");
+            //}
+
+            //foreach (string table_name in tables)
+            //{
+            //   DataTable table = new DataTable();
+            //    if (!db.GetItemNameData(table_name, out table))
+            //    {
+            //        return false;
+            //    }
+
+            //    foreach (DataColumn col in table.Columns)
+            //    {
+            //        colmun_list.Add("["+table_name+"].["+col.ColumnName+"]");
+            //    }
+
+            //}
+
+            if (dic.Equals("2"))
+            {
+                // 入出庫実績・在庫
+                DataTable output_item_dt1 = new DataTable();
+                db.GetInOutItem1(dic, out output_item_dt1);
+
+                foreach (DataColumn col in output_item_dt1.Columns)
+                {
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+            }
+            else if (dic.Equals("14"))
+            {
+                // 日別在庫
+                DataTable output_item_dt1 = new DataTable();
+                db.GetDailyStockItem1(dic, out output_item_dt1);
+
+                foreach (DataColumn col in output_item_dt1.Columns)
+                {
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+            }
+            else if (dic.Equals("15"))
+            {
+                // 月末在庫
+                DataTable output_item_dt1 = new DataTable();
+                db.GetMonthlyStockItem1(dic, out output_item_dt1);
+
+                foreach (DataColumn col in output_item_dt1.Columns)
+                {
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+            }
+            else
+            {
+                DataTable output_item_dt1 = new DataTable();
+                db.GetItem1(dic, out output_item_dt1);
+
+                foreach (DataColumn col in output_item_dt1.Columns)
+                {
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+
+                DataTable output_item_dt2 = new DataTable();
+                db.GetItem2(dic, out output_item_dt2);
+
+                foreach (DataColumn col in output_item_dt2.Columns)
+                {
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+
+                DataTable output_item_dt3 = new DataTable();
+                db.GetItemParameter(dic, out output_item_dt3);
+
+                foreach (DataColumn col in output_item_dt3.Columns)
+                {
+                    //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
+                    if (!except_list.ContainsKey(col.ColumnName))
+                    {
+                        except_list[col.ColumnName] = 0;
+                        colmun_list.Add(col.ColumnName);
+                    }
+                }
+            }
+
+            return true;
+        }
+
     }
 
 

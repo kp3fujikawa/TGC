@@ -770,8 +770,13 @@ namespace SearchSample
 
                 if (!string.IsNullOrEmpty(sc.item) && !string.IsNullOrEmpty(sc.condition))
                 {
+                    string value = " '" + sc.value + "' ";
+                    if (sc.condition.Equals("LIKE"))
+                    {
+                        value = " '%" + sc.value + "%' ";
+                    }
                     where += " " + (string.IsNullOrEmpty(sc.combi) ? " AND " : sc.combi)
-                        + " " + sc.item + " " + sc.condition + " '" + sc.value + "' ";
+                        + " " + sc.item + " " + sc.condition + value;
                 }
             }
 
@@ -1403,6 +1408,77 @@ namespace SearchSample
         /// <param name="table_name">対象テーブル名</param>
         /// <param name="itemNameDT">データテーブル</param>
         /// <returns>true/false</returns>
+        public bool GetSort(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = string.Empty;
+
+                        SQL += " SELECT ";
+
+                        SQL += " [項目名] ";
+                        SQL += " ,[表示順] ";
+                        SQL += " ,[ソート順] ";
+                        SQL += " ,[ソート方向] ";
+                        SQL += " ,[表示有無] ";
+
+                        SQL += " FROM [出力項目] ";
+
+                        SQL += " WHERE [データディクショナリ] = '" + dic + "' AND [表示有無] = '1'";
+                        SQL += " AND [ソート順] <> '' AND [ソート方向] <> '' ";
+
+                        SQL += " ORDER BY [ソート順] asc";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
         public bool SetOutputItem(
             string dic,
             List<OutputItem> list
@@ -1567,6 +1643,663 @@ namespace SearchSample
 
             return ret;
         }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchInOutData(
+            SearchData seach,
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            bool addparam = false;
+            bool addtest = false;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectInOutItem1(dic);
+
+                        SQL += " FROM "+
+                                "("+
+                                    "(" +
+                                        "[受払] AS " + T14 + " " +
+                                        " LEFT JOIN [個体の情報] AS " + T13 + " ON "+
+                                        "(" + 
+                                            T13 + ".[在庫ユニークキー] = " + T14 + ".[在庫ユニークキー] " +
+                                            " AND " + T13 + ".[個体識別] = " + T14 + ".[個体識別] " +
+                                            " AND " + T13 + ".[ロケーションID] = " + T14 + ".[ロケーションID]"
+                                        +") " +
+                                    ") "+
+                                    " LEFT JOIN [ロット情報] AS " + T12 + " ON "+
+                                    "(" + 
+                                        T12 + ".[在庫ユニークキー] = " + T14 + ".[在庫ユニークキー] " +
+                                    ") " +
+                                " )";
+                        SQL += " LEFT JOIN [タンク] AS " + T21 + " ON " +
+                                "(" +
+                                    T21 + ".[品目コード] = " + T12 + ".[品目コード] " +
+                                ") ";
+
+                        SQL += " WHERE 1=1 " + CreateSearchCondiotion(seach, out addparam, out addtest);
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        private string SelectInOutItem1(string dic)
+        {
+            string T11 = Common.table_dic["在庫ユニークキー管理"];
+            string T12 = Common.table_dic["ロット情報"];
+            string T13 = Common.table_dic["個体の情報"];
+            string T14 = Common.table_dic["受払"];
+            string T15 = Common.table_dic["移庫指図"];
+            string T16 = Common.table_dic["受払ワーク"];
+            string T17 = Common.table_dic["荷揃指図"];
+            string T18 = Common.table_dic["品転指図"];
+            string T19 = Common.table_dic["在庫（日別）"];
+            string T20 = Common.table_dic["月末在庫"];
+            string T21 = Common.table_dic["タンク"];
+            string T22 = Common.table_dic["タンクレベル履歴"];
+
+            string SQL = "";
+
+            SQL += " " + T14 + ".[受払SEQ] ";
+            SQL += " ," + T14 + ".[受払日時] ";
+            SQL += " ," + T14 + ".[受払区分] ";
+            SQL += " ," + T14 + ".[在庫ユニークキー] ";
+            SQL += " ," + T14 + ".[個体識別] ";
+            SQL += " ," + T14 + ".[移動タイプ] ";
+            SQL += " ," + T14 + ".[個数] ";
+            SQL += " ," + T14 + ".[在庫量（理論値）] ";
+            SQL += " ," + T14 + ".[在庫量（実数）] ";
+            SQL += " ," + T14 + ".[有姿数量] ";
+            SQL += " ," + T14 + ".[純分数量] ";
+            SQL += " ," + T14 + ".[ロケーションID] ";
+            SQL += " ," + T14 + ".[受払発生元指図] ";
+            SQL += " ," + T14 + ".[在庫変更理由] ";
+            SQL += " ," + T14 + ".[受払実施者] ";
+            SQL += " ," + T14 + ".[伝票日付] ";
+            SQL += " ," + T14 + ".[転記日付] ";
+            SQL += " ," + T14 + ".[ヘッダテキスト] ";
+            SQL += " ," + T14 + ".[移動理由区分] ";
+            SQL += " ," + T14 + ".[原価センタコード] ";
+
+            //SQL += " ," + T12 + ".[在庫ユニークキー] ";
+            SQL += " ," + T12 + ".[品目コード] ";
+            SQL += " ," + T12 + ".[受入ロット] ";
+            SQL += " ," + T12 + ".[メーカーロット] ";
+            SQL += " ," + T12 + ".[メーカーコード] ";
+            SQL += " ," + T12 + ".[仕入先コード] ";
+            SQL += " ," + T12 + ".[購入元課] ";
+            SQL += " ," + T12 + ".[入荷日] ";
+            SQL += " ," + T12 + ".[メーカー製造日] ";
+            SQL += " ," + T12 + ".[製造ロット] ";
+            SQL += " ," + T12 + ".[出荷ロット] ";
+            SQL += " ," + T12 + ".[向け先コード] ";
+            SQL += " ," + T12 + ".[製造着手日] ";
+            SQL += " ," + T12 + ".[製造完了日] ";
+            SQL += " ," + T12 + ".[製造日] ";
+            SQL += " ," + T12 + ".[出荷製造日] ";
+            SQL += " ," + T12 + ".[有効期限] ";
+            SQL += " ," + T12 + ".[製造保証日] ";
+            SQL += " ," + T12 + ".[顧客保証期限] ";
+            SQL += " ," + T12 + ".[生産課] ";
+            SQL += " ," + T12 + ".[入庫日時] ";
+            SQL += " ," + T12 + ".[自動引当対象外フラグ] ";
+            SQL += " ," + T12 + ".[グレードコード] ";
+            SQL += " ," + T12 + ".[荷姿コード] ";
+            SQL += " ," + T12 + ".[サンプルフラグ] ";
+            SQL += " ," + T12 + ".[SAPロット] ";
+            SQL += " ," + T12 + ".[PCN品フラグ] ";
+            SQL += " ," + T12 + ".[純分換算値] ";
+
+            //SQL += " ," + T13 + ".[在庫ユニークキー] ";
+            //SQL += " ," + T13 + ".[個体識別] ";
+            //SQL += " ," + T13 + ".[ロケーションID] ";
+            SQL += " ," + T13 + ".[個数] ";
+            SQL += " ," + T13 + ".[在庫量（理論値）] ";
+            SQL += " ," + T13 + ".[在庫量（実数）] ";
+            SQL += " ," + T13 + ".[有姿数量] ";
+            SQL += " ," + T13 + ".[純分数量] ";
+            SQL += " ," + T13 + ".[引当ロット] ";
+            SQL += " ," + T13 + ".[在庫ステータス] ";
+            SQL += " ," + T13 + ".[半端品フラグ] ";
+            SQL += " ," + T13 + ".[開封・未開封区分] ";
+            SQL += " ," + T13 + ".[使い切りフラグ] ";
+            SQL += " ," + T13 + ".[サンプル区分] ";
+            SQL += " ," + T13 + ".[保管サンプル保管期限] ";
+            SQL += " ," + T13 + ".[引当可能数量] ";
+            SQL += " ," + T13 + ".[SAP簿外フラグ] ";
+            SQL += " ," + T13 + ".[その他情報区分] ";
+            SQL += " ," + T13 + ".[備考] ";
+
+            SQL += " ," + T21 + ".[タンクNo] ";
+            //SQL += " ," + T21 + ".[品目コード] ";
+            SQL += " ," + T21 + ".[タンクロット] ";
+            SQL += " ," + T21 + ".[タンクレベル] ";
+            SQL += " ," + T21 + ".[タンク内容量] ";
+            SQL += " ," + T21 + ".[タンク内重量] ";
+            SQL += " ," + T21 + ".[レベル確認日時] ";
+
+            return SQL;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetInOutItem1(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectInOutItem1(dic);
+
+
+                        SQL += " FROM " +
+                                "(" +
+                                    "(" +
+                                        "[受払] AS " + T14 + " " +
+                                        " LEFT JOIN [個体の情報] AS " + T13 + " ON " +
+                                        "(" +
+                                            T13 + ".[在庫ユニークキー] = " + T14 + ".[在庫ユニークキー] " +
+                                            " AND " + T13 + ".[個体識別] = " + T14 + ".[個体識別] " +
+                                            " AND " + T13 + ".[ロケーションID] = " + T14 + ".[ロケーションID]"
+                                        + ") " +
+                                    ") " +
+                                    " LEFT JOIN [ロット情報] AS " + T12 + " ON " +
+                                    "(" +
+                                        T12 + ".[在庫ユニークキー] = " + T14 + ".[在庫ユニークキー] " +
+                                    ") " +
+                                " )";
+                        SQL += " LEFT JOIN [タンク] AS " + T21 + " ON " +
+                                "(" +
+                                    T21 + ".[品目コード] = " + T12 + ".[品目コード] " +
+                                ") ";
+
+                        SQL += " WHERE 1=0 ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchDailyStockData(
+            SearchData seach,
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            bool addparam = false;
+            bool addtest = false;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectDailyStockItem1(dic);
+
+                        SQL += " FROM [在庫（日別）] AS " + T19 + " ";
+
+                        SQL += " WHERE 1=1 " + CreateSearchCondiotion(seach, out addparam, out addtest);
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        private string SelectDailyStockItem1(string dic)
+        {
+            string T11 = Common.table_dic["在庫ユニークキー管理"];
+            string T12 = Common.table_dic["ロット情報"];
+            string T13 = Common.table_dic["個体の情報"];
+            string T14 = Common.table_dic["受払"];
+            string T15 = Common.table_dic["移庫指図"];
+            string T16 = Common.table_dic["受払ワーク"];
+            string T17 = Common.table_dic["荷揃指図"];
+            string T18 = Common.table_dic["品転指図"];
+            string T19 = Common.table_dic["在庫（日別）"];
+            string T20 = Common.table_dic["月末在庫"];
+            string T21 = Common.table_dic["タンク"];
+            string T22 = Common.table_dic["タンクレベル履歴"];
+
+            string SQL = "";
+
+            SQL += " " + T19 + ".[在庫日時] ";
+            SQL += " ," + T19 + ".[品目コード] ";
+            SQL += " ," + T19 + ".[在庫ステータス] ";
+            SQL += " ," + T19 + ".[在庫量（理論値）] ";
+            SQL += " ," + T19 + ".[在庫量（実数）] ";
+            SQL += " ," + T19 + ".[有姿数量] ";
+            SQL += " ," + T19 + ".[純分数量] ";
+
+
+            return SQL;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetDailyStockItem1(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectDailyStockItem1(dic);
+
+                        SQL += " FROM [在庫（日別）] AS " + T19 + " ";
+
+                        SQL += " WHERE 1=0 ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchMonthlyStockData(
+            SearchData seach,
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            bool addparam = false;
+            bool addtest = false;
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectMonthlyStockItem1(dic);
+
+                        SQL += " FROM [月末在庫] AS " + T20 + " ";
+
+                        SQL += " WHERE 1=1 " + CreateSearchCondiotion(seach, out addparam, out addtest);
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        private string SelectMonthlyStockItem1(string dic)
+        {
+            string T11 = Common.table_dic["在庫ユニークキー管理"];
+            string T12 = Common.table_dic["ロット情報"];
+            string T13 = Common.table_dic["個体の情報"];
+            string T14 = Common.table_dic["受払"];
+            string T15 = Common.table_dic["移庫指図"];
+            string T16 = Common.table_dic["受払ワーク"];
+            string T17 = Common.table_dic["荷揃指図"];
+            string T18 = Common.table_dic["品転指図"];
+            string T19 = Common.table_dic["在庫（日別）"];
+            string T20 = Common.table_dic["月末在庫"];
+            string T21 = Common.table_dic["タンク"];
+            string T22 = Common.table_dic["タンクレベル履歴"];
+
+            string SQL = "";
+
+            SQL += " " + T20 + ".[年月] ";
+            SQL += " ," + T20 + ".[在庫ユニークキー] ";
+            SQL += " ," + T20 + ".[個体識別] ";
+            SQL += " ," + T20 + ".[ロケーションID] ";
+            SQL += " ," + T20 + ".[個数] ";
+            SQL += " ," + T20 + ".[在庫量（理論値）] ";
+            SQL += " ," + T20 + ".[在庫量（実数）] ";
+
+            return SQL;
+        }
+
+        /// <summary>
+        /// データ検索
+        /// </summary>
+        /// <param name="table_name">対象テーブル名</param>
+        /// <param name="itemNameDT">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool GetMonthlyStockItem1(
+            string dic,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string T11 = Common.table_dic["在庫ユニークキー管理"];
+                        string T12 = Common.table_dic["ロット情報"];
+                        string T13 = Common.table_dic["個体の情報"];
+                        string T14 = Common.table_dic["受払"];
+                        string T15 = Common.table_dic["移庫指図"];
+                        string T16 = Common.table_dic["受払ワーク"];
+                        string T17 = Common.table_dic["荷揃指図"];
+                        string T18 = Common.table_dic["品転指図"];
+                        string T19 = Common.table_dic["在庫（日別）"];
+                        string T20 = Common.table_dic["月末在庫"];
+                        string T21 = Common.table_dic["タンク"];
+                        string T22 = Common.table_dic["タンクレベル履歴"];
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += SelectMonthlyStockItem1(dic);
+
+                        SQL += " FROM [月末在庫] AS " + T20 + " ";
+
+                        SQL += " WHERE 1=0 ";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
 
 
     }

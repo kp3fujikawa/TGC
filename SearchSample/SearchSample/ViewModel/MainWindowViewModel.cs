@@ -126,38 +126,29 @@ namespace SearchSample.ViewModel
             }
         }
 
-        private String[] data_dictionary_value = {
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "11",
-            "12",
-            "13",
-        };
-        private String[] data_dictionary_text = {
-            "",
-            "バッチ実績＋出荷実績",
-            "入出庫実績・在庫",
-            "品質情報",
-            "PT-395 反応",
-            "工程金属マテバラ",
-            "フィルターの溶剤通液量",
-            "プロセスデータ①(原材料管理)",
-            "工程時間予実",
-            "品目マスタ",
-            "荷姿マスタ",
-            "保管場所マスタ",
-            "配送先マスタ",
-            "ユーザマスタ",
-        };
+        /// <summary>
+        /// 検索時テーブル別名
+        /// </summary>
+        private Dictionary<string, string> data_dictionary =
+            new Dictionary<string, string>()
+            {
+                {"0", ""},
+                {"1", "バッチ実績＋出荷実績"},
+                {"2", "入出庫実績・在庫"},
+                {"3", "品質情報"},
+                {"4", "PT-395 反応"},
+                {"5", "工程金属マテバラ"},
+                {"6", "フィルターの溶剤通液量"},
+                {"7", "プロセスデータ①(原材料管理)"},
+                {"8", "工程時間予実"},
+                {"9", "品目マスタ"},
+                {"10", "荷姿マスタ"},
+                {"11", "保管場所マスタ"},
+                {"12", "配送先マスタ"},
+                {"13", "ユーザマスタ"},
+                {"14", "日別在庫"},
+                {"15", "月末在庫"},
+            };
 
         private DataTable data_dictionary_dt;
         public DataTable DataDictionary
@@ -167,11 +158,11 @@ namespace SearchSample.ViewModel
                 data_dictionary_dt = new DataTable();
                 data_dictionary_dt.Columns.Add(new DataColumn(Common.ComboBoxValue));
                 data_dictionary_dt.Columns.Add(new DataColumn(Common.ComboBoxText));
-                for (int i = 0; i < data_dictionary_value.Length; i++)
+                foreach (KeyValuePair<string,string> dic in data_dictionary)
                 {
                     DataRow newrow = data_dictionary_dt.NewRow();
-                    newrow[Common.ComboBoxValue] = data_dictionary_value[i];
-                    newrow[Common.ComboBoxText] = data_dictionary_text[i];
+                    newrow[Common.ComboBoxValue] = dic.Key;
+                    newrow[Common.ComboBoxText] = dic.Value;
                     data_dictionary_dt.Rows.Add(newrow);
                 }
 
@@ -189,7 +180,7 @@ namespace SearchSample.ViewModel
         /// テーブルカラム名取得
         /// </summary>
         /// <returns>true/false</returns>
-        public bool GetItemData(out DataTable rtndt)
+        public bool GetItemData(string dic, out DataTable rtndt)
         {
             rtndt = new DataTable();
             rtndt.Columns.Add(Common.ComboBoxText);
@@ -201,70 +192,55 @@ namespace SearchSample.ViewModel
             {
                 
                 DataTable table = new DataTable();
-                Dictionary<string, int> dic = new Dictionary<string, int>();
-                string table_name = string.Empty;
+                Dictionary<string, int> except_dic = new Dictionary<string, int>();
+                List<string> table_list = new List<string>();
 
-                table_name = "製造指図情報";
-
-                if (!db.GetItemNameData(table_name, out table))
+                if (dic.Equals("2"))
                 {
-                    return false;
+                    // 入出庫実績・在庫
+                    table_list.Add("受払");
+                    table_list.Add("個体の情報");
+                    table_list.Add("ロット情報");
+                    table_list.Add("タンク");
+                }
+                else if (dic.Equals("14"))
+                {
+                    // 日別在庫
+                    table_list.Add("在庫（日別）");
+                }
+                else if (dic.Equals("15"))
+                {
+                    // 月末在庫
+                    table_list.Add("月末在庫");
+                }
+                else
+                {
+                    // 上記以外
+                    table_list.Add("製造指図情報");
+                    table_list.Add("実行処方製品");
+                    table_list.Add("実行処方ヘッダ");
                 }
 
-                foreach(DataColumn col in table.Columns)
+                foreach (string table_name in table_list)
                 {
-                    if (dic.ContainsKey(col.ColumnName))
+                    if (!db.GetItemNameData(table_name, out table))
                     {
-                        continue;
+                        return false;
                     }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
 
-                    dic[col.ColumnName] = 1;
-                }
-
-                table_name = "実行処方製品";
-
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach (DataColumn col in table.Columns)
-                {
-                    if (dic.ContainsKey(col.ColumnName))
+                    foreach (DataColumn col in table.Columns)
                     {
-                        continue;
+                        if (except_dic.ContainsKey(col.ColumnName))
+                        {
+                            continue;
+                        }
+                        DataRow newrow = rtndt.NewRow();
+                        newrow[Common.ComboBoxText] = col.ColumnName;
+                        newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
+                        rtndt.Rows.Add(newrow);
+
+                        except_dic[col.ColumnName] = 1;
                     }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
-
-                    dic[col.ColumnName] = 1;
-                }
-
-                table_name = "実行処方ヘッダ";
-
-                if (!db.GetItemNameData(table_name, out table))
-                {
-                    return false;
-                }
-
-                foreach (DataColumn col in table.Columns)
-                {
-                    if (dic.ContainsKey(col.ColumnName))
-                    {
-                        continue;
-                    }
-                    DataRow newrow = rtndt.NewRow();
-                    newrow[Common.ComboBoxText] = col.ColumnName;
-                    newrow[Common.ComboBoxValue] = Common.table_dic[table_name] + ".[" + col.ColumnName + "]";
-                    rtndt.Rows.Add(newrow);
-
-                    dic[col.ColumnName] = 1;
                 }
 
             }
@@ -285,7 +261,26 @@ namespace SearchSample.ViewModel
         /// <returns>true/false</returns>
         public bool SearchData(SearchData seach, string dic, out DataTable resulrdt)
         {
-            return db.SearchData(seach, dic, out resulrdt);
+            if (dic.Equals("2"))
+            {
+                // 入出庫実績・在庫
+                return db.SearchInOutData(seach, dic, out resulrdt);
+            }
+            else if (dic.Equals("14"))
+            {
+                // 日別在庫
+                return db.SearchDailyStockData(seach, dic, out resulrdt);
+            }
+            else if (dic.Equals("15"))
+            {
+                // 月末在庫
+                return db.SearchMonthlyStockData(seach, dic, out resulrdt);
+            }
+            else
+            {
+                return db.SearchData(seach, dic, out resulrdt);
+            }
+            
         }
 
         public bool GetOutputItem(string dic, out DataTable dt)
@@ -321,6 +316,21 @@ namespace SearchSample.ViewModel
             return true;
         }
 
+        public bool GetSort(string dic, out List<string> sort)
+        {
+            sort = new List<string>();
+
+            DataTable dt = new DataTable();
+            db.GetSort(dic, out dt);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                sort.Add(row["項目名"].ToString() + " " + row["ソート方向"].ToString());
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// テーブルカラム名取得
         /// </summary>
@@ -328,46 +338,9 @@ namespace SearchSample.ViewModel
         public bool GetItemList(string dic, out List<string> colmun_list)
         {
             colmun_list = new List<string>();
-            Dictionary<string, int> except_list = new Dictionary<string, int>();
 
-            DataTable output_item_dt1 = new DataTable();
-            db.GetItem1(dic, out output_item_dt1);
+            return Common.GetItemList(db, dic, out colmun_list);
 
-            foreach (DataColumn col in output_item_dt1.Columns)
-            {
-                if (!except_list.ContainsKey(col.ColumnName))
-                {
-                    except_list[col.ColumnName] = 0;
-                    colmun_list.Add(col.ColumnName);
-                }
-            }
-
-            DataTable output_item_dt2 = new DataTable();
-            db.GetItem2(dic, out output_item_dt2);
-
-            foreach (DataColumn col in output_item_dt2.Columns)
-            {
-                if (!except_list.ContainsKey(col.ColumnName))
-                {
-                    except_list[col.ColumnName] = 0;
-                    colmun_list.Add(col.ColumnName);
-                }
-            }
-
-            DataTable output_item_dt3 = new DataTable();
-            db.GetItemParameter(dic, out output_item_dt3);
-
-            foreach (DataColumn col in output_item_dt3.Columns)
-            {
-                //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
-                if (!except_list.ContainsKey(col.ColumnName))
-                {
-                    except_list[col.ColumnName] = 0;
-                    colmun_list.Add(col.ColumnName);
-                }
-            }
-
-            return true;
         }
 
 

@@ -226,6 +226,7 @@
     </ApplicationDefinition>
     <Compile Include="Common\DBAccess.cs" />
     <Compile Include="Control\DropDownMenuButton.cs" />
+    <Compile Include="Model\ComboItem.cs" />
     <Compile Include="Model\OutputItem.cs" />
     <Compile Include="Model\SearchCondition.cs" />
     <Compile Include="Model\SearchData.cs" />

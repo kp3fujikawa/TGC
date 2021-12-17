@@ -83,16 +83,20 @@ namespace SearchSample.View
             SortDtDir.Columns.Add(Common.ComboBoxText);
             SortDtDir.Columns.Add(Common.ComboBoxValue);
 
-           string[] sort_dir_list = { "昇順", "降順" };
+            Dictionary<string, string> sort_dir_dic =
+            new Dictionary<string, string>()
+            {
+                {"ASC", "昇順"},
+                {"DESC", "降順"},
+            };
 
-            foreach (string sort_dir in sort_dir_list)
+            foreach (KeyValuePair<string,string> sort_dir in sort_dir_dic)
             {
                 DataRow newrow = SortDtDir.NewRow();
-                newrow[Common.ComboBoxText] = sort_dir;
-                newrow[Common.ComboBoxValue] = sort_dir;
+                newrow[Common.ComboBoxText] = sort_dir.Value;
+                newrow[Common.ComboBoxValue] = sort_dir.Key;
                 SortDtDir.Rows.Add(newrow);
             }
-
 
             // グリッド初期設定
             //dataGrid.IsReadOnly = true;              // 読取専用
@@ -103,7 +107,6 @@ namespace SearchSample.View
 
             FrameworkElementFactory up = new FrameworkElementFactory(typeof(Button));
             up.SetValue(Button.ContentProperty, "∧");
-            up.SetValue(Button.NameProperty, "btnUp");
             up.SetValue(Button.UidProperty, new Binding("line_no"));
             up.AddHandler(Button.ClickEvent, new RoutedEventHandler(up_event));
 
@@ -120,7 +123,6 @@ namespace SearchSample.View
 
             FrameworkElementFactory down = new FrameworkElementFactory(typeof(Button));
             down.SetValue(Button.ContentProperty, "∨");
-            down.SetValue(Button.NameProperty, "btnDown");
             down.SetValue(Button.UidProperty, new Binding("line_no"));
             down.AddHandler(Button.ClickEvent, new RoutedEventHandler(down_event));
 
@@ -137,7 +139,6 @@ namespace SearchSample.View
 
             FrameworkElementFactory chkDisplay = new FrameworkElementFactory(typeof(CheckBox));
             chkDisplay.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            chkDisplay.SetValue(CheckBox.NameProperty, "chkDisplay");
 
             Binding bind_display = new Binding("display");
             bind_display.NotifyOnSourceUpdated = true;
@@ -163,7 +164,6 @@ namespace SearchSample.View
             FrameworkElementFactory txtItemName = new FrameworkElementFactory(typeof(TextBox));
             txtItemName.SetBinding(TextBox.TextProperty, new Binding("output_item"));
             txtItemName.SetValue(TextBox.IsReadOnlyProperty, true);
-            txtItemName.SetValue(TextBox.NameProperty, "txtItemName");
 
             DataGridTemplateColumn txtItemNameColumn = new DataGridTemplateColumn()
             {
@@ -177,49 +177,9 @@ namespace SearchSample.View
             };
 
 
-            FrameworkElementFactory cmbSort = new FrameworkElementFactory(typeof(ComboBox));
-            cmbSort.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
-            cmbSort.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
-            cmbSort.SetValue(ComboBox.ItemsSourceProperty, SortDt.DefaultView);
-            cmbSort.SetValue(ComboBox.NameProperty, "cmbSort");
+            DataGridTemplateColumn cmbSortColumn = CreateCombo("sort", "ソート順序", SortDt.DefaultView);
 
-            Binding bind_sort = new Binding("sort");
-            bind_sort.NotifyOnSourceUpdated = true;
-            bind_sort.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            cmbSort.SetBinding(ComboBox.TextProperty, bind_sort);
-
-            DataGridTemplateColumn cmbSortColumn = new DataGridTemplateColumn()
-            {
-                Header = "ソート順序",
-                CellTemplate = new DataTemplate()
-                {
-                    DataType = typeof(ComboBox),
-                    VisualTree = cmbSort,
-                },
-                //Width = 130,
-            };
-
-            FrameworkElementFactory cmbSortDir = new FrameworkElementFactory(typeof(ComboBox));
-            cmbSortDir.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
-            cmbSortDir.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
-            cmbSortDir.SetValue(ComboBox.ItemsSourceProperty, SortDtDir.DefaultView);
-            cmbSortDir.SetValue(ComboBox.NameProperty, "cmbSortDir");
-
-            Binding bind_sort_dir = new Binding("sort_dir");
-            bind_sort_dir.NotifyOnSourceUpdated = true;
-            bind_sort_dir.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            cmbSortDir.SetBinding(ComboBox.TextProperty, bind_sort_dir);
-
-            DataGridTemplateColumn cmbSortDirColumn = new DataGridTemplateColumn()
-            {
-                Header = "ソート方向",
-                CellTemplate = new DataTemplate()
-                {
-                    DataType = typeof(ComboBox),
-                    VisualTree = cmbSortDir,
-                },
-                //Width = 130,
-            };
+            DataGridTemplateColumn cmbSortDirColumn = CreateCombo("sort_dir", "ソート方向", SortDtDir.DefaultView);
 
             //FrameworkElementFactory rdoSortDir1 = new FrameworkElementFactory(typeof(RadioButton));
             //rdoSortDir1.SetValue(RadioButton.NameProperty, "asc");
@@ -331,6 +291,36 @@ namespace SearchSample.View
             }
 
             dataGrid.ItemsSource = this.dataList;
+        }
+
+        private DataGridTemplateColumn CreateCombo(string bind_name, string header_name, object src)
+        {
+            FrameworkElementFactory cmb = new FrameworkElementFactory(typeof(ComboBox));
+            cmb.SetValue(ComboBox.DisplayMemberPathProperty, Common.ComboBoxText);
+            cmb.SetValue(ComboBox.SelectedValuePathProperty, Common.ComboBoxValue);
+
+            Binding bind_selected_value = new Binding(bind_name);
+            bind_selected_value.NotifyOnSourceUpdated = true;
+            bind_selected_value.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            cmb.SetValue(ComboBox.SelectedValueProperty, bind_selected_value);
+
+            Binding bind_source = new Binding();
+            bind_source.Source = src;
+            bind_source.Mode = BindingMode.OneWay;
+            bind_source.NotifyOnSourceUpdated = true;
+            bind_source.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            cmb.SetValue(ComboBox.ItemsSourceProperty, bind_source);
+
+            return new DataGridTemplateColumn()
+            {
+                Header = header_name,
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(ComboBox),
+                    VisualTree = cmb,
+                },
+                //Width = 130,
+            };
         }
 
         private void dataGrid_SourceUpdated(object sender, DataTransferEventArgs e)
