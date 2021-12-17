@@ -1518,12 +1518,14 @@ namespace SearchSample
                         {
                             try
                             {
+                                string sort_dir = items.sort_dir_asc ? "ASC" : items.sort_dir_desc ? "DESC" : "";
+
                                 List<string> values = new List<string>();
                                 values.Add("'" + items.output_item + "'");
                                 values.Add("'" + dic + "'");
                                 values.Add("'" + items.line_no + "'");
                                 values.Add("'" + items.sort + "'");
-                                values.Add("'" + items.sort_dir + "'");
+                                values.Add("'" + sort_dir + "'");
                                 values.Add("'" + (items.display ? "1" : "") + "'");
 
                                 command.CommandText =

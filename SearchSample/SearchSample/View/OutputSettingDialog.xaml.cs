@@ -179,67 +179,48 @@ namespace SearchSample.View
 
             DataGridTemplateColumn cmbSortColumn = CreateCombo("sort", "ソート順序", SortDt.DefaultView);
 
-            DataGridTemplateColumn cmbSortDirColumn = CreateCombo("sort_dir", "ソート方向", SortDtDir.DefaultView);
+            //DataGridTemplateColumn cmbSortDirColumn = CreateCombo("sort_dir", "ソート方向", SortDtDir.DefaultView);
 
-            //FrameworkElementFactory rdoSortDir1 = new FrameworkElementFactory(typeof(RadioButton));
-            //rdoSortDir1.SetValue(RadioButton.NameProperty, "asc");
-            //rdoSortDir1.SetValue(RadioButton.ContentProperty, "昇順");
-            ////rdoSortDir1.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
-            //rdoSortDir1.SetValue(RadioButton.IsCheckedProperty, "{Binding Path=ModeArray[0], Mode=TwoWay}");
+            FrameworkElementFactory rdoSortDir1 = new FrameworkElementFactory(typeof(RadioButton));
+            rdoSortDir1.SetValue(RadioButton.ContentProperty, "昇順");
+            Binding bind_asc = new Binding("sort_dir_asc");
+            bind_asc.Mode = BindingMode.TwoWay;
+            bind_asc.NotifyOnSourceUpdated = true;
+            bind_asc.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            rdoSortDir1.SetValue(RadioButton.IsCheckedProperty, bind_asc);
 
-            //FrameworkElementFactory rdoSortDir2 = new FrameworkElementFactory(typeof(RadioButton));
-            //rdoSortDir2.SetValue(RadioButton.NameProperty, "desc");
-            //rdoSortDir2.SetValue(RadioButton.ContentProperty, "降順");
-            ////rdoSortDir2.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
+            FrameworkElementFactory rdoSortDir2 = new FrameworkElementFactory(typeof(RadioButton));
+            rdoSortDir2.SetValue(RadioButton.ContentProperty, "降順");
+            Binding bind_desc = new Binding("sort_dir_desc");
+            bind_desc.Mode = BindingMode.TwoWay;
+            bind_desc.NotifyOnSourceUpdated = true;
+            bind_desc.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            rdoSortDir2.SetValue(RadioButton.IsCheckedProperty, bind_desc);
 
-            //FrameworkElementFactory stkSortDir = new FrameworkElementFactory(typeof(StackPanel));
-            //stkSortDir.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-            //stkSortDir.AppendChild(rdoSortDir1);
-            //stkSortDir.AppendChild(rdoSortDir2);
+            FrameworkElementFactory stkSortDir = new FrameworkElementFactory(typeof(StackPanel));
+            stkSortDir.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+            stkSortDir.AppendChild(rdoSortDir1);
+            stkSortDir.AppendChild(rdoSortDir2);
 
-            //DataGridTemplateColumn rdoSortDirColumn = new DataGridTemplateColumn()
-            //{
-            //    Header = "ソート方向",
-            //    CellTemplate = new DataTemplate()
-            //    {
-            //        DataType = typeof(StackPanel),
-            //        VisualTree = stkSortDir,
-            //    },
-            //    //Width = 130,
-            //};
+            DataGridTemplateColumn rdoSortDirColumn = new DataGridTemplateColumn()
+            {
+                Header = "ソート方向",
+                CellTemplate = new DataTemplate()
+                {
+                    DataType = typeof(StackPanel),
+                    VisualTree = stkSortDir,
+                },
+                //Width = 130,
+            };
 
-            //FrameworkElementFactory txtSortDir = new FrameworkElementFactory(typeof(TextBox));
-            //txtSortDir.SetBinding(TextBlock.TextProperty, new Binding("sort_dir"));
-
-            //DataGridTemplateColumn txtSortDirColumn = new DataGridTemplateColumn()
-            //{
-            //    Header = "",
-            //    CellTemplate = new DataTemplate()
-            //    {
-            //        DataType = typeof(TextBox),
-            //        VisualTree = txtSortDir,
-            //    },
-            //    Width = 0,
-            //    //Visibility = Visibility.Hidden,
-            //    //Width = 130,
-            //};
-
-            //DataGridTextColumn txtSortDirColumn = new DataGridTextColumn()
-            //{
-            //    Header = "",
-            //    Binding = new Binding("sort_dir"),
-            //    Width = 0,
-            //};
 
             dataGrid.Columns.Add(hlup);
             dataGrid.Columns.Add(hldown);
             dataGrid.Columns.Add(chkDisplayColumn);
             dataGrid.Columns.Add(txtItemNameColumn);
             dataGrid.Columns.Add(cmbSortColumn);
-            dataGrid.Columns.Add(cmbSortDirColumn);
-            //dataGrid.Columns.Add(rdoSortDirColumn);
-            //dataGrid.Columns.Add(txtSortDirColumn);
-
+            //dataGrid.Columns.Add(cmbSortDirColumn);
+            dataGrid.Columns.Add(rdoSortDirColumn);
 
             this.dataList = new ObservableCollection<OutputItem>();
 
@@ -264,7 +245,9 @@ namespace SearchSample.View
                     sort = row["ソート順"].ToString(),
                     sort_dir = row["ソート方向"].ToString(),
                     line_no = row["表示順"].ToString(),
-                });
+                    sort_dir_asc = row["ソート方向"].ToString().Equals("ASC") ? true : false,
+                    sort_dir_desc = row["ソート方向"].ToString().Equals("DESC") ? true : false,
+                });;
 
                 if (!except_list.ContainsKey(row["項目名"].ToString()))
                 {
@@ -287,6 +270,8 @@ namespace SearchSample.View
                     sort = "",
                     sort_dir = "",
                     line_no = String.Format("{0:D4}", (max_line_no++)).ToString(),
+                    sort_dir_asc = false,
+                    sort_dir_desc = false,
                 });
             }
 
