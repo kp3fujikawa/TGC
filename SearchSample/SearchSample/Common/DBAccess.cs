@@ -75,6 +75,8 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
+
                 ret = false;
             }
             finally
@@ -122,6 +124,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -133,6 +136,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -256,12 +260,13 @@ namespace SearchSample
 
                             List<string> element_param_list = new List<string>();
 
+                            // データテーブルの列生成
                             foreach (DataRow row2 in tmpparamdt.Rows)
                             {
                                 string element_name = row2["要素名称"].ToString();
-                                string param_name = row2["パラメータ名称"].ToString().Replace(".","-");
                                 string col_name = string.Empty;
 
+                                // 処方要素の項目列を追加
                                 foreach (string col in element_cols)
                                 {
                                     col_name = element_name + Common.ColCennector + col;
@@ -271,6 +276,8 @@ namespace SearchSample
                                     }
                                 }
 
+                                // 処方パラメータの項目列を追加（値のみ）
+                                string param_name = row2["パラメータ名称"].ToString().Replace(".", "-");
                                 if (!string.IsNullOrEmpty(param_name))
                                 {
                                     col_name = element_name + Common.ColCennector + param_name;
@@ -286,10 +293,10 @@ namespace SearchSample
 
                             DataRow[] drs = paramdt.Select("製造指図番号 = '" + pno + "'");
 
+                            // データ値をセット
                             foreach (DataRow row2 in tmpparamdt.Rows)
                             {
                                 string element_name = row2["要素名称"].ToString();
-                                string param_name = row2["パラメータ名称"].ToString().Replace(".", "-");
                                 string col_name = string.Empty;
 
                                 foreach (string col in element_cols)
@@ -298,6 +305,7 @@ namespace SearchSample
                                     drs[0][col_name] = row2[col];
                                 }
 
+                                string param_name = row2["パラメータ名称"].ToString().Replace(".", "-");
                                 if (!string.IsNullOrEmpty(param_name))
                                 {
                                     col_name = element_name + Common.ColCennector + param_name;
@@ -450,6 +458,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -461,6 +470,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -475,9 +485,7 @@ namespace SearchSample
         {
             string T1 = Common.table_dic["製造指図情報"];
             string T2 = Common.table_dic["実行処方製品"];
-            string T3 = Common.table_dic["実行処方ヘッダ"];
-            string T4 = Common.table_dic["実行処方要素"];
-            string T5 = Common.table_dic["実行処方パラメータ"];
+            string T3 = Common.table_dic["実行処方ヘッダ"];           
 
             string SQL = "";
 
@@ -581,9 +589,6 @@ namespace SearchSample
 
         private string SelectItem2(string dic)
         {
-            string T1 = Common.table_dic["製造指図情報"];
-            string T2 = Common.table_dic["実行処方製品"];
-            string T3 = Common.table_dic["実行処方ヘッダ"];
             string T4 = Common.table_dic["実行処方要素"];
             string T5 = Common.table_dic["実行処方パラメータ"];
 
@@ -832,6 +837,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -843,6 +849,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -886,6 +893,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -897,6 +905,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -989,6 +998,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1000,6 +1010,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1058,6 +1069,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1069,6 +1081,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1129,6 +1142,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1140,6 +1154,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1241,6 +1256,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1252,6 +1268,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1311,6 +1328,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1322,6 +1340,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1381,6 +1400,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1392,6 +1412,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1452,6 +1473,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1463,6 +1485,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1535,6 +1558,7 @@ namespace SearchSample
                             }
                             catch (Exception ex)
                             {
+                                Common.DoError(ex);
                                 ret = false;
                                 transaction.Rollback();
                             }
@@ -1545,6 +1569,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                         try
                         {
@@ -1563,6 +1588,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1596,7 +1622,6 @@ namespace SearchSample
                     OleDbCommand command = new OleDbCommand();
                     OleDbTransaction transaction = null;
                     command.Connection = connection;
-                    int cnt = 0;
 
                     try
                     {
@@ -1618,6 +1643,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                         try
                         {
@@ -1636,6 +1662,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1723,6 +1750,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1734,6 +1762,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1916,6 +1945,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -1927,6 +1957,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -1995,6 +2026,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -2006,6 +2038,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -2099,6 +2132,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -2110,6 +2144,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -2178,6 +2213,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -2189,6 +2225,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -2253,18 +2290,7 @@ namespace SearchSample
 
                         connection.Open();
 
-                        string T11 = Common.table_dic["在庫ユニークキー管理"];
-                        string T12 = Common.table_dic["ロット情報"];
-                        string T13 = Common.table_dic["個体の情報"];
-                        string T14 = Common.table_dic["受払"];
-                        string T15 = Common.table_dic["移庫指図"];
-                        string T16 = Common.table_dic["受払ワーク"];
-                        string T17 = Common.table_dic["荷揃指図"];
-                        string T18 = Common.table_dic["品転指図"];
-                        string T19 = Common.table_dic["在庫（日別）"];
                         string T20 = Common.table_dic["月末在庫"];
-                        string T21 = Common.table_dic["タンク"];
-                        string T22 = Common.table_dic["タンクレベル履歴"];
 
                         string SQL = "";
                         SQL += " SELECT ";
@@ -2281,6 +2307,7 @@ namespace SearchSample
                     }
                     catch (Exception ex)
                     {
+                        Common.DoError(ex);
                         ret = false;
                     }
                     finally
@@ -2292,6 +2319,7 @@ namespace SearchSample
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally
@@ -2303,6 +2331,129 @@ namespace SearchSample
         }
 
 
+        /// <summary>
+        /// データディクショナリ定義検索
+        /// </summary>
+        /// <param name="seach"></param>
+        /// <param name="resulrdt">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchDataDictionary(
+            DataDictionarySearchData seach,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
 
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += " T1.*";
+                        SQL += " FROM [データディクショナリ定義] AS T1 ";
+                        SQL += " ORDER BY 種別,データディクショナリ名";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.DoError(ex);
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.DoError(ex);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// データディクショナリアイテム定義検索
+        /// </summary>
+        /// <param name="seach"></param>
+        /// <param name="resulrdt">データテーブル</param>
+        /// <returns>true/false</returns>
+        public bool SearchDataDictionaryItem(
+            string dataDictionaryId,
+            out DataTable resulrdt
+            )
+        {
+            // DB接続文字列作成
+            string connectionString = connectionStringBase + LocalDBName;
+            bool ret = true;
+
+            resulrdt = new DataTable();
+
+            try
+            {
+                using (OleDbConnection connection = new OleDbConnection(connectionString))
+                {
+                    try
+                    {
+
+                        connection.Open();
+
+                        string SQL = "";
+                        SQL += " SELECT ";
+                        SQL += " T1.*";
+                        SQL += " FROM [データディクショナリアイテム定義] AS T1 ";
+                        SQL += " WHERE [データディクショナリID] = '" + dataDictionaryId + "' ";
+                        SQL += " ORDER BY 表示順";
+
+                        OleDbDataAdapter adapter = new OleDbDataAdapter(SQL, connection);
+                        adapter.Fill(resulrdt);
+                        adapter.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.DoError(ex);
+                        ret = false;
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.DoError(ex);
+                ret = false;
+            }
+            finally
+            {
+
+            }
+
+            return ret;
+        }
     }
 }

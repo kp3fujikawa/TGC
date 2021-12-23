@@ -279,15 +279,7 @@ namespace SearchSample.View
 
         private void CreateDataDictinary(MainWindowViewModel vm)
         {
-            SetComboBox(cmbDataDictinary, vm.DataDictionary);
-        }
-
-        private void SetComboBox(ComboBox cmb, DataTable dt)
-        {
-            // コンボボックスを作成
-            cmb.ItemsSource = dt.DefaultView;
-            cmb.DisplayMemberPath = Common.ComboBoxText;
-            cmb.SelectedValuePath = Common.ComboBoxValue;
+            Common.SetComboBox(cmbDataDictinary, vm.DataDictionary);
         }
 
         /// <summary>

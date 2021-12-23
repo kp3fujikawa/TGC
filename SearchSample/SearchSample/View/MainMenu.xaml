@@ -58,8 +58,8 @@
                 </StackPanel>
                 <l:DropDownMenuButton.DropDownContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="データディクショナリ一覧" />
-                        <MenuItem Header="辞書一覧" />
+                        <MenuItem Header="データディクショナリ一覧" Click="MenuItem3_Click" />
+                        <MenuItem Header="辞書一覧" Click="MenuItem4_Click" />
                     </ContextMenu>
                 </l:DropDownMenuButton.DropDownContextMenu>
             </l:DropDownMenuButton>

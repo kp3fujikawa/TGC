@@ -1,0 +1,174 @@
+﻿<mahApps:MetroWindow x:Class="SearchSample.View.DataDictionaryItem"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SearchSample.ViewModel"
+        mc:Ignorable="d"
+        xmlns:mahApps="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        ResizeMode="CanResizeWithGrip"
+        Title="データディクショナリ登録"
+        Loaded="Window_Loaded"
+        WindowStartupLocation="CenterOwner">
+    <mahApps:MetroWindow.DataContext>
+        <local:DataDictionaryItemViewModel/>
+    </mahApps:MetroWindow.DataContext>
+    <Window.Resources>
+        <ResourceDictionary Source="../Style/DataExtractStyleDic.xaml"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"></RowDefinition>
+            <RowDefinition Height="140"></RowDefinition>
+            <RowDefinition ></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="233" />
+        </Grid.ColumnDefinitions>
+        
+        <Button x:Name="btnClose" Grid.Row="0" Grid.Column="0" Content="閉じる" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="117" Click="btnClose_Click" Margin="0,0,10,10"
+                Style="{DynamicResource MahApps.Styles.Button.Square}" ToolTip="閉じる">
+        </Button>
+
+        <StackPanel Grid.Row="1" Grid.Column="0">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"></ColumnDefinition>
+                    <ColumnDefinition Width="300"></ColumnDefinition>
+                    <ColumnDefinition Width="200"></ColumnDefinition>
+                    <ColumnDefinition Width="300"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Row="0" Grid.Column="0"  Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="種別" Foreground="White"></Label>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="0" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="データディクショナリ名" Foreground="White"></Label>
+                </Border>
+                <Border Grid.Row="2" Grid.Column="0" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="登録ユーザ" Foreground="White"></Label>
+                </Border>
+                <Border Grid.Row="3" Grid.Column="0" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="更新ユーザ" Foreground="White"></Label>
+                </Border>
+
+                <Border Grid.Row="1" Grid.Column="2" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="テーブル名" Foreground="White"></Label>
+                </Border>
+                <Border Grid.Row="2" Grid.Column="2" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="登録日" Foreground="White"></Label>
+                </Border>
+                <Border Grid.Row="3" Grid.Column="2" Background="#006400" BorderBrush="White" BorderThickness="1">
+                    <Label Content="更新日" Foreground="White"></Label>
+                </Border>
+
+                <Border Grid.Row="0" Grid.Column="1" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="製造実績"></Label>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="PT-395 反応"></Label>
+                </Border>
+                <Border Grid.Row="2" Grid.Column="1" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="横河太郎"></Label>
+                </Border>
+                <Border Grid.Row="3" Grid.Column="1" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="2021/12/01 00:00:00"></Label>
+                </Border>
+
+                <Border Grid.Row="1" Grid.Column="3" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="PT395Reaction"></Label>
+                </Border>
+                <Border Grid.Row="2" Grid.Column="3" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="横河太郎"></Label>
+                </Border>
+                <Border Grid.Row="3" Grid.Column="3" BorderBrush="Gray" BorderThickness="1">
+                    <Label Content="2021/12/01 00:00:00"></Label>
+                </Border>
+
+            </Grid>
+
+        </StackPanel>
+
+        <DataGrid x:Name="dataGrid2" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="10,0,0,0" CanUserAddRows="False" VerticalAlignment="Top" AutoGenerateColumns="False"
+                  Style="{StaticResource MyGridStyle}" ColumnHeaderStyle="{StaticResource MyColumnHeaderStyle}"
+                  MaxHeight="500px" Height="482">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn></DataGridCheckBoxColumn>
+                <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="△"></TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="▽"></TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="出力テーブル" Binding="{Binding テーブル名}" Width="200"></DataGridTextColumn>
+                <DataGridTextColumn Header="種別" Binding="{Binding 種別}"></DataGridTextColumn>
+                <DataGridTextColumn Header="項目名" Binding="{Binding 項目名}"></DataGridTextColumn>
+                <DataGridTextColumn Header="ソート順序" Binding="{Binding ソート順序}"></DataGridTextColumn>
+                <DataGridTemplateColumn Header="ソート方向">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="昇順"></RadioButton>
+                                <RadioButton Content="降順"></RadioButton>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Expander Grid.Row="0" Grid.RowSpan="3" Grid.Column="1"
+                      Header="操作" 
+                      Margin="10"
+                      IsExpanded="True">
+            <StackPanel Margin="6" 
+                            HorizontalAlignment="Left"
+                            Width="200">
+                <Label>
+                    <Hyperlink>
+                        <TextBlock Text="追加" />
+                    </Hyperlink>
+                </Label>
+                <Label>
+                    <Hyperlink>
+                        <TextBlock Text="削除" />
+                    </Hyperlink>
+                </Label>
+                <Label>
+                    <Hyperlink>
+                        <TextBlock Text="登録" />
+                    </Hyperlink>
+                </Label>
+                <Label>
+                    <Hyperlink>
+                        <TextBlock Text="CSV出力" />
+                    </Hyperlink>
+                </Label>
+                <Label>
+                    <Hyperlink>
+                        <TextBlock Text="CSV取込" />
+                    </Hyperlink>
+                </Label>
+            </StackPanel>
+        </Expander>
+        
+    </Grid>
+</mahApps:MetroWindow>

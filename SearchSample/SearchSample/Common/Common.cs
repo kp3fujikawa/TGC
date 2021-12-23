@@ -239,46 +239,111 @@ namespace SearchSample
             else
             {
                 DataTable output_item_dt1 = new DataTable();
-                db.GetItem1(dic, out output_item_dt1);
 
-                foreach (DataColumn col in output_item_dt1.Columns)
+                //db.GetItem1(dic, out output_item_dt1);
+
+                //foreach (DataColumn col in output_item_dt1.Columns)
+                //{
+                //    if (!except_list.ContainsKey(col.ColumnName))
+                //    {
+                //        except_list[col.ColumnName] = 0;
+                //        colmun_list.Add(col.ColumnName);
+                //    }
+                //}
+
+                //DataTable output_item_dt2 = new DataTable();
+                //db.GetItem2(dic, out output_item_dt2);
+
+                //foreach (DataColumn col in output_item_dt2.Columns)
+                //{
+                //    if (!except_list.ContainsKey(col.ColumnName))
+                //    {
+                //        except_list[col.ColumnName] = 0;
+                //        colmun_list.Add(col.ColumnName);
+                //    }
+                //}
+
+                //DataTable output_item_dt3 = new DataTable();
+                //db.GetItemParameter(dic, out output_item_dt3);
+
+                //foreach (DataColumn col in output_item_dt3.Columns)
+                //{
+                //    //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
+                //    if (!except_list.ContainsKey(col.ColumnName))
+                //    {
+                //        except_list[col.ColumnName] = 0;
+                //        colmun_list.Add(col.ColumnName);
+                //    }
+                //}
+
+                db.SearchDataDictionaryItem(dic, out output_item_dt1);
+                foreach (DataRow row in output_item_dt1.Rows)
                 {
-                    if (!except_list.ContainsKey(col.ColumnName))
-                    {
-                        except_list[col.ColumnName] = 0;
-                        colmun_list.Add(col.ColumnName);
-                    }
+                    colmun_list.Add(row["項目名"].ToString());
                 }
 
-                DataTable output_item_dt2 = new DataTable();
-                db.GetItem2(dic, out output_item_dt2);
 
-                foreach (DataColumn col in output_item_dt2.Columns)
-                {
-                    if (!except_list.ContainsKey(col.ColumnName))
-                    {
-                        except_list[col.ColumnName] = 0;
-                        colmun_list.Add(col.ColumnName);
-                    }
-                }
-
-                DataTable output_item_dt3 = new DataTable();
-                db.GetItemParameter(dic, out output_item_dt3);
-
-                foreach (DataColumn col in output_item_dt3.Columns)
-                {
-                    //colmun_list.Add("[要素名称"+Common.ColCennector+"パラメータ名称].[" + col.ColumnName + "]");
-                    if (!except_list.ContainsKey(col.ColumnName))
-                    {
-                        except_list[col.ColumnName] = 0;
-                        colmun_list.Add(col.ColumnName);
-                    }
-                }
             }
 
             return true;
         }
 
+
+        public static void SetComboBox(ComboBox cmb, DataTable dt)
+        {
+            // コンボボックスを作成
+            cmb.ItemsSource = dt.DefaultView;
+            cmb.DisplayMemberPath = Common.ComboBoxText;
+            cmb.SelectedValuePath = Common.ComboBoxValue;
+        }
+
+        public static Dictionary<string, string> GetSearchCondition() {
+            Dictionary<string, string> cond = new Dictionary<string, string>();
+
+            cond.Add("", "");
+            cond.Add("と等しい", "=");
+            cond.Add("を含む", "LIKE");
+            cond.Add("より大きい", ">");
+            cond.Add("より小さい", "<");
+            cond.Add("以上", ">=");
+            cond.Add("以下", "<=");
+
+            return cond;
+        }
+
+        public static string[] GetCombi()
+        {
+            return new string[] {
+            "AND",
+            "OR"
+            };
+        }
+
+        public static Dictionary<string, string> GetDataDictionary()
+        {
+            Dictionary<string, string> data_dictionary =
+                new Dictionary<string, string>()
+                {
+                    {"0", ""},
+                    {"1", "バッチ実績＋出荷実績"},
+                    {"2", "入出庫実績"},
+                    {"3", "品質情報"},
+                    {"4", "PT-395 反応"},
+                    {"5", "工程金属マテバラ"},
+                    {"6", "フィルターの溶剤通液量"},
+                    {"7", "プロセスデータ①(原材料管理)"},
+                    {"8", "工程時間予実"},
+                    {"14", "日別在庫"},
+                    {"15", "月末在庫"},
+                };
+
+            return data_dictionary;
+        }
+
+        public static void DoError(Exception ex)
+        {
+            System.Diagnostics.Debug.Print(ex.Message);
+        }
     }
 
 

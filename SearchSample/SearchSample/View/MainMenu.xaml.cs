@@ -94,6 +94,19 @@ namespace SearchSample.View
         {
 
         }
+
+        private void MenuItem3_Click(object sender, RoutedEventArgs e)
+        {
+
+            DataDictionary frm1 = new DataDictionary();
+
+            frm1.Show();
+        }
+
+        private void MenuItem4_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 
 }

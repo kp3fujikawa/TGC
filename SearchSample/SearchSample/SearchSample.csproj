@@ -190,7 +190,7 @@
       <HintPath>..\packages\ShowMeTheXAML.AvalonEdit.2.0.0\lib\net472\ShowMeTheXAML.AvalonEdit.dll</HintPath>
     </Reference>
     <Reference Include="System">
-      <HintPath>..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
@@ -224,20 +224,28 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Common\ComConst.cs" />
     <Compile Include="Common\DBAccess.cs" />
     <Compile Include="Control\DropDownMenuButton.cs" />
     <Compile Include="Model\ComboItem.cs" />
     <Compile Include="Model\OutputItem.cs" />
     <Compile Include="Model\SearchCondition.cs" />
+    <Compile Include="Model\DataDictionarySearchData.cs" />
     <Compile Include="Model\SearchData.cs" />
+    <Compile Include="ViewModel\DataDictionaryItemViewModel.cs" />
     <Compile Include="ViewModel\MainMenuViewModel.cs" />
     <Compile Include="ViewModel\OutputSettingDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeRegisterDialogViewModel.cs" />
     <Compile Include="ViewModel\LikeDialogViewModel.cs" />
+    <Compile Include="ViewModel\DataDictionaryViewModel.cs" />
     <Compile Include="ViewModel\PlantSearchViewModel.cs" />
     <Compile Include="ViewModel\QuolityDialogViewModel.cs" />
     <Compile Include="ViewModel\ErrorDialogViewModel.cs" />
     <Compile Include="ViewModel\MainWindowViewModel.cs" />
+    <Page Include="View\DataDictionaryItem.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\MainMenu.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -251,6 +259,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="View\LikeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\DataDictionary.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -276,6 +288,9 @@
     </Compile>
     <Compile Include="Common\Common.cs" />
     <Compile Include="ViewModel\StyleSettingViewModel.cs" />
+    <Compile Include="View\DataDictionaryItem.xaml.cs">
+      <DependentUpon>DataDictionaryItem.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\MainMenu.xaml.cs">
       <DependentUpon>MainMenu.xaml</DependentUpon>
     </Compile>
@@ -287,6 +302,9 @@
     </Compile>
     <Compile Include="View\LikeDialog.xaml.cs">
       <DependentUpon>LikeDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\DataDictionary.xaml.cs">
+      <DependentUpon>DataDictionary.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\PlantSearch.xaml.cs">
       <DependentUpon>PlantSearch.xaml</DependentUpon>

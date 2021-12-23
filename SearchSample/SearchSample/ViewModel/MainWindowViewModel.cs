@@ -20,31 +20,13 @@ namespace SearchSample.ViewModel
 
         #region "DBアクセスモデル"
 
-        private DBAccess db = new DBAccess();
+        private readonly DBAccess db = new DBAccess();
 
         #endregion
 
         #region "変数"
 
-        private String[] search_condtinon_value = {
-            "",
-            "=",
-            "LIKE",
-            ">",
-            "<",
-            ">=",
-            "<="
-        };
-        private String[] search_condtinon_text = {
-            "",
-            "と等しい",
-            "を含む",
-            "より大きい",
-            "より小さい",
-            "以上",
-            "以下"
-        };
-
+       
         private DataTable search_condtinon_dt;
         public DataTable SearchCondition
         {
@@ -53,11 +35,12 @@ namespace SearchSample.ViewModel
                 search_condtinon_dt = new DataTable();
                 search_condtinon_dt.Columns.Add(new DataColumn(Common.ComboBoxValue));
                 search_condtinon_dt.Columns.Add(new DataColumn(Common.ComboBoxText));
-                for (int i = 0; i < search_condtinon_value.Length; i++)
+                Dictionary<string,string> search_condtinon = Common.GetSearchCondition();
+                foreach (string key in search_condtinon.Keys)
                 {
                     DataRow newrow = search_condtinon_dt.NewRow();
-                    newrow[Common.ComboBoxValue] = search_condtinon_value[i];
-                    newrow[Common.ComboBoxText] = search_condtinon_text[i];
+                    newrow[Common.ComboBoxValue] = search_condtinon[key];
+                    newrow[Common.ComboBoxText] = key;
                     search_condtinon_dt.Rows.Add(newrow);
                 }
 
@@ -69,10 +52,7 @@ namespace SearchSample.ViewModel
             }
         }
 
-        private String[] search_combi = { 
-            "AND", 
-            "OR"
-        };
+        
         private DataTable search_combi_dt;
         public DataTable SearchCombi
         {
@@ -81,6 +61,7 @@ namespace SearchSample.ViewModel
                 search_combi_dt = new DataTable();
                 search_combi_dt.Columns.Add(new DataColumn(Common.ComboBoxValue));
                 search_combi_dt.Columns.Add(new DataColumn(Common.ComboBoxText));
+                string[] search_combi = Common.GetCombi();
                 for (int i = 0; i < search_combi.Length; i++)
                 {
                     DataRow newrow = search_combi_dt.NewRow();
@@ -129,26 +110,7 @@ namespace SearchSample.ViewModel
         /// <summary>
         /// 検索時テーブル別名
         /// </summary>
-        private Dictionary<string, string> data_dictionary =
-            new Dictionary<string, string>()
-            {
-                {"0", ""},
-                {"1", "バッチ実績＋出荷実績"},
-                {"2", "入出庫実績・在庫"},
-                {"3", "品質情報"},
-                {"4", "PT-395 反応"},
-                {"5", "工程金属マテバラ"},
-                {"6", "フィルターの溶剤通液量"},
-                {"7", "プロセスデータ①(原材料管理)"},
-                {"8", "工程時間予実"},
-                {"9", "品目マスタ"},
-                {"10", "荷姿マスタ"},
-                {"11", "保管場所マスタ"},
-                {"12", "配送先マスタ"},
-                {"13", "ユーザマスタ"},
-                {"14", "日別在庫"},
-                {"15", "月末在庫"},
-            };
+        
 
         private DataTable data_dictionary_dt;
         public DataTable DataDictionary
@@ -158,7 +120,7 @@ namespace SearchSample.ViewModel
                 data_dictionary_dt = new DataTable();
                 data_dictionary_dt.Columns.Add(new DataColumn(Common.ComboBoxValue));
                 data_dictionary_dt.Columns.Add(new DataColumn(Common.ComboBoxText));
-                foreach (KeyValuePair<string,string> dic in data_dictionary)
+                foreach (KeyValuePair<string,string> dic in Common.GetDataDictionary())
                 {
                     DataRow newrow = data_dictionary_dt.NewRow();
                     newrow[Common.ComboBoxValue] = dic.Key;
@@ -246,6 +208,7 @@ namespace SearchSample.ViewModel
             }
             catch (Exception ex)
             {
+                Common.DoError(ex);
                 ret = false;
             }
             finally

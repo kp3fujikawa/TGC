@@ -414,7 +414,7 @@ namespace SearchSample.View
             }
             catch(Exception ex)
             {
-
+                Common.DoError(ex);
             }
 
         }
@@ -444,7 +444,7 @@ namespace SearchSample.View
             }
             catch (Exception ex)
             {
-
+                Common.DoError(ex);
             }
         }
 
