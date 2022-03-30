@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 # この .gitignore ファイルは Microsoft(R) Visual Studio によって自動的に作成されました。
 ################################################################################
 
@@ -10,3 +10,7 @@
 /SearchSample/SearchSample/bin/Release
 /SearchSample/SearchSample/obj/Release
 /SearchSample/SearchSample/SearchSample.csproj.user
+/AddColumnTool/.vs
+/AddColumnTool/AddColumnTool/bin
+/AddColumnTool/AddColumnTool/obj
+AddColumnTool/AddColumnTool/AddColumnTool.csproj.user
