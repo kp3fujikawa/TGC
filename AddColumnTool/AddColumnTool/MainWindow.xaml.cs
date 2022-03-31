@@ -28,7 +28,7 @@ namespace AddColumnTool
         }
 
         /// <summary>
-        /// ファイル選択ボタン
+        /// ファイル選択 ボタンクリック
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -49,7 +49,7 @@ namespace AddColumnTool
         }
 
         /// <summary>
-        /// 処理開始ボタン
+        /// 【１】テーブルにサロゲートキーを追加する ボタンクリック
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -196,13 +196,172 @@ namespace AddColumnTool
         }
 
         /// <summary>
-        /// 終了ボタン
+        /// 終了 ボタンクリック
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        /// <summary>
+        /// CSVファイル選択 ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSelectCSV_Click(object sender, RoutedEventArgs e)
+        {
+            // ダイアログのインスタンスを生成
+            var dialog = new OpenFileDialog();
+
+            // ファイルの種類を設定
+            dialog.Filter = "CSVファイル (*.csv)|*.csv";
+
+            // ダイアログを表示する
+            if (dialog.ShowDialog() == true)
+            {
+                // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
+                txtCSVFile.Text = dialog.FileName;
+            }
+        }
+
+        /// <summary>
+        /// 【２】Fieldの1番目と3番目の値をCSV出力する ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnProc2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text))
+                {
+                    // 出力ファイル名
+                    int loc = txtFileName.Text.IndexOf("a5er");
+                    string OutFileName = String.Format("{0}_Field１と３.csv",
+                                                       txtFileName.Text[0..(loc-1)]);
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(OutFileName);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsEntity = false;      // [Entity]判断フラグ
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            // Fieldの場合
+                            if (strbuf.IndexOf("Field") != -1)
+                            {
+                                // Fieldの1番目と3番目の値が同じかチェック
+                                bool IsSameKey = false;        // 値比較フラグ
+                                var checkField = strbuf.Split(',');
+                                int pos = checkField[0].IndexOf("=");
+                                var colname = checkField[0].Substring(pos+1);
+                                if (colname.Equals(checkField[2])) IsSameKey = true;
+
+                                // Fieldの1番目と3番目の値が同じ場合
+                                if (IsSameKey)
+                                {
+                                    // Fieldの1番目と3番目の値を書き出す
+                                    string addline = String.Format("{0},{1}",
+                                        colname, checkField[2]);
+                                    sw.WriteLine(addline);
+                                }
+
+                                // Fieldのデータ行を処理
+                                while (sr.EndOfStream == false)
+                                {
+                                    // Fieldの1番目と3番目の値が同じ場合
+                                    if (IsSameKey)
+                                    {
+                                        // 1レコードのみ出力する為、読み飛ばす
+                                    }
+                                    // Fieldの1番目と3番目の値が異なる場合
+                                    else
+                                    {
+                                        // Fieldの1番目と3番目の値を書き出す
+                                        string addline = String.Format("{0},{1}",
+                                            colname, checkField[2]);
+                                        sw.WriteLine(addline);
+                                    }
+
+                                    strbuf = sr.ReadLine();
+
+                                    // Field以外なら抜ける
+                                    if (strbuf.IndexOf("Field") == -1)
+                                    {
+                                        // 出力せずに読み飛ばす
+                                        break;
+                                    }
+                                }
+                            }
+                            // Field以外の場合
+                            else
+                            {
+                                // 出力せずに読み飛ばす
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 出力せずに読み飛ばす
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 【３】Fieldの3番目の箇所にFieldの1番目の値の先頭に"*"を付ける ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnProc3_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// 【４】CSVファイルを読込み、[Manager]の枠に情報を追加する ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnProc4_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

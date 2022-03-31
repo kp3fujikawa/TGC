@@ -6,13 +6,35 @@
         xmlns:local="clr-namespace:AddColumnTool"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="A5SQLカラム追加ツール" Height="150" Width="500">
+        Title="DB設計ツール" Height="320" Width="500">
     <Grid>
         <Label Content="a5erファイル" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="txtFileName" HorizontalAlignment="Left" Margin="82,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300"/>
         <Button x:Name="btnSelectFile" Content="ファイル選択" HorizontalAlignment="Left" Margin="387,12,0,0" VerticalAlignment="Top" Width="80" Click="btnSelectFile_Click"/>
-        <Button x:Name="btnExec" Content="処理開始" HorizontalAlignment="Left" Margin="10,64,0,0" VerticalAlignment="Top" Width="80" Click="btnExec_Click"/>
-        <Button x:Name="btnClose" Content="終了" HorizontalAlignment="Left" Margin="387,64,0,0" VerticalAlignment="Top" Width="80" Click="btnClose_Click"/>
+        <Label Content="CSVファイル" HorizontalAlignment="Left" Margin="10,49,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtCSVFile" HorizontalAlignment="Left" Margin="82,53,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300"/>
+        <Button x:Name="btnSelectCSV" Content="ファイル選択" HorizontalAlignment="Left" Margin="387,51,0,0" VerticalAlignment="Top" Width="80" Click="btnSelectCSV_Click"/>
+        <Button x:Name="btnExec" Content="【１】テーブルにサロゲートキーを追加する" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="457" Click="btnExec_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnProc2" Content="【２】Fieldの1番目と3番目の値をCSV出力する" HorizontalAlignment="Left" Margin="10,133,0,0" VerticalAlignment="Top" Width="457" Click="btnProc2_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnProc3" Content="【３】Fieldの3番目の箇所にFieldの1番目の値の先頭に&quot;＊&quot;を付ける" HorizontalAlignment="Left" Margin="10,163,0,0" VerticalAlignment="Top" Width="457" Click="btnProc3_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnProc4" Content="【４】CSVファイルを読込み、[Manager]の枠に情報を追加する" HorizontalAlignment="Left" Margin="10,193,0,0" VerticalAlignment="Top" Width="457" Click="btnProc4_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnClose" Content="終了" HorizontalAlignment="Left" Margin="387,239,0,0" VerticalAlignment="Top" Width="80" Click="btnClose_Click"/>
 
     </Grid>
 </Window>
