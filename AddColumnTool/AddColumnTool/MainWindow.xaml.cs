@@ -462,7 +462,122 @@ namespace AddColumnTool
         /// <param name="e"></param>
         private void btnProc4_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
+                {
+                    // 出力ファイル名
+                    int loc = txtFileName.Text.IndexOf("a5er");
+                    string OutFileName = txtFileName.Text.Insert(loc - 1, "_ドメイン追加");
 
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(OutFileName);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsManager = false;     // [Manager]判断フラグ
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsManager = false;
+                            if (strbuf.IndexOf("[Manager]") != -1)
+                            {
+                                IsManager = true;
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Manager]の場合
+                        //-----------------------------------------------------
+                        if (IsManager)
+                        {
+                            // [Manager]のデータ行を処理
+                            while (sr.EndOfStream == false)
+                            {
+                                // DecodeDomainの場合
+                                if (strbuf.IndexOf("DecodeDomain=") != -1)
+                                {
+                                    // 読み込んだ内容をそのまま書き出す
+                                    sw.WriteLine(strbuf);
+                                }
+                                // Domainの場合
+                                else if (strbuf.IndexOf("Domain=") != -1 || strbuf.IndexOf("DomainInfo=") != -1)
+                                {
+                                    // 既に存在するDomain、DomainInfoは削除する
+                                }
+                                // Domain以外の場合
+                                else
+                                {
+                                    // 読み込んだ内容をそのまま書き出す
+                                    sw.WriteLine(strbuf);
+                                }
+
+                                strbuf = sr.ReadLine();
+
+                                // 次のブロックが来たら抜ける
+                                if (strbuf != "" && strbuf[0] == '[')
+                                {
+                                    IsManager = false;
+                                    break;
+                                }
+                            }
+                            // ドメインを追加する
+                            StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                            string strbufCSV = "";      // CSVファイル読み込みバッファ
+
+                            // CSVファイルのデータを処理
+                            while (srCSV.EndOfStream == false)
+                            {
+                                strbufCSV = srCSV.ReadLine();
+
+                                // 文字列を分割して配列に格納
+                                var arrField = strbufCSV.Split(',');
+
+                                // Domainを追加
+                                string addline = String.Format("Domain={0}={1}",
+                                    arrField[0], arrField[1]);
+                                sw.WriteLine(addline);
+
+                                // DomainInfoを追加
+                                addline = String.Format("DomainInfo=\"{0}\",\"{1}\",\"\",\"\"",
+                                    arrField[0], arrField[1]);
+                                sw.WriteLine(addline);
+                            }
+
+                            // CSVファイルを閉じる
+                            srCSV.Close();
+
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                        //-----------------------------------------------------
+                        // [Manager]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
