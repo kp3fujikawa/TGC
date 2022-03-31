@@ -237,14 +237,9 @@ namespace AddColumnTool
             {
                 if (File.Exists(txtFileName.Text))
                 {
-                    // 出力ファイル名
-                    int loc = txtFileName.Text.IndexOf("a5er");
-                    string OutFileName = String.Format("{0}_Field１と３.csv",
-                                                       txtFileName.Text[0..(loc-1)]);
+                    SortedDictionary<String, string> items = new SortedDictionary<string, string>();
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
-
-                    StreamWriter sw = new StreamWriter(OutFileName);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     bool IsEntity = false;      // [Entity]判断フラグ
@@ -270,72 +265,39 @@ namespace AddColumnTool
                             if (strbuf.IndexOf("Field") != -1)
                             {
                                 // Fieldの1番目と3番目の値が同じかチェック
-                                bool IsSameKey = false;        // 値比較フラグ
                                 var checkField = strbuf.Split(',');
                                 int pos = checkField[0].IndexOf("=");
                                 var colname = checkField[0].Substring(pos+1);
-                                if (colname.Equals(checkField[2])) IsSameKey = true;
+
+                                String samekey = String.Format("{0},{1}", colname, checkField[2]);
 
                                 // Fieldの1番目と3番目の値が同じ場合
-                                if (IsSameKey)
+                                if (!items.ContainsKey(samekey))
                                 {
-                                    // Fieldの1番目と3番目の値を書き出す
-                                    string addline = String.Format("{0},{1}",
-                                        colname, checkField[2]);
-                                    sw.WriteLine(addline);
-                                }
-
-                                // Fieldのデータ行を処理
-                                while (sr.EndOfStream == false)
-                                {
-                                    // Fieldの1番目と3番目の値が同じ場合
-                                    if (IsSameKey)
-                                    {
-                                        // 1レコードのみ出力する為、読み飛ばす
-                                    }
-                                    // Fieldの1番目と3番目の値が異なる場合
-                                    else
-                                    {
-                                        // 文字列を分割して配列に格納
-                                        var arrField = strbuf.Split(',');
-
-                                        // Fieldの1番目の値を取得
-                                        pos = arrField[0].IndexOf("=");
-
-                                        // Fieldの1番目と3番目の値を書き出す
-                                        string addline = String.Format("{0},{1}",
-                                            arrField[0].Substring(pos + 1), arrField[2]);
-                                        sw.WriteLine(addline);
-                                    }
-
-                                    strbuf = sr.ReadLine();
-
-                                    // Field以外なら抜ける
-                                    if (strbuf.IndexOf("Field") == -1)
-                                    {
-                                        // 出力せずに読み飛ばす
-                                        break;
-                                    }
+                                    items.Add(samekey, samekey);
                                 }
                             }
-                            // Field以外の場合
-                            else
-                            {
-                                // 出力せずに読み飛ばす
-                            }
-                        }
-                        //-----------------------------------------------------
-                        // [Entity]以外の場合
-                        //-----------------------------------------------------
-                        else
-                        {
-                            // 出力せずに読み飛ばす
                         }
                     }
 
                     // ファイルを閉じる
-                    sw.Close();
                     sr.Close();
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("CSVファイル(*.csv)|*.csv");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    // 出力ファイル名
+                    StreamWriter sw = new StreamWriter(result);
+                    foreach (var key in items.Keys)
+                    {
+                        sw.WriteLine(items[key]);
+                    }
+                    sw.Close();
 
                     MessageBox.Show("処理が終了しました", Title);
                 }
@@ -361,13 +323,17 @@ namespace AddColumnTool
             {
                 if (File.Exists(txtFileName.Text))
                 {
-                    // 出力ファイル名
-                    int loc = txtFileName.Text.IndexOf("a5er");
-                    string OutFileName = txtFileName.Text.Insert(loc - 1, "_Field３設定");
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
 
-                    StreamWriter sw = new StreamWriter(OutFileName);
+                    StreamWriter sw = new StreamWriter(result);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     bool IsEntity = false;      // [Entity]判断フラグ
@@ -466,13 +432,17 @@ namespace AddColumnTool
             {
                 if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
                 {
-                    // 出力ファイル名
-                    int loc = txtFileName.Text.IndexOf("a5er");
-                    string OutFileName = txtFileName.Text.Insert(loc - 1, "_ドメイン追加");
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
 
-                    StreamWriter sw = new StreamWriter(OutFileName);
+                    StreamWriter sw = new StreamWriter(result);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     bool IsManager = false;     // [Manager]判断フラグ
@@ -579,5 +549,28 @@ namespace AddColumnTool
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private String selectOutputFile(String filter)
+        {
+            // ファイル保存ダイアログを生成します。
+            var dialog = new SaveFileDialog();
+
+            // フィルターを設定します。
+            // この設定は任意です。
+            dialog.Filter = filter;
+
+            // ファイル保存ダイアログを表示します。
+            var result = dialog.ShowDialog() ?? false;
+
+            // 保存ボタン以外が押下された場合
+            if (!result)
+            {
+                // 終了します。
+                return "";
+            }
+
+            return dialog.FileName;
+        }
     }
+
 }
