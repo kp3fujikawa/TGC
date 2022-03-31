@@ -296,9 +296,15 @@ namespace AddColumnTool
                                     // Fieldの1番目と3番目の値が異なる場合
                                     else
                                     {
+                                        // 文字列を分割して配列に格納
+                                        var arrField = strbuf.Split(',');
+
+                                        // Fieldの1番目の値を取得
+                                        pos = arrField[0].IndexOf("=");
+
                                         // Fieldの1番目と3番目の値を書き出す
                                         string addline = String.Format("{0},{1}",
-                                            colname, checkField[2]);
+                                            arrField[0].Substring(pos + 1), checkField[2]);
                                         sw.WriteLine(addline);
                                     }
 
@@ -351,7 +357,102 @@ namespace AddColumnTool
         /// <param name="e"></param>
         private void btnProc3_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                if (File.Exists(txtFileName.Text))
+                {
+                    // 出力ファイル名
+                    int loc = txtFileName.Text.IndexOf("a5er");
+                    string OutFileName = txtFileName.Text.Insert(loc - 1, "_Field３設定");
 
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(OutFileName);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsEntity = false;      // [Entity]判断フラグ
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            // Fieldの場合
+                            if (strbuf.IndexOf("Field") != -1)
+                            {
+                                // Fieldのデータ行を処理
+                                while (sr.EndOfStream == false)
+                                {
+                                    // 文字列を分割して配列に格納
+                                    var arrField = strbuf.Split(',');
+
+                                    // Fieldの1番目の値を取得
+                                    int pos = arrField[0].IndexOf("=");
+                                    var colname = arrField[0].Substring(pos + 1);
+
+                                    // Fieldの3番目の値を設定
+                                    arrField[2] = colname.Insert(1, "*");
+
+                                    // 配列を結合して文字列にする
+                                    string strCsvData = string.Join(",", arrField);
+
+                                    sw.WriteLine(strCsvData);
+
+                                    strbuf = sr.ReadLine();
+
+                                    // Field以外なら抜ける
+                                    if (strbuf.IndexOf("Field") == -1)
+                                    {
+                                        // 読み込んだ内容をそのまま書き出す
+                                        sw.WriteLine(strbuf);
+                                        break;
+                                    }
+                                }
+                            }
+                            // Field以外の場合
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         /// <summary>
