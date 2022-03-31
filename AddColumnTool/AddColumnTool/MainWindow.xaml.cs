@@ -304,7 +304,7 @@ namespace AddColumnTool
 
                                         // Fieldの1番目と3番目の値を書き出す
                                         string addline = String.Format("{0},{1}",
-                                            arrField[0].Substring(pos + 1), checkField[2]);
+                                            arrField[0].Substring(pos + 1), arrField[2]);
                                         sw.WriteLine(addline);
                                     }
 
