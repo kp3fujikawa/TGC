@@ -550,6 +550,11 @@ namespace AddColumnTool
             }
         }
 
+        /// <summary>
+        /// ファイル保存ダイアログを生成する
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <returns>ファイル名</returns>
         private String selectOutputFile(String filter)
         {
             // ファイル保存ダイアログを生成します。
@@ -570,6 +575,57 @@ namespace AddColumnTool
             }
 
             return dialog.FileName;
+        }
+
+        /// <summary>
+        /// A5M2の定義をObjectBrowser用定義に変換する ボタンクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnProc5_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text))
+                {
+                    // 出力ファイル名
+                    int loc = txtFileName.Text.IndexOf("a5er");
+                    string OutFileName = string.Format("{0}EDM", txtFileName.Text.Substring(0, loc));
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(OutFileName);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+
+                    // 先頭行を書き出す
+                    sw.WriteLine("<ERD ERD-VERSION=\"22\" ACTIVE-VIEW=\"メインモデル\" ID=\"0\" MAXID=\"8\" L-NAME=\"\" AUTHOR=\"\" VERSION=\"\" COMMENT=\"\">");
+                    
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // 各ブロックの処理
+                    }
+
+                    // 最終行を書き出す
+                    sw.WriteLine("</ERD>");
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 

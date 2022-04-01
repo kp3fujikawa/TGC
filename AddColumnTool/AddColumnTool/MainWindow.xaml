@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:AddColumnTool"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="DB設計ツール" Height="320" Width="500">
+        Title="DB設計ツール" Height="350" Width="500">
     <Grid>
         <Label Content="a5erファイル" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="txtFileName" HorizontalAlignment="Left" Margin="82,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300"/>
@@ -14,6 +14,7 @@
         <Label Content="CSVファイル" HorizontalAlignment="Left" Margin="10,49,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="txtCSVFile" HorizontalAlignment="Left" Margin="82,53,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="300"/>
         <Button x:Name="btnSelectCSV" Content="ファイル選択" HorizontalAlignment="Left" Margin="387,51,0,0" VerticalAlignment="Top" Width="80" Click="btnSelectCSV_Click"/>
+        <!-- 処理ボタン -->
         <Button x:Name="btnExec" Content="【１】テーブルにサロゲートキーを追加する" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="457" Click="btnExec_Click">
             <Button.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
@@ -34,7 +35,13 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
-        <Button x:Name="btnClose" Content="終了" HorizontalAlignment="Left" Margin="387,239,0,0" VerticalAlignment="Top" Width="80" Click="btnClose_Click"/>
+        <Button x:Name="btnProc5" Content="【５】A5M2の定義をObjectBrowser用定義に変換する" HorizontalAlignment="Left" Margin="10,223,0,0" VerticalAlignment="Top" Width="457" Click="btnProc5_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <!-- 終了ボタン -->
+        <Button x:Name="btnClose" Content="終了" HorizontalAlignment="Left" Margin="387,275,0,0" VerticalAlignment="Top" Width="80" Click="btnClose_Click"/>
 
     </Grid>
 </Window>
