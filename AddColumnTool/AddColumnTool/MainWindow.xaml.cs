@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Xml.Linq;
 using Microsoft.Win32;      // ファイル選択ダイアログ
 
 namespace AddColumnTool
@@ -586,34 +587,193 @@ namespace AddColumnTool
         {
             try
             {
-                if (File.Exists(txtFileName.Text))
+                if (File.Exists(txtA5FileName.Text) && File.Exists(txtOBFileName.Text))
                 {
-                    // 出力ファイル名
-                    int loc = txtFileName.Text.IndexOf("a5er");
-                    string OutFileName = string.Format("{0}EDM", txtFileName.Text.Substring(0, loc));
+                    List<TableDAO> datas = new List<TableDAO>();
 
-                    StreamReader sr = new StreamReader(txtFileName.Text);
-
-                    StreamWriter sw = new StreamWriter(OutFileName);
+                    StreamReader sr = new StreamReader(txtA5FileName.Text);
 
                     string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsEntity = false;      // [Entity]判断フラグ
 
-                    // 先頭行を書き出す
-                    sw.WriteLine("<ERD ERD-VERSION=\"22\" ACTIVE-VIEW=\"メインモデル\" ID=\"0\" MAXID=\"8\" L-NAME=\"\" AUTHOR=\"\" VERSION=\"\" COMMENT=\"\">");
-                    
+                    TableDAO tableDao = null;
+
                     while (sr.EndOfStream == false)
                     {
                         strbuf = sr.ReadLine();
 
-                        // 各ブロックの処理
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                                tableDao = new TableDAO();
+                                datas.Add(tableDao);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            if (strbuf.IndexOf("PName=") == 0)
+                            {
+                                // テーブル名を取得
+                                tableDao.Table.Name = strbuf.Replace("PName=", "");
+                            }
+                            else if (strbuf.IndexOf("LName=") == 0)
+                            {
+                                // テーブル名を取得
+                                tableDao.Table.TableName = strbuf.Replace("LName=", "");
+                            }
+                            else if (strbuf.IndexOf("Comment=") == 0)
+                            {
+                                // コメントを取得
+                                tableDao.Table.Comment = strbuf.Replace("Comment=","");
+                            }
+                            else if (strbuf.IndexOf("Field=") == 0)
+                            {
+                                var fields = strbuf.Replace("Field=", "").Split(',');
+
+                                RecordEntity recordEntity = new RecordEntity()
+                                {
+                                    Name = fields[0].Trim('"'),
+                                    ColName = fields[1].Trim('"'),
+                                    Domain = fields[2].Trim('"'),
+                                    DataType = "",
+                                    PrimaryKey = fields[4].Trim('"'),
+                                    Comment = fields[6].Trim('"'),
+                                };
+                                
+                                tableDao.Records.Add(recordEntity);
+                            }
+                        }
                     }
 
-                    // 最終行を書き出す
-                    sw.WriteLine("</ERD>");
-
                     // ファイルを閉じる
-                    sw.Close();
                     sr.Close();
+
+                    //xmlファイルを指定する
+                    XElement xml = XElement.Load(@txtOBFileName.Text);
+
+                    var ents = xml.Elements("ENTITY").ToList();
+                    foreach (var target in ents)
+                    {
+                        target.Remove();
+                    }
+
+                    var modelview = xml.Element("MODELVIEW");
+                    foreach (var target in modelview.Elements("ENTITY").ToList())
+                    {
+                        target.Remove();
+                    }
+
+                    //メンバー情報分ループして、コンソールに表示
+                    int count = 0;
+                    foreach (TableDAO info in datas)
+                    {
+                        ++count;
+
+                        // MODELVIEW
+                        XElement modelroot =
+                           new XElement("ENTITY");
+                        modelroot.SetAttributeValue("ID", count.ToString());
+                        modelroot.SetAttributeValue("LEFT", "176");
+                        modelroot.SetAttributeValue("TOP","126");
+                        modelroot.SetAttributeValue("RIGHT","276");
+                        modelroot.SetAttributeValue("BOTTOM","200");
+                        modelroot.SetAttributeValue("BRUSHCOLOR"," - 16777211");
+                        modelroot.SetAttributeValue("PENCOLOR"," - 16777208");
+                        modelroot.SetAttributeValue("NAMEFONTNAME","ＭＳ Ｐゴシック");
+                        modelroot.SetAttributeValue("NAMEFONTSIZE","9");
+                        modelroot.SetAttributeValue("NAMEFONTCOLOR"," - 16777208");
+                        modelroot.SetAttributeValue("NAMEFONTBL","0");
+                        modelroot.SetAttributeValue("NAMEFONTIT","0");
+                        modelroot.SetAttributeValue("NAMEFONTUL","0");
+                        modelroot.SetAttributeValue("NAMEFONTSO","0");
+                        modelroot.SetAttributeValue("ATTRFONTNAME","ＭＳ Ｐゴシック");
+                        modelroot.SetAttributeValue("ATTRFONTSIZE","9");
+                        modelroot.SetAttributeValue("ATTRFONTCOLOR"," - 16777208");
+                        modelroot.SetAttributeValue("ATTRFONTBL","0");
+                        modelroot.SetAttributeValue("ATTRFONTIT","0");
+                        modelroot.SetAttributeValue("ATTRFONTUL","0");
+                        modelroot.SetAttributeValue("ATTRFONTSO","0");
+                        modelroot.SetAttributeValue("FKFONTNAME","ＭＳ Ｐゴシック");
+                        modelroot.SetAttributeValue("FKFONTSIZE","9");
+                        modelroot.SetAttributeValue("FKFONTCOLOR"," - 16777208");
+                        modelroot.SetAttributeValue("FKFONTBL","1");
+                        modelroot.SetAttributeValue("FKFONTIT","0");
+                        modelroot.SetAttributeValue("FKFONTUL","0");
+                        modelroot.SetAttributeValue("FKFONTSO","0");
+
+                        modelview.Add(modelroot);
+
+                        // ENTITY
+                        XElement root =
+                            new XElement("ENTITY");
+                        root.SetAttributeValue("ID", count.ToString());
+                        root.SetAttributeValue("L-NAME", info.Table.TableName);
+                        root.SetAttributeValue("DEPENDENT", "");
+                        root.SetAttributeValue("P-NAME", info.Table.Name);
+                        root.SetAttributeValue("SCHEMA", "");
+                        root.SetAttributeValue("DBMAPPINGID", "0");
+                        root.SetAttributeValue("COMMENT", info.Table.Comment);
+                        root.SetAttributeValue("SHOWTYPE", "0");
+                        root.SetAttributeValue("PRE-SQL", "");
+                        root.SetAttributeValue("POST-SQL", "");
+                        root.SetAttributeValue("ENGINE", "");
+                        root.SetAttributeValue("EstInit", "0");
+                        root.SetAttributeValue("EstInc", "0");
+                        root.SetAttributeValue("MIGSCHEMA", "");
+                        root.SetAttributeValue("MIGTABLENAME", "");
+
+                        int colcount = 0;
+                        foreach (RecordEntity rec in info.Records)
+                        {
+                            XElement recent =
+                                new XElement("ATTR");
+                            recent.SetAttributeValue("ID", (++colcount).ToString());
+                            recent.SetAttributeValue("L-NAME", rec.ColName);
+                            recent.SetAttributeValue("P-NAME", rec.Name);
+                            recent.SetAttributeValue("DDOMAINID", rec.Domain);
+                            recent.SetAttributeValue("DATATYPE", "");
+                            recent.SetAttributeValue("LENGTH", "");
+                            recent.SetAttributeValue("SCALE", "0");
+                            recent.SetAttributeValue("NULL", "");
+                            recent.SetAttributeValue("DEFID", "0");
+                            recent.SetAttributeValue("DEF", "");
+                            recent.SetAttributeValue("RULEID", "0");
+                            recent.SetAttributeValue("RULE", "");
+                            recent.SetAttributeValue("CODEDEFINEID", "0");
+                            recent.SetAttributeValue("COMMENT", rec.Comment);
+                            recent.SetAttributeValue("COLLATE", "");
+                            recent.SetAttributeValue("PK", rec.PrimaryKey);
+                            recent.SetAttributeValue("FKCRT", "0");
+                            recent.SetAttributeValue("COLUMNTYPE", "0");
+                            recent.SetAttributeValue("MIGSETTYPE", "0");
+                            recent.SetAttributeValue("MIGSETPARAM", "");
+
+                            root.Add(recent);
+                        }
+
+                        xml.Add(root);
+                    }
+
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("ObjectBrowserファイル (*.edm)|*.edm");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    FileStream fs = new FileStream(result, FileMode.Create);
+                    xml.Save(fs);
+                    fs.Close();
+                    fs.Dispose();
 
                     MessageBox.Show("処理が終了しました", Title);
                 }
@@ -625,6 +785,38 @@ namespace AddColumnTool
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnSelectA5File_Click(object sender, RoutedEventArgs e)
+        {
+            // ダイアログのインスタンスを生成
+            var dialog = new OpenFileDialog();
+
+            // ファイルの種類を設定
+            dialog.Filter = "a5erファイル (*.a5er)|*.a5er";
+
+            // ダイアログを表示する
+            if (dialog.ShowDialog() == true)
+            {
+                // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
+                txtA5FileName.Text = dialog.FileName;
+            }
+        }
+
+        private void btnSelectOBFile_Click(object sender, RoutedEventArgs e)
+        {
+            // ダイアログのインスタンスを生成
+            var dialog = new OpenFileDialog();
+
+            // ファイルの種類を設定
+            dialog.Filter = "ObjectBrowserファイル (*.edm)|*.edm";
+
+            // ダイアログを表示する
+            if (dialog.ShowDialog() == true)
+            {
+                // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
+                txtOBFileName.Text = dialog.FileName;
             }
         }
     }
