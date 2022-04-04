@@ -672,6 +672,8 @@ namespace AddColumnTool
 
                     //メンバー情報分ループして、コンソールに表示
                     int count = 0;
+                    int top = 100;
+                    int left = 150;
                     foreach (TableDAO info in datas)
                     {
                         ++count;
@@ -680,8 +682,8 @@ namespace AddColumnTool
                         XElement modelroot =
                            new XElement("ENTITY");
                         modelroot.SetAttributeValue("ID", count.ToString());
-                        modelroot.SetAttributeValue("LEFT", "176");
-                        modelroot.SetAttributeValue("TOP","126");
+                        modelroot.SetAttributeValue("LEFT", (left+(count%10*150)).ToString());
+                        modelroot.SetAttributeValue("TOP",(top+(count/10*200)).ToString());
                         modelroot.SetAttributeValue("RIGHT","276");
                         modelroot.SetAttributeValue("BOTTOM","200");
                         modelroot.SetAttributeValue("BRUSHCOLOR"," - 16777211");
