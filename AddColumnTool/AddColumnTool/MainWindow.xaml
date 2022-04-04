@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:AddColumnTool"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="DB設計ツール" Height="326" Width="606">
+        Title="DB設計ツール" Height="400" Width="606">
 
     <StackPanel Orientation="Vertical">
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -73,6 +73,39 @@
             </StackPanel>
         </Border>
 
+        <Border BorderThickness="1" BorderBrush="Black" >
+            <StackPanel Orientation="Vertical" Margin="5px">
+
+                <Grid HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    
+                    <Label Content="ドメインCSVファイル" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <TextBox x:Name="txtDomainCSVFileName" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="198" Height="20"/>
+                    <Button x:Name="btnDomainOBFile" Grid.Row="0" Grid.Column="2" Content="ファイル選択" HorizontalAlignment="Left" Width="80" Click="btnSelectDomanCSVFile_Click" Margin="0,0,0,6"/>
+
+                    <Label Content="ObjecdtBrowserファイル" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <TextBox x:Name="txtDomainOBFileName" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="198" Height="20"/>
+                    <Button x:Name="btnSelectDomainOBFile" Grid.Row="1" Grid.Column="2" Content="ファイル選択" HorizontalAlignment="Left" VerticalAlignment="Top" Width="80" Click="btnSelectDomainOBFile_Click"/>
+
+                </Grid>
+                
+                <Button x:Name="btnProc6" Content="【６】ドメイン定義をObjectBrowser用定義に変換する" HorizontalAlignment="Center" VerticalAlignment="Top" Width="457" Click="btnProc6_Click">
+                        <Button.Background>
+                            <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+                        </Button.Background>
+                    </Button>
+                
+            </StackPanel>
+        </Border>
+        
         <!-- 終了ボタン -->
         <Button x:Name="btnClose" Grid.Row="7" Grid.Column="0" Content="終了" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,10,20,0" Width="80" Click="btnClose_Click"/>
 

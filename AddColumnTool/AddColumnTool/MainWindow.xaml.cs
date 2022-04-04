@@ -819,6 +819,134 @@ namespace AddColumnTool
                 txtOBFileName.Text = dialog.FileName;
             }
         }
+
+        private void btnProc6_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtDomainCSVFileName.Text) && File.Exists(txtDomainOBFileName.Text))
+                {
+                    StreamReader sr = new StreamReader(txtDomainCSVFileName.Text);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+
+                    List<String> domains = new List<string>();
+                    
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        domains.Add(strbuf);
+                    }
+
+                    // ファイルを閉じる
+                    sr.Close();
+
+                    //xmlファイルを指定する
+                    XElement xml = XElement.Load(@txtDomainOBFileName.Text);
+
+                    var ents = xml.Elements("DOMAIN").ToList();
+                    foreach (var target in ents)
+                    {
+                        target.Remove();
+                    }
+
+                    //メンバー情報分ループして、コンソールに表示
+                    int count = 0;
+                    foreach (String info in domains)
+                    {
+                        String[] domain = info.Split(",");
+                        String[] length = domain[3].Split(".");
+
+                        ++count;
+
+                        // DOMAIN
+                        XElement root =
+                           new XElement("DOMAIN");
+
+                        root.SetAttributeValue("DOMAIN ID", count.ToString());
+                        root.SetAttributeValue("L-NAME", domain[0]);
+                        root.SetAttributeValue("P-NAME", domain[1]);
+                        root.SetAttributeValue("DATATYPE", domain[2]);
+                        root.SetAttributeValue("LENGTH", length[0]);
+                        if (length.Length > 1)
+                        {
+                            root.SetAttributeValue("SCALE", length[1]);
+                        }
+                        else
+                        {
+                            root.SetAttributeValue("SCALE", "0");
+                        }
+                        root.SetAttributeValue("NULL","0" );
+                        root.SetAttributeValue("DEFID","0" );
+                        root.SetAttributeValue("DEF","" );
+                        root.SetAttributeValue("RULEID","0");
+                        root.SetAttributeValue("CODEDEFINEID","0"); 
+                        root.SetAttributeValue("RULE","");
+                        root.SetAttributeValue("COMMENT",""); 
+                        root.SetAttributeValue("GROUP","0");
+
+                        xml.Add(root);
+                    }
+
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("ObjectBrowserファイル (*.edm)|*.edm");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    FileStream fs = new FileStream(result, FileMode.Create);
+                    xml.Save(fs);
+                    fs.Close();
+                    fs.Dispose();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnSelectDomanCSVFile_Click(object sender, RoutedEventArgs e)
+        {
+            // ダイアログのインスタンスを生成
+            var dialog = new OpenFileDialog();
+
+            // ファイルの種類を設定
+            dialog.Filter = "CSVファイル (*.csv)|*.csv";
+
+            // ダイアログを表示する
+            if (dialog.ShowDialog() == true)
+            {
+                // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
+                txtDomainCSVFileName.Text = dialog.FileName;
+            }
+        }
+
+        private void btnSelectDomainOBFile_Click(object sender, RoutedEventArgs e)
+        {
+            // ダイアログのインスタンスを生成
+            var dialog = new OpenFileDialog();
+
+            // ファイルの種類を設定
+            dialog.Filter = "ObjectBrowserファイル (*.edm)|*.edm";
+
+            // ダイアログを表示する
+            if (dialog.ShowDialog() == true)
+            {
+                // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
+                txtDomainOBFileName.Text = dialog.FileName;
+            }
+        }
     }
 
 }
