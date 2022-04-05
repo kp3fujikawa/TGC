@@ -866,7 +866,7 @@ namespace AddColumnTool
                         XElement root =
                            new XElement("DOMAIN");
 
-                        root.SetAttributeValue("DOMAIN ID", count.ToString());
+                        root.SetAttributeValue("ID", count.ToString());
                         root.SetAttributeValue("L-NAME", domain[0]);
                         root.SetAttributeValue("P-NAME", domain[1]);
                         root.SetAttributeValue("DATATYPE", domain[2]);
