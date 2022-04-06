@@ -32,12 +32,22 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
-        <Button x:Name="btnProc3" Content="【３】Fieldの3番目の箇所にFieldの1番目の値の先頭に&quot;＊&quot;を付ける" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc3_Click">
+        <Button x:Name="btnProc3" Content="【３】Fieldの3番目の箇所にFieldの1番目の値をコピーする" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc3_Click">
             <Button.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
-        <Button x:Name="btnProc4" Content="【４】CSVファイルを読込み、[Manager]の枠に情報を追加する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc4_Click">
+        <Button x:Name="btnProc4" Content="【４-1】CSVファイルを読込み、ドメイン情報を更新する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc4_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnProc4_2" Content="【４-2】CSVファイルを読込み、Fieldの物理名を更新する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc4_2_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
+        <Button x:Name="btnProc7" Content="【7】CSVファイルを読込み、テーブル物理名を変更する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc7_Click">
             <Button.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>

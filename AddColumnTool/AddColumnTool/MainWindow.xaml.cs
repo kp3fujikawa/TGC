@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +24,8 @@ namespace AddColumnTool
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        Regex reg = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
         public MainWindow()
         {
             InitializeComponent();
@@ -66,7 +69,7 @@ namespace AddColumnTool
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
 
-                    StreamWriter sw = new StreamWriter(OutFileName);
+                    StreamWriter sw = new StreamWriter(OutFileName, false, Encoding.UTF8);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     string TableName = "";      // テーブル名
@@ -102,7 +105,7 @@ namespace AddColumnTool
                                 string addKeyName = TableName + "Key";
                                 // 先頭に"xxxx+Key"という名称のカラムがあるかチェック
                                 bool IsExistKey = false;        // キー存在フラグ
-                                var checkField = strbuf.Split(',');
+                                var checkField = reg.Split(strbuf);
                                 var colname = checkField[0].Trim('"');
                                 if (colname.Length > 3 &&
                                     (colname.Substring(colname.Length - 3).Equals("Key") ||
@@ -124,7 +127,7 @@ namespace AddColumnTool
                                     if (!IsExistKey)
                                     { 
                                         // 文字列を分割して配列に格納
-                                        var arrField = strbuf.Split(',');
+                                        var arrField = reg.Split(strbuf);
 
                                         // キー項目の場合
                                         if (arrField[4] != "")
@@ -266,7 +269,7 @@ namespace AddColumnTool
                             if (strbuf.IndexOf("Field") != -1)
                             {
                                 // Fieldの1番目と3番目の値が同じかチェック
-                                var checkField = strbuf.Split(',');
+                                var checkField = reg.Split(strbuf);
                                 int pos = checkField[0].IndexOf("=");
                                 var colname = checkField[0].Substring(pos+1);
 
@@ -293,7 +296,7 @@ namespace AddColumnTool
                     }
 
                     // 出力ファイル名
-                    StreamWriter sw = new StreamWriter(result);
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
                     foreach (var key in items.Keys)
                     {
                         sw.WriteLine(items[key]);
@@ -334,7 +337,7 @@ namespace AddColumnTool
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
 
-                    StreamWriter sw = new StreamWriter(result);
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     bool IsEntity = false;      // [Entity]判断フラグ
@@ -363,14 +366,14 @@ namespace AddColumnTool
                                 while (sr.EndOfStream == false)
                                 {
                                     // 文字列を分割して配列に格納
-                                    var arrField = strbuf.Split(',');
+                                    var arrField = reg.Split(strbuf);
 
                                     // Fieldの1番目の値を取得
                                     int pos = arrField[0].IndexOf("=");
                                     var colname = arrField[0].Substring(pos + 1);
 
                                     // Fieldの3番目の値を設定
-                                    arrField[2] = colname.Insert(1, "*");
+                                    arrField[2] = colname;
 
                                     // 配列を結合して文字列にする
                                     string strCsvData = string.Join(",", arrField);
@@ -433,6 +436,34 @@ namespace AddColumnTool
             {
                 if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
                 {
+                    Dictionary<string, string> domains = new Dictionary<string, string>();
+
+                    // ドメインを追加する
+                    StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                    string strbufCSV = "";      // CSVファイル読み込みバッファ
+                    try
+                    {
+                        // CSVファイルのデータを処理
+                        while (srCSV.EndOfStream == false)
+                        {
+                            strbufCSV = srCSV.ReadLine();
+
+                            // 文字列を分割して配列に格納
+                            var arrField = reg.Split(strbufCSV);
+
+                            domains.Add(arrField[0].Trim('\"'), strbufCSV);
+                        }
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                    finally
+                    {
+                        // CSVファイルを閉じる
+                        srCSV.Close();
+                    }
+
                     // ファイル保存ダイアログを表示します。
                     String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
                     if (String.IsNullOrEmpty(result))
@@ -443,7 +474,7 @@ namespace AddColumnTool
 
                     StreamReader sr = new StreamReader(txtFileName.Text);
 
-                    StreamWriter sw = new StreamWriter(result);
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
 
                     string strbuf = "";         // ファイル読み込みバッファ
                     bool IsManager = false;     // [Manager]判断フラグ
@@ -458,7 +489,7 @@ namespace AddColumnTool
                             if (strbuf.IndexOf("[Manager]") != -1)
                             {
                                 IsManager = true;
-                            }
+                            }                            
                         }
                         //-----------------------------------------------------
                         // [Manager]の場合
@@ -496,25 +527,19 @@ namespace AddColumnTool
                                 }
                             }
                             // ドメインを追加する
-                            StreamReader srCSV = new StreamReader(txtCSVFile.Text);
-                            string strbufCSV = "";      // CSVファイル読み込みバッファ
-
-                            // CSVファイルのデータを処理
-                            while (srCSV.EndOfStream == false)
+                            foreach (var domain_name in domains.Keys)
                             {
-                                strbufCSV = srCSV.ReadLine();
-
                                 // 文字列を分割して配列に格納
-                                var arrField = strbufCSV.Split(',');
+                                var arrField = reg.Split(domains[domain_name]);
 
                                 // Domainを追加
                                 string addline = String.Format("Domain={0}={1}",
-                                    arrField[0], arrField[1]);
+                                    arrField[0].Trim('\"'), arrField[1].Trim('\"'));
                                 sw.WriteLine(addline);
 
                                 // DomainInfoを追加
-                                addline = String.Format("DomainInfo=\"{0}\",\"{1}\",\"\",\"\"",
-                                    arrField[0], arrField[1]);
+                                addline = String.Format("DomainInfo=\"{0}\",\"{1}\",\"{2}\",\"\"",
+                                    arrField[0].Trim('\"'), arrField[1].Trim('\"'), arrField[2].Trim('\"'));
                                 sw.WriteLine(addline);
                             }
 
@@ -635,7 +660,7 @@ namespace AddColumnTool
                             }
                             else if (strbuf.IndexOf("Field=") == 0)
                             {
-                                var fields = strbuf.Replace("Field=", "").Split(',');
+                                var fields = reg.Split(strbuf.Replace("Field=", ""));
 
                                 RecordEntity recordEntity = new RecordEntity()
                                 {
@@ -947,6 +972,217 @@ namespace AddColumnTool
             {
                 // 選択されたファイル名 (ファイルパス) をテキストボックスに表示
                 txtDomainOBFileName.Text = dialog.FileName;
+            }
+        }
+
+        private void btnProc7_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
+                {
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    // テーブル情報を取得
+                    StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                    string strbufCSV = "";      // CSVファイル読み込みバッファ
+
+                    Dictionary<string, string> tables = new Dictionary<string, string>();
+
+                    try
+                    {
+                        // CSVファイルのデータを処理
+                        while (srCSV.EndOfStream == false)
+                        {
+                            strbufCSV = srCSV.ReadLine().Replace("\"","");
+
+                            // 文字列を分割して配列に格納
+                            var arrField = strbufCSV.Split(',');
+
+                            tables.Add(arrField[0], arrField[1]);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw ex;
+                    }
+                    finally
+                    {
+                        // CSVファイルを閉じる
+                        srCSV.Close();
+                    }
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        if (strbuf.IndexOf("PName=") != -1)
+                        {
+                            String pname = strbuf.Substring(6);
+                            if (tables.ContainsKey(pname))
+                            {
+                                sw.WriteLine("PName=" + tables[pname]);
+                            }
+                            else
+                            {
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        else if (strbuf.IndexOf("Entity1=") != -1)
+                        {
+                            String pname = strbuf.Substring(8);
+                            if (tables.ContainsKey(pname))
+                            {
+                                sw.WriteLine("Entity1=" + tables[pname]);
+                            }
+                            else
+                            {
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        else if (strbuf.IndexOf("Entity2=") != -1)
+                        {
+                            String pname = strbuf.Substring(8);
+                            if (tables.ContainsKey(pname))
+                            {
+                                sw.WriteLine("Entity2=" + tables[pname]);
+                            }
+                            else
+                            {
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnProc4_2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
+                {
+                    Dictionary<string, string> domains = new Dictionary<string, string>();
+
+                    // ドメインを追加する
+                    StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                    string strbufCSV = "";      // CSVファイル読み込みバッファ
+                    try
+                    {
+                        // CSVファイルのデータを処理
+                        while (srCSV.EndOfStream == false)
+                        {
+                            strbufCSV = srCSV.ReadLine();
+
+                            // 文字列を分割して配列に格納
+                            var arrField = reg.Split(strbufCSV);
+
+                            domains.Add(arrField[0].Trim('\"'), strbufCSV);
+                        }
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                    finally
+                    {
+                        // CSVファイルを閉じる
+                        srCSV.Close();
+                    }
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        if (strbuf.IndexOf("Field=") == 0)
+                        {
+                            var fields = reg.Split(strbuf);
+                            String domain_name = fields[0].Replace("Field=", "").Trim('\"');
+
+                            if (domains.ContainsKey(domain_name))
+                            {
+                                var domain = reg.Split(domains[domain_name]);
+
+                                // 物理名変更
+                                fields[1] = "\"" + domain[2].Trim('\"') + "\"";
+
+                                sw.WriteLine(string.Join(",", fields));
+                            }
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
