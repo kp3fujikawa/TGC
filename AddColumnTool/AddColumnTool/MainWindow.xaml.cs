@@ -370,10 +370,10 @@ namespace AddColumnTool
 
                                     // Fieldの1番目の値を取得
                                     int pos = arrField[0].IndexOf("=");
-                                    var colname = arrField[0].Substring(pos + 1);
+                                    var colname = arrField[0].Substring(pos + 1).Trim('\"');
 
                                     // Fieldの3番目の値を設定
-                                    arrField[2] = colname;
+                                    arrField[2] = "\"*" + colname + "\"";
 
                                     // 配列を結合して文字列にする
                                     string strCsvData = string.Join(",", arrField);
@@ -548,6 +548,26 @@ namespace AddColumnTool
 
                             // 読み込んだ内容をそのまま書き出す
                             sw.WriteLine(strbuf);
+                        }
+                        else if (strbuf.IndexOf("Field=") == 0)
+                        {
+                            var fields = reg.Split(strbuf);
+                            String domain_name = fields[0].Replace("Field=", "").Trim('\"');
+
+                            if (domains.ContainsKey(domain_name))
+                            {
+                                var domain = reg.Split(domains[domain_name]);
+
+                                // 物理名変更
+                                fields[1] = "\"" + domain[2].Trim('\"') + "\"";
+
+                                sw.WriteLine(string.Join(",", fields));
+                            }
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
                         }
                         //-----------------------------------------------------
                         // [Manager]以外の場合

@@ -32,12 +32,12 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
-        <Button x:Name="btnProc3" Content="【３】Fieldの3番目の箇所にFieldの1番目の値をコピーする" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc3_Click">
+        <Button x:Name="btnProc3" Content="【３】Fieldの3番目の箇所にFieldの1番目の値に*を付加してコピーする" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc3_Click">
             <Button.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
-        <Button x:Name="btnProc4" Content="【４-1】CSVファイルを読込み、ドメイン情報を更新する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc4_Click">
+        <Button x:Name="btnProc4" Content="【４-1】CSVファイルを読込み、ドメイン情報とFieldの物理名を更新する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc4_Click">
             <Button.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
