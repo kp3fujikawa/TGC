@@ -1205,6 +1205,170 @@ namespace AddColumnTool
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void btnProc8_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var changedata = new Dictionary<String, String>();
+                changedata.Add("SAP", "Sap");
+                changedata.Add("MES", "Mes");
+                changedata.Add("OPC", "Opc");
+                changedata.Add("DCS", "Dcs");
+                changedata.Add("PCN", "Pcn");
+                changedata.Add("TAG", "Tag");
+                changedata.Add("SEQ", "Seq");
+                changedata.Add("ASTPLANNNER", "Astplanner");
+
+
+                if (File.Exists(txtFileName.Text))
+                {
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsEntity = false;      // [Entity]判断フラグ
+                    bool bSkip = false;
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                            }
+                        }
+                        else if (strbuf.IndexOf("DomainInfo=") != -1)
+                        {
+                            // 文字列を分割して配列に格納
+                            var arrField = reg.Split(strbuf);
+                            if (arrField.Length < 3)
+                            {
+                                sw.WriteLine(strbuf);
+                                continue;
+                            }
+
+                            var fieldname = arrField[2].Trim('\"');
+                            if (string.IsNullOrEmpty(fieldname))
+                            {
+                                sw.WriteLine(strbuf);
+                                continue;
+                            }
+
+                            // 値変換
+                            foreach (var key in changedata.Keys)
+                            {
+                                fieldname = fieldname.Replace(key, changedata[key]);
+                            }
+                            fieldname = fieldname.Substring(0, 1).ToLower() + fieldname.Substring(1);
+
+                            // Fieldの2番目の値を設定
+                            arrField[2] = "\"" + fieldname + "\"";
+
+                            // 配列を結合して文字列にする
+                            string strCsvData = string.Join(",", arrField);
+
+                            sw.WriteLine(strCsvData);
+
+                            continue;
+                        }
+
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            if (strbuf.IndexOf("Page=") != -1)
+                            {
+                                bSkip = (strbuf.IndexOf("Page=マスタ（基盤）") != -1
+                                    || strbuf.IndexOf("Page=システム（基盤）") != -1
+                                    || strbuf.IndexOf("Page=履歴") != -1);
+                            }
+                            // Fieldの場合
+                            if (strbuf.IndexOf("Field") != -1 && !bSkip)
+                            {
+                                // Fieldのデータ行を処理
+                                while (sr.EndOfStream == false)
+                                {
+                                    // 文字列を分割して配列に格納
+                                    var arrField = reg.Split(strbuf);
+
+                                    // Fieldの1番目の値を取得
+                                    int pos = arrField[0].IndexOf("=");
+                                    var colname = arrField[0].Substring(pos + 1).Trim('\"');
+                                    var fieldname = arrField[1].Trim('\"');
+
+                                    // 値変換
+                                    foreach (var key in changedata.Keys){
+                                        fieldname = fieldname.Replace(key, changedata[key]);
+                                    }
+                                    fieldname = fieldname.Substring(0, 1).ToLower() + fieldname.Substring(1);
+
+                                    // Fieldの2番目の値を設定
+                                    arrField[1] = "\"" + fieldname + "\"";
+
+                                    // 配列を結合して文字列にする
+                                    string strCsvData = string.Join(",", arrField);
+
+                                    sw.WriteLine(strCsvData);
+
+                                    strbuf = sr.ReadLine();
+
+                                    // Field以外なら抜ける
+                                    if (strbuf.IndexOf("Field") == -1)
+                                    {
+                                        // 読み込んだ内容をそのまま書き出す
+                                        sw.WriteLine(strbuf);
+                                        break;
+                                    }
+                                }
+                            }
+                            // Field以外の場合
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
 }
