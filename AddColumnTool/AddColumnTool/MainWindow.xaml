@@ -57,6 +57,11 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
+        <Button x:Name="btnProc9" Content="【9】削除フラグを追加する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc9_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
 
         <Border BorderThickness="1" BorderBrush="Black" >
             <StackPanel Orientation="Vertical" Margin="5px">

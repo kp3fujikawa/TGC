@@ -1369,6 +1369,171 @@ namespace AddColumnTool
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void btnProc9_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text))
+                {
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    Dictionary<string, string> tables = new Dictionary<string, string>();
+
+                    StreamReader sr_st = new StreamReader(txtFileName.Text);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    string TableName = "";      // テーブル名
+                    bool IsEntity = false;      // [Entity]判断フラグ
+                    while (sr_st.EndOfStream == false)
+                    {
+                        strbuf = sr_st.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                                TableName = "";
+                            }
+                        }
+                        if (IsEntity)
+                        {
+                            // テーブル名を取得
+                            if (strbuf.IndexOf("LName") != -1)
+                            {
+                                TableName = strbuf.Substring(6);
+                            }
+                            // ブロックを判定
+                            if (strbuf.IndexOf("Tag=") > -1)
+                            {
+                                var tagname = strbuf.Substring(4);
+                                tables.Add(TableName, tagname);
+                            }
+                        }
+                    }
+                    sr_st.Close();
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    IsEntity = false;      // [Entity]判断フラグ
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                                TableName = "";
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            // テーブル名を取得
+                            if (strbuf.IndexOf("LName") != -1)
+                            {
+                                TableName = strbuf.Substring(6);
+                            }
+                            // Fieldの場合
+                            if (strbuf.IndexOf("Field") != -1)
+                            {
+                                bool IsExistKey = false;        // 存在フラグ
+
+                                // Fieldのデータ行を処理
+                                while (sr.EndOfStream == false)
+                                {
+                                    if (!tables.ContainsKey(TableName) ||
+                                        (tables.ContainsKey(TableName) &&
+                                        tables[TableName] != "マスタ" &&
+                                        tables[TableName] != "マスタ（基盤）" &&
+                                        tables[TableName] != "システム（基盤）"))
+                                    {
+                                        // 文字列を分割して配列に格納
+                                        var arrField = reg.Split(strbuf);
+
+                                        // キー項目の場合
+                                        if (arrField[0].Equals("削除フラグ"))
+                                        {
+                                            IsExistKey = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        IsExistKey = true;
+                                    }
+
+                                    // 読み込んだ内容をそのまま書き出す
+                                    sw.WriteLine(strbuf);
+
+                                    strbuf = sr.ReadLine();
+
+                                    // Field以外なら抜ける
+                                    if (strbuf.IndexOf("Field") == -1)
+                                    {
+                                        // 削除フラグ追加
+                                        if (!IsExistKey)
+                                        {
+                                            string addline = String.Format("Field=\"削除フラグ\",\"*削除フラグ\",\"NUMERIC(1)\",,,\"\",\"\",$FFFFFFFF,\"\"");
+                                            sw.WriteLine(addline);
+                                        }
+
+                                        // 読み込んだ内容をそのまま書き出す
+                                        sw.WriteLine(strbuf);
+
+                                        break;
+                                    }
+                                }
+                            }
+                            // Field以外の場合
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
 }
