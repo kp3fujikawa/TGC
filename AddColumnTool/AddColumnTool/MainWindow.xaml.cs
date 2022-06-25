@@ -1534,6 +1534,155 @@ namespace AddColumnTool
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void btnProc10_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
+                {
+                    Dictionary<string, string> indexes = new Dictionary<string, string>();
+
+                    // 制約を追加する
+                    StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                    string strbufCSV = "";      // CSVファイル読み込みバッファ
+                    try
+                    {
+                        // CSVファイルのデータを処理
+                        while (srCSV.EndOfStream == false)
+                        {
+                            strbufCSV = srCSV.ReadLine();
+
+                            // 文字列を分割して配列に格納
+                            var arrField = reg.Split(strbufCSV);
+
+                            indexes.Add(arrField[0].Trim('\"'), strbufCSV);
+                        }
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                    finally
+                    {
+                        // CSVファイルを閉じる
+                        srCSV.Close();
+                    }
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("A5M2ファイル(*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    string TableName = "";
+                    bool IsEntity = false;     // [Entity]判断フラグ                   
+                    Dictionary<string, string> items = new Dictionary<string, string>();
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                                TableName = "";
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            // テーブル名を取得
+                            if (strbuf.IndexOf("PName") != -1)
+                            {
+                                TableName = strbuf.Substring(6);
+
+                                items.Clear();
+                                if (indexes.ContainsKey(TableName))
+                                {
+                                    String[] datas = reg.Split(indexes[TableName]);
+                                    for (int i=2; i<datas.Length; i++)
+                                    {
+                                        items.Add(datas[i], datas[i]);
+                                    }
+                                }
+                            }
+
+                            // Fieldの場合
+                            if (strbuf.IndexOf("Field") != -1)
+                            {
+                                var checkField = reg.Split(strbuf.Replace("Field=",""));
+                                var colname = checkField[0].Trim('"');
+                                var colname2 = checkField[1].Trim('"');
+
+                                // 制約対象かチェック
+                                if (colname.IndexOf("nk") != 0 && items.ContainsKey(colname2))
+                                {
+                                    // 論理名にnkを追加
+                                    sw.WriteLine(strbuf.Replace("\""+colname+"\"","\"nk"+colname+"\""));
+                                }
+                                else
+                                {
+                                    // 読み込んだ内容をそのまま書き出す
+                                    sw.WriteLine(strbuf);
+                                }
+                            }
+                            // EffectModeの場合
+                            else if (strbuf.IndexOf("EffectMode") != -1)
+                            {
+                                // 制約を出力
+                                if (items.Count > 0)
+                                {
+                                    var outdata = string.Format("Index={0}={1},{2}", TableName + "NK", "1", string.Join(",", items.Values));
+                                    sw.WriteLine(outdata);
+                                }
+                                sw.WriteLine(strbuf);
+                            }
+                            // Field以外の場合
+                            else
+                            {
+                                // 読み込んだ内容をそのまま書き出す
+                                sw.WriteLine(strbuf);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]以外の場合
+                        //-----------------------------------------------------
+                        else
+                        {
+                            // 読み込んだ内容をそのまま書き出す
+                            sw.WriteLine(strbuf);
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sw.Close();
+                    sr.Close();
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
 }
