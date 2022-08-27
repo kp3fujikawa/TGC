@@ -1683,6 +1683,281 @@ namespace AddColumnTool
                 MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void btnProc11_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (File.Exists(txtFileName.Text) && File.Exists(txtCSVFile.Text))
+                {
+                    Dictionary<string, string[]> changeitems = new Dictionary<string, string[]>();
+                    Dictionary<string, string[]> domains = new Dictionary<string, string[]>();
+                    Dictionary<string, List<string>> dropitems = new Dictionary<string, List<string>>();
+
+                    // 変更情報
+                    if (!string.IsNullOrEmpty(txtCSVFile.Text))
+                    {
+                        StreamReader srCSV = new StreamReader(txtCSVFile.Text);
+                        string strbufCSV = "";      // CSVファイル読み込みバッファ
+                        try
+                        {
+                            // CSVファイルのデータを処理
+                            while (srCSV.EndOfStream == false)
+                            {
+                                strbufCSV = srCSV.ReadLine();
+
+                                // 文字列を分割して配列に格納
+                                var arrField = reg.Split(strbufCSV);
+
+                                if (arrField.Length == 3 || (arrField.Length == 4 && string.IsNullOrEmpty(arrField[3])))
+                                {
+                                    if (arrField[0].Trim('\"') == "D")
+                                    {
+                                        if (!dropitems.ContainsKey(arrField[1].Trim('\"')))
+                                        {
+                                            dropitems.Add(arrField[1].Trim('\"'), new List<string>());
+                                        }
+                                        dropitems[arrField[1].Trim('\"')].Add(arrField[2]);
+                                    }
+                                    else
+                                    {
+                                        changeitems.Add(arrField[1].Trim('\"') + "," + arrField[2].Trim('\"'), arrField);
+                                    }
+                                }
+                                else if (arrField.Length == 4)
+                                {
+                                    changeitems.Add(arrField[1].Trim('\"') + "," + arrField[3].Trim('\"'), arrField);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            throw;
+                        }
+                        finally
+                        {
+                            // CSVファイルを閉じる
+                            srCSV.Close();
+                        }
+                    }
+
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("スクリプトファイル(*.sql)|*.sql");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+                    try
+                    {
+                        string strbuf = "";         // ファイル読み込みバッファ
+                        string TableName = "";
+                        string TableName2 = "";
+                        bool IsManager = false;     // [Manager]判断フラグ
+                        bool IsEntity = false;     // [Entity]判断フラグ                   
+                        Dictionary<string, string> items = new Dictionary<string, string>();
+                        List<string> dropcol = new List<string>();
+
+                        while (sr.EndOfStream == false)
+                        {
+                            strbuf = sr.ReadLine();
+
+                            // ブロックを判定
+                            if (strbuf != "" && strbuf[0] == '[')
+                            {
+                                IsManager = false;
+                                if (strbuf.IndexOf("[Manager]") != -1)
+                                {
+                                    IsManager = true;
+                                }
+                                IsEntity = false;
+                                if (strbuf.IndexOf("[Entity]") != -1)
+                                {
+                                    IsEntity = true;
+                                    TableName = "";
+                                }
+                            }
+                            //-----------------------------------------------------
+                            // [Manager]の場合
+                            //-----------------------------------------------------
+                            if (IsManager)
+                            {
+                                // Domainの場合
+                                if (strbuf.IndexOf("DomainInfo=") != -1)
+                                {
+                                    // 文字列を分割して配列に格納
+                                    var arrField = reg.Split(strbuf);
+                                    arrField[0] = arrField[0].Replace("DomainInfo=", "");
+                                    var domainname = arrField[0].Replace("\"","");
+
+                                    // ドメイン情報を格納する
+                                    if (!domains.ContainsKey(domainname))
+                                    {
+                                        domains.Add(domainname, arrField);
+                                    }
+                                }
+                            }
+
+                            //-----------------------------------------------------
+                            // [Entity]の場合
+                            //-----------------------------------------------------
+                            if (IsEntity)
+                            {
+                                // テーブル名を取得
+                                if (strbuf.IndexOf("LName") != -1)
+                                {
+                                    TableName = strbuf.Substring(6);
+
+                                    if (dropitems.ContainsKey(TableName))
+                                    {
+                                        var data = dropitems[TableName];
+                                        if (data.Count > 0)
+                                        {
+                                            foreach (string colname in data)
+                                            {
+                                                dropcol.Add("alter table " + TableName2 + " drop column " + colname + ";");
+                                            }
+                                        }
+                                    }
+                                }
+                                if (strbuf.IndexOf("PName") != -1)
+                                {
+                                    TableName2 = strbuf.Substring(6);
+                                }
+
+                                // Fieldの場合
+                                if (strbuf.IndexOf("Field") != -1)
+                                {
+                                    var checkField = reg.Split(strbuf.Replace("Field=", ""));
+                                    var colname = checkField[0].Trim('"');
+                                    var colname2 = checkField[1].Trim('"');
+                                    var domain = checkField[2].Trim('"').Replace("*","");
+                                    var notnull = String.IsNullOrEmpty(checkField[3].Trim('"').Trim()) ? "" : (" " + checkField[3].Trim('"').Trim());
+                                    var comment = checkField[6].Trim('"');
+
+                                    if (changeitems.ContainsKey(TableName + "," + colname))
+                                    {
+                                        // 変更情報（論理名）
+                                        var data = changeitems[TableName + "," + colname];
+
+                                        if (data[0] == "A")
+                                        {
+                                            // 追加
+                                            // ドメイン情報
+                                            if (domains.ContainsKey(domain))
+                                            {
+                                                string[] data2 = domains[domain];
+                                                var itemtype = data2[1].Trim('"');
+
+                                                // 追加
+                                                sw.WriteLine("alter table " + TableName2 + " add " + colname2 + " " + itemtype + notnull + ";");
+                                                sw.WriteLine("execute sp_addextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                            }
+                                        }
+                                        else if (data[0] == "U")
+                                        {
+                                            // 変更
+                                            if (data.Length == 3 || (data.Length == 4 && string.IsNullOrEmpty(data[3])))
+                                            {
+                                                // ドメイン情報
+                                                if (domains.ContainsKey(domain))
+                                                {
+                                                    string[] data2 = domains[domain];
+                                                    var itemtype = data2[1].Trim('"');
+
+                                                    sw.WriteLine("alter table " + TableName2 + " alter column " + colname2 + " " + itemtype + notnull + ";");
+                                                    sw.WriteLine("execute sp_updateextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                                }
+                                            }
+                                            else if (data.Length == 4)
+                                            {
+                                                // 変更（論理名、コメント）
+                                                sw.WriteLine("execute sp_updateextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                            }
+                                        }
+                                    }
+                                    else if (changeitems.ContainsKey(TableName + "," + colname2))
+                                    {
+                                        // 変更情報（物理名）
+                                        var data = changeitems[TableName + "," + colname2];
+
+                                        if (data[0] == "A")
+                                        {
+                                            // ドメイン情報
+                                            if (domains.ContainsKey(domain))
+                                            {
+                                                string[] data2 = domains[domain];
+                                                var itemtype = data2[1].Trim('"');
+
+                                                // 追加
+                                                sw.WriteLine("alter table " + TableName2 + " add " + colname2 + " " + itemtype + notnull + ";");
+                                                sw.WriteLine("execute sp_addextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                            }
+                                        }
+                                        else if (data[0] == "U")
+                                        {
+                                            if (data.Length == 3 || (data.Length == 4 && string.IsNullOrEmpty(data[3])))
+                                            {
+                                                // ドメイン情報
+                                                if (domains.ContainsKey(domain))
+                                                {
+                                                    string[] data2 = domains[domain];
+                                                    var itemtype = data2[1].Trim('"');
+
+                                                    // 追加
+                                                    sw.WriteLine("alter table " + TableName2 + " alter column " + colname2 + " " + itemtype + notnull + ";");
+                                                    sw.WriteLine("execute sp_updateextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                                }
+                                            }
+                                            else if (data.Length == 4)
+                                            {
+                                                // ドメイン情報
+                                                if (domains.ContainsKey(domain))
+                                                {
+                                                    string[] data2 = domains[domain];
+                                                    var itemtype = data2[1].Trim('"');
+
+                                                    // 変更（物理名）
+                                                    sw.WriteLine("alter table " + TableName + " add " + colname2 + " " + itemtype + notnull + ";");
+                                                    sw.WriteLine("update " + TableName2 + " set " + TableName + " " + data[2] + "=" + colname2 + ";");
+                                                    sw.WriteLine("alter table " + TableName + " drop column " + data[2] + ";");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach (string buf in dropcol)
+                        {
+                            sw.WriteLine(buf);
+                        }
+                    }
+                    finally
+                    {
+                        // ファイルを閉じる
+                        sw.Close();
+                        sr.Close();
+                    }
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
 }

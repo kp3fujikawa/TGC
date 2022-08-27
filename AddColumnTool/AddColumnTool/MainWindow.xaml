@@ -67,6 +67,11 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
             </Button.Background>
         </Button>
+        <Button x:Name="btnProc11" Content="【11】差分スクリプトを出力する" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="5px" Width="457" Click="btnProc11_Click">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}"/>
+            </Button.Background>
+        </Button>
 
         <Border BorderThickness="1" BorderBrush="Black" >
             <StackPanel Orientation="Vertical" Margin="5px">
