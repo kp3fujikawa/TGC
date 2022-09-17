@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<operation>
+  <ope message="ジオキサン_反応仕込み開始時_R-602D内温" confirm_message="入力してください" value="50" result="" link=""></ope>
+  <ope message="ジオキサン_反応仕込み終了時_R-602D内温" confirm_message="入力してください" value="50" result="" link=""></ope>
+  <ope message="ジオキサン反応仕込み_設定量" confirm_message="入力してください" value="50" result="" link=""></ope>
+  <ope message="ジオキサン反応仕込み_実測値" confirm_message="入力してください" value="50" result="" link=""></ope>
+</operation>

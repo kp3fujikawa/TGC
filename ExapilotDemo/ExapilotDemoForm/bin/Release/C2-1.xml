@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<operation>
+  <ope message="遠心機濾布使用回数" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="遠心機濾布使用枚数" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始前_純水タンク内温下限" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始前_純水タンク内温上限" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始前_純水タンク内温" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始前_純水タンクレベル" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始前_冷純水タンクレベル" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="給液開始後_PW加温装置温度" confirm_message="入力してください" value="30" result="" link=""></ope>
+  <ope message="水洗開始前_PW加温装置温度" confirm_message="入力してください" value="30" result="" link=""></ope>
+</operation>

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<operation>
+  <ope message="開始剤溶解時間" confirm_message="開始剤溶解時間を入力してください" value="2" result="2" link=""></ope>
+  <ope message="開始剤溶解温度 MAX" confirm_message="開始剤溶解温度 MAXを入力してください" value="67" result="67" link=""></ope>
+  <ope message="開始剤溶解温度 MIN" confirm_message="開始剤溶解温度 MINを入力してください" value="100" result="" link="d:\work"></ope>
+  <ope message="脱気回数" confirm_message="脱気回数を入力してください" value="2" result="" link=""></ope>
+  <ope message="開始剤押し出しPGME重量" confirm_message="開始剤押し出しPGME重量を入力してください" value="20" result="" link="d:\work"></ope>
+  <ope message="開始剤ﾎﾟﾝﾌﾟ　検量値" confirm_message="開始剤ﾎﾟﾝﾌﾟ　検量値を入力してください" value="100" result="" link=""></ope>
+  <ope message="PGME重量（合計）" confirm_message="PGME重量（合計）を入力してください" value="50" result="" link=""></ope>
+  <ope message="脱気回数" confirm_message="脱気回数を入力してください" value="2" result="" link=""></ope>
+  <ope message="気温" confirm_message="気温を入力してください" value="30" result="" link=""></ope>
+</operation>

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExapilotDemo", "ExapilotDemo\ExapilotDemo.csproj", "{2C7AF513-71AB-48D4-87FB-BBF8D6278B76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExapilotDemoForm", "ExapilotDemoForm\ExapilotDemoForm.csproj", "{58C0FAEB-BBC4-4FA4-AEAD-834E15A865C4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C7AF513-71AB-48D4-87FB-BBF8D6278B76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C7AF513-71AB-48D4-87FB-BBF8D6278B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C7AF513-71AB-48D4-87FB-BBF8D6278B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C7AF513-71AB-48D4-87FB-BBF8D6278B76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58C0FAEB-BBC4-4FA4-AEAD-834E15A865C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58C0FAEB-BBC4-4FA4-AEAD-834E15A865C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58C0FAEB-BBC4-4FA4-AEAD-834E15A865C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58C0FAEB-BBC4-4FA4-AEAD-834E15A865C4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {32F2088A-BB9E-4500-ACF3-C7465D8AB034}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<operation>
+  <ope message="使用乾燥機（M,P,S,V,A,D）" confirm_message="" value="30" result="" link=""></ope>
+  <ope message="パレット枚数①（ABC順）" confirm_message="" value="30" result="" link=""></ope>
+  <ope message="パレット枚数②（ABC順）" confirm_message="" value="30" result="" link=""></ope>
+  <ope message="パレット枚数③（ABC順）" confirm_message="" value="30" result="" link=""></ope>
+  <ope message="Wet Cake重量(kg/枚)" confirm_message="" value="30" result="" link=""></ope>
+  <ope message="Wet Cake総重量" confirm_message="" value="30" result="" link=""></ope>
+</operation>

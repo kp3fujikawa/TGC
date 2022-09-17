@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<operation>
+  <ope message="晶析開始時_R-603D内温下限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="晶析開始時_R-603D内温上限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="晶析終了時_R-603D内温下限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="晶析終了時_R-603D内温上限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603D晶析所要時間下限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603D晶析所要時間上限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603D晶析所要時間" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="晶析開始時_R-603E内温" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="晶析終了時_R-603E内温" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603E晶析所要時間下限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603E晶析所要時間上限" confirm_message="入力してください" value="" result="" link=""></ope>
+  <ope message="R-603E晶析所要時間" confirm_message="入力してください" value="" result="" link=""></ope>
+</operation>

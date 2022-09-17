@@ -1,0 +1,15 @@
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\bin\Release\ExapilotDemo.exe.config
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\bin\Release\ExapilotDemo.exe
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\bin\Release\ExapilotDemo.pdb
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.csprojAssemblyReference.cache
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\Views\MainWindow.g.cs
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\App.g.cs
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo_MarkupCompile.cache
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo_MarkupCompile.lref
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\Views\MainWindow.baml
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.g.resources
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.Properties.Resources.resources
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.csproj.GenerateResource.cache
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.csproj.CoreCompileInputs.cache
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.exe
+C:\Users\ryugo\OneDrive\ドキュメント\GitHub\TGC\ExapilotDemo\ExapilotDemo\obj\Release\ExapilotDemo.pdb
