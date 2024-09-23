@@ -1842,6 +1842,8 @@ namespace AddColumnTool
 
                                     if (changeitems.ContainsKey(TableName + "," + colname))
                                     {
+                                        System.Diagnostics.Debug.Print("(1):" + TableName + " " + TableName2 + " " + colname + " " + colname2 + " " + domain);
+
                                         // 変更情報（論理名）
                                         var data = changeitems[TableName + "," + colname];
 
@@ -1883,6 +1885,8 @@ namespace AddColumnTool
                                     }
                                     else if (changeitems.ContainsKey(TableName + "," + colname2))
                                     {
+                                        System.Diagnostics.Debug.Print("(2):" + TableName + " " + TableName2 + " " + colname + " " + colname2 + " " + domain);
+
                                         // 変更情報（物理名）
                                         var data = changeitems[TableName + "," + colname2];
 
@@ -1909,7 +1913,7 @@ namespace AddColumnTool
                                                     string[] data2 = domains[domain];
                                                     var itemtype = data2[1].Trim('"');
 
-                                                    // 追加
+                                                    // 変更
                                                     sw.WriteLine("alter table " + TableName2 + " alter column " + colname2 + " " + itemtype + notnull + ";");
                                                     sw.WriteLine("execute sp_updateextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
                                                 }
@@ -1923,9 +1927,10 @@ namespace AddColumnTool
                                                     var itemtype = data2[1].Trim('"');
 
                                                     // 変更（物理名）
-                                                    sw.WriteLine("alter table " + TableName + " add " + colname2 + " " + itemtype + notnull + ";");
-                                                    sw.WriteLine("update " + TableName2 + " set " + TableName + " " + data[2] + "=" + colname2 + ";");
-                                                    sw.WriteLine("alter table " + TableName + " drop column " + data[2] + ";");
+                                                    sw.WriteLine("alter table " + TableName2 + " add " + colname2 + " " + itemtype + notnull + ";");
+                                                    sw.WriteLine("execute sp_addextendedproperty N'MS_Description', N'" + colname + ":" + comment + "', N'SCHEMA', N'dbo', N'TABLE', N'" + TableName2 + "', N'COLUMN', N'" + colname2 + "';");
+                                                    sw.WriteLine("update " + TableName2 + " set " + colname2 + "=" + data[2] + ";");
+                                                    sw.WriteLine("alter table " + TableName2 + " drop column " + data[2] + ";");
                                                 }
                                             }
                                         }
@@ -1945,6 +1950,182 @@ namespace AddColumnTool
                         sw.Close();
                         sr.Close();
                     }
+
+                    MessageBox.Show("処理が終了しました", Title);
+                }
+                else
+                {
+                    MessageBox.Show("ファイルが存在しません", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnProc12_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                int zorder = 0;
+
+                if (File.Exists(txtFileName.Text))
+                {
+                    // ファイル保存ダイアログを表示します。
+                    String result = selectOutputFile("ファイル (*.a5er)|*.a5er");
+                    if (String.IsNullOrEmpty(result))
+                    {
+                        // 終了します。
+                        return;
+                    }
+
+                    List<TableDAO> datas = new List<TableDAO>();
+
+                    StreamReader sr = new StreamReader(txtFileName.Text);
+
+                    StreamWriter sw = new StreamWriter(result, false, Encoding.UTF8);
+
+
+                    string strbuf = "";         // ファイル読み込みバッファ
+                    bool IsEntity = false;      // [Entity]判断フラグ
+
+                    TableDAO tableDao = null;
+
+                    while (sr.EndOfStream == false)
+                    {
+                        strbuf = sr.ReadLine();
+                        sw.WriteLine(strbuf);
+
+                        if (strbuf.IndexOf("ZOrder=") == 0)
+                        {
+                            var z = int.Parse(strbuf.Replace("ZOrder=", ""));
+                            if (zorder < z) zorder = z;
+                        }
+
+                        // ブロックを判定
+                        if (strbuf != "" && strbuf[0] == '[')
+                        {
+                            IsEntity = false;
+                            if (strbuf.IndexOf("[Entity]") != -1)
+                            {
+                                IsEntity = true;
+                                tableDao = new TableDAO();
+                                datas.Add(tableDao);
+                            }
+                        }
+                        //-----------------------------------------------------
+                        // [Entity]の場合
+                        //-----------------------------------------------------
+                        if (IsEntity)
+                        {
+                            if (strbuf.IndexOf("PName=") == 0)
+                            {
+                                // テーブル名を取得
+                                tableDao.Table.Name = strbuf.Replace("PName=", "");
+                            }
+                            else if (strbuf.IndexOf("LName=") == 0)
+                            {
+                                // テーブル名を取得
+                                tableDao.Table.TableName = strbuf.Replace("LName=", "");
+                            }
+                            else if (strbuf.IndexOf("Comment=") == 0)
+                            {
+                                // コメントを取得
+                                tableDao.Table.Comment = strbuf.Replace("Comment=", "");
+                            }
+                            else if (strbuf.IndexOf("Page=") == 0)
+                            {
+                                // ページを取得
+                                tableDao.Table.Page = strbuf.Replace("Page=", "");
+                            }
+                            else if (strbuf.IndexOf("Tag=") == 0)
+                            {
+                                // タグを取得
+                                tableDao.Table.Tag = strbuf.Replace("Tag=", "");
+                            }
+                            else if (strbuf.IndexOf("Left=") == 0)
+                            {
+                                // LEFTを取得
+                                tableDao.Table.Left = strbuf.Replace("Left=", "");
+                            }
+                            else if (strbuf.IndexOf("Top=") == 0)
+                            {
+                                // TOPを取得
+                                tableDao.Table.Top = strbuf.Replace("Top=", "");
+                            }
+                            else if (strbuf.IndexOf("Field=") == 0)
+                            {
+                                var fields = reg.Split(strbuf.Replace("Field=", ""));
+
+                                RecordEntity recordEntity = new RecordEntity()
+                                {
+                                    Name = fields[0].Trim('"'),
+                                    ColName = fields[1].Trim('"'),
+                                    Domain = fields[2].Trim('"'),
+                                    IsNotNull = fields[3].Trim('"'),
+                                    DataType = "",
+                                    PrimaryKey = fields[4].Trim('"'),
+                                    Comment = fields[6].Trim('"'),
+                                };
+
+                                tableDao.Records.Add(recordEntity);
+                            }
+                        }
+                    }
+
+                    // ファイルを閉じる
+                    sr.Close();
+
+
+                    String updateD = DateTime.Now.ToString("yyyyMMddHHmmss");
+
+                    foreach (TableDAO info in datas)
+                    {
+                        if (!info.Table.Page.Equals("トランザクション（製造）")
+                            && !info.Table.Page.Equals("トランザクション（在庫）")
+                            && !info.Table.Page.Equals("トランザクション（計量）"))
+                        {
+                            continue;
+                        }
+
+                        sw.WriteLine("");
+                        sw.WriteLine("[Entity]");
+                        sw.WriteLine("PName=" + "h_" + info.Table.Name);
+                        sw.WriteLine("LName=" + info.Table.TableName + "履歴");
+                        sw.WriteLine("Comment=" + info.Table.Comment);
+                        sw.WriteLine("TableOption=");
+                        sw.WriteLine("Page=" + info.Table.Page.Replace("トランザクション","履歴"));
+                        sw.WriteLine("Left=" + info.Table.Left);
+                        sw.WriteLine("Top=" + info.Table.Top);
+
+                        RecordEntity rec = info.Records[0];
+                        sw.WriteLine(String.Format("Field=\"{0}\",\"{1}\",\"{2}\",{3},{4},\"\",\"{5}\",$FFFFFFFF,\"\"",
+                                                    rec.Name, rec.ColName, rec.Domain, rec.IsNotNull, rec.PrimaryKey, rec.Comment));
+
+                        sw.WriteLine("Field=\"履歴番号\",\"rev\",\"*履歴番号\",NOT NULL,1,\"\",\"【システム項目】履歴テーブルのレコード生成時に自動付与される。\",$FFFFFFFF,\"\"");
+                        sw.WriteLine("Field=\"履歴区分\",\"revtype\",\"*履歴区分\",NOT NULL,,\"\",\"【システム項目】履歴テーブルに記録される変更の種類。　0:登録, 1:更新, 2:削除\",$FFFFFFFF,\"\"");
+
+                        for (int i=1; i < info.Records.Count; i++)
+                        {
+                            rec = info.Records[i];
+
+                            sw.WriteLine(String.Format("Field=\"{0}\",\"{1}\",\"{2}\",{3},{4},\"\",\"{5}\",$FFFFFFFF,\"\"",
+                                                        rec.Name, rec.ColName, rec.Domain, rec.IsNotNull, rec.PrimaryKey, rec.Comment));
+                        }
+
+                        sw.WriteLine("EffectMode=Gradation");
+                        sw.WriteLine("Tag=履歴（トランザクション）");
+                        sw.WriteLine("Color=$000000");
+                        sw.WriteLine("BkColor=$FFFFFF");
+                        sw.WriteLine("ModifiedDateTime=" + updateD);
+
+                        zorder++;
+                        sw.WriteLine("ZOrder=" + zorder.ToString());
+                    }
+
+                    sw.Close();
+                    sw.Dispose();
 
                     MessageBox.Show("処理が終了しました", Title);
                 }
